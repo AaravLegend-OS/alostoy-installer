@@ -10,7 +10,15 @@ This is the ALOSToy Installer. The foundation to install ALOSToy v1.0 Standard o
 
 
 
-According to Khadija, she says this is the coolest invention possible.
+## Comes in two editions: ##
+
+
+
+ALOSToy Standard
+
+
+
+ALOSToy Extended
 
 
 
