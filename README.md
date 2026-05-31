@@ -61,7 +61,7 @@ And you can install **ALOSToy** on your USB drive, turning it into a bootable Ve
 * A tools.esd file which extracts to 24 files in %Root%bin.
 
 
-### ** Download the ALOSToy Installer from the releases first. Then follow the guide. **
+### **Download the ALOSToy Installer from the releases first. Then follow the guide.**
 
 
 
