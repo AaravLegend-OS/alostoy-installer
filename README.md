@@ -22,6 +22,10 @@ ALOSToy Extended
 
 
 
+## See the installation guide: ##
+
+
+
 ### **Streamlined, Modern, Packed**
 
 
