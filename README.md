@@ -378,7 +378,7 @@ along with this program. If not, see [**https://www.gnu.org/licenses/**](https:/
 
 
 
-To see the full GNU GPL v3.0 License, open the **COPYING** file.
+To see the full GNU GPL v3.0 License, open the **LICENSE** file on this repository.
 
 ## **Author**
 
