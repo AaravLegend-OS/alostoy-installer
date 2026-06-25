@@ -61,8 +61,7 @@ And you can install **ALOSToy** on your USB drive, turning it into a bootable Ve
 * A tools.esd file which extracts to 24 files in %Root%bin.
 
 
-
-# **Download the installer first from releases and then proceed.**
+## ***Download the installer first and then follow instructions.***
 
 
 ## **Installation**
@@ -123,21 +122,11 @@ Yes! It does. Check them here.
 
 ### **Custom logfile**
 
+By default, **ALOSToy-Installer.bat** logs to ALOSToy-Installer.log in the root directory. You can actually change that if you desire to.
+
 
 
 **ALOSToy-Installer.bat** /LogFile C:\\Logs\\ALOSToy-Installer.log
-
-
-
-To be prompted for a path:
-
-
-
-**ALOSToy-Installer.bat** /LogFile Prompt
-
-
-
-Be very careful! cmd.exe does not parse %\* cleanly. It often cuts out "" while storing arguments. Because of that, you cannot put spaces in the logfile path!
 
 
 
@@ -287,12 +276,12 @@ You can also use:
 
 ## **Argument rules (VERY IMPORTANT!!!)**
 
-* Any and all arguments are case-insensitive. Windows users will be happy, same for Linux users.
+* Any and all arguments are case-insensitive by default. I know.
 * You are only able to pick from one prefix:
 
   * /
   * \-
-  * \-- <---- Picking this prefix makes most arguments case-sensitive.
+  * \-- <---- Picking this prefix makes all arguments case-sensitive.
 * Never ever mix a prefix. Chose "/"? Use "/" only. Same for the other prefixes.
 
 
@@ -312,6 +301,16 @@ A bad example:
 **ALOSToy-Installer.bat** /Product Standard --No-Banner <---- Throws an error.
 
 
+
+You do need to note that once you use the -- prefix, you then have to type it in **exactly as shown**. Arguments become **case-sensitive** once used. It is great right? I made a new function for it.
+
+
+
+The **NoUpdate** and **ForceUpdate** arguments are compatible with all other arguments except themselves.
+
+
+
+**ALOSToy-Installer.bat** /NoUpdate /ForceUpdate will **NOT** work. Same for the other way round.
 
 ## **Troubleshooting**
 
@@ -417,7 +416,7 @@ along with this program. If not, see [**https://www.gnu.org/licenses/**](https:/
 
 
 
-To see the full GNU GPL v3.0 License, open the **LICENSE** file in this repo.
+To see the full GNU GPL v3.0 License, open the **LICENSE** file on this repo.
 
 ## **Author**
 
