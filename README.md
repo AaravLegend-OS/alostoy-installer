@@ -265,12 +265,21 @@ Example:
 **ALOSToy-Installer.bat** /ForceUpdate
 
 
+Specifying **AutoUpdate** tells the installer to automatically apply the latest update if a new version is found.
+
+
+Example:
+
+**ALOSToy-Installer.bat** /AutoUpdate
+
 
 You can also use:
 
 \-NoUpdate or --No-Update
 
 \-ForceUpdate or --Force-Update
+
+\-AutoUpdate or --Auto-Update
 
 
 
