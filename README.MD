@@ -61,6 +61,10 @@ And you can install **ALOSToy** on your USB drive, turning it into a bootable Ve
 * A tools.esd file which extracts to 24 files in %Root%bin.
 
 
+# Download the installer from releases and then follow the installation steps.
+
+
+
 ## **Installation**
 
 1. Run **ALOSTOY-INSTALLER.BAT**.
