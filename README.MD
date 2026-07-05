@@ -34,7 +34,7 @@ ALOSToy Extended
 
 
 
-**ALOSToy Installer** is a bat installer only for Windows. (I will not make a Linux version. Sorry!!! ＞︿＜)
+**ALOSToy Installer** is a bat installer only for Windows. (I will not make a Linux version. Sorry!!!)
 
 
 
@@ -61,12 +61,9 @@ And you can install **ALOSToy** on your USB drive, turning it into a bootable Ve
 * A tools.esd file which extracts to 24 files in %Root%bin.
 
 
-## ***Download the installer first and then follow instructions.***
-
-
 ## **Installation**
 
-1. Run **ALOSToy-Installer.bat**.
+1. Run **ALOSTOY-INSTALLER.BAT**.
 2. Wait, obviously.
 3. Accept EULA.
 4. Accept Antivirus Warning.
@@ -78,7 +75,7 @@ And you can install **ALOSToy** on your USB drive, turning it into a bootable Ve
    4. Verifiy Your Installation
    5. Delete Leftover Verfication Databases
    6. Quit The Installer
-   7. Look Into The Installer (This one will look jarring because you get to see inside **ALOSToy-Installer.bat**.)
+   7. Look Into The Installer (This one will look jarring because you get to see inside **ALOSTOY-INSTALLER.BAT**.)
 6. Accept license terms of the product.
 7. Wait for the installer to fetch the latest version.
 8. Choose a drive. (BE CAREFUL!!!)
@@ -93,24 +90,36 @@ And you can install **ALOSToy** on your USB drive, turning it into a bootable Ve
 
 
 
-**ALOSToy-Installer.bat** is the file to run.
+**ALOSTOY-INSTALLER.BAT** is the file to run.
 
 
 
 ## **I NEED HELP!**
 
 No worries! Use one of these to see the help or press H on the main menu with the 7 buttons. (Casing does not matter. Press H or h.)
-**ALOSToy-Installer.bat** /Help
-**ALOSToy-Installer.bat** /H
-**ALOSToy-Installer.bat** /?
-
+```batch
+ALOSTOY-INSTALLER.BAT /Help
+ALOSTOY-INSTALLER.BAT /H
+ALOSTOY-INSTALLER.BAT /?
+```
 
 
 You can also use -Help, -H, -?, or --Help, --H, --?.
 
 
+If you add either:
+/InstallGuide
+-InstallGuide
+--Install-Guide
+to your help command line. Eg:
+```batch
+ALOSTOY-INSTALLER.BAT /? /InstallGuide
+ALOSTOY-INSTALLER.BAT -? -InstallGuide
+ALOSTOY-INSTALLER.BAT --? --Install-Guide
+```
 
-Please note, this help is for the command-line, is very detailed and it spans **8 PAGES! OH MY GOD!!!!**
+
+Please note, this help is for the command-line, is very detailed and it spans 10 PAGES!
 
 
 
@@ -122,11 +131,11 @@ Yes! It does. Check them here.
 
 ### **Custom logfile**
 
-By default, **ALOSToy-Installer.bat** logs to ALOSToy-Installer.log in the root directory. You can actually change that if you desire to.
+By default, **ALOSTOY-INSTALLER.BAT** logs to ALOSToy-Installer.log in the root directory. You can actually change that if you desire to.
 
 
 
-**ALOSToy-Installer.bat** /LogFile C:\\Logs\\ALOSToy-Installer.log
+**ALOSTOY-INSTALLER.BAT** /LogFile C:\\Logs\\ALOSToy-Installer.log
 
 
 
@@ -138,7 +147,7 @@ You can also use -LogFile or --Log-File.
 
 
 
-**ALOSToy-Installer.bat** /VentoyVersion 1.1.12
+**ALOSTOY-INSTALLER.BAT** /VentoyVersion 1.1.12
 
 
 
@@ -154,7 +163,7 @@ You can also use -VentoyVersion or --Ventoy-Version.
 
 
 
-**ALOSToy-Installer.bat** /DownloadVentoyVersion 1.1.12 /SaveLocation C:\\Downloads
+**ALOSTOY-INSTALLER.BAT** /DownloadVentoyVersion 1.1.12 /SaveLocation C:\\Downloads
 
 
 
@@ -162,7 +171,7 @@ You can even request **interactive** selections too!
 
 
 
-**ALOSToy-Installer.bat** /DownloadVentoyVersion 1.1.12 /SaveLocation Prompt
+**ALOSTOY-INSTALLER.BAT** /DownloadVentoyVersion 1.1.12 /SaveLocation Prompt
 
 
 
@@ -180,15 +189,15 @@ You can also use -DownloadVentoyVersion and -SaveLocation or --Download-Ventoy-V
 
 
 
-**ALOSToy-Installer.bat** /Product Standard
+**ALOSTOY-INSTALLER.BAT** /Product Standard
 
 
 
-**ALOSToy-Installer.bat** /Product Standard+Extensions
+**ALOSTOY-INSTALLER.BAT** /Product Standard+Extensions
 
 
 
-**ALOSToy-Installer.bat** /Product Extended
+**ALOSTOY-INSTALLER.BAT** /Product Extended
 
 
 
@@ -216,7 +225,7 @@ The following example never shows the logo branding:
 
 
 
-**ALOSToy-Installer.bat** /NoBanner
+**ALOSTOY-INSTALLER.BAT** /NoBanner
 
 
 
@@ -224,7 +233,7 @@ The following example always shows the logo branding:
 
 
 
-**ALOSToy-Installer.bat** /ForceBanner
+**ALOSTOY-INSTALLER.BAT** /ForceBanner
 
 
 
@@ -242,7 +251,7 @@ You can also use:
 
 ## **Update Control**
 
-There is an updater in **ALOSToy-Installer.bat** that checks for the latest version and lets **YOU** choose whether to update or not.
+There is an updater in **ALOSTOY-INSTALLER.BAT** that checks for the latest version and lets **YOU** choose whether to update or not.
 
 
 
@@ -252,17 +261,17 @@ Specifying **NoUpdate** tells the installer **not** to check for or apply update
 
 Example:
 
-**ALOSToy-Installer.bat** /NoUpdate
+**ALOSTOY-INSTALLER.BAT** /NoUpdate
 
 
 
-Specifying **ForceUpdate** tells the installer to update to the newest or current version regardless. Useful for accidentally modifying **ALOSToy-Installer.bat** and then needing to revert back.
+Specifying **ForceUpdate** tells the installer to update to the newest or current version regardless. Useful for accidentally modifying **ALOSTOY-INSTALLER.BAT** and then needing to revert back.
 
 
 
 Example:
 
-**ALOSToy-Installer.bat** /ForceUpdate
+**ALOSTOY-INSTALLER.BAT** /ForceUpdate
 
 
 Specifying **AutoUpdate** tells the installer to automatically apply the latest update if a new version is found.
@@ -270,7 +279,7 @@ Specifying **AutoUpdate** tells the installer to automatically apply the latest 
 
 Example:
 
-**ALOSToy-Installer.bat** /AutoUpdate
+**ALOSTOY-INSTALLER.BAT** /AutoUpdate
 
 
 You can also use:
@@ -299,7 +308,7 @@ A good example:
 
 
 
-**ALOSToy-Installer.bat** /Product Standard /NoBanner <---- Works
+**ALOSTOY-INSTALLER.BAT** /Product Standard /NoBanner <---- Works
 
 
 
@@ -307,7 +316,7 @@ A bad example:
 
 
 
-**ALOSToy-Installer.bat** /Product Standard --No-Banner <---- Throws an error.
+**ALOSTOY-INSTALLER.BAT** /Product Standard --No-Banner <---- Throws an error.
 
 
 
@@ -319,7 +328,7 @@ The **NoUpdate** and **ForceUpdate** arguments are compatible with all other arg
 
 
 
-**ALOSToy-Installer.bat** /NoUpdate /ForceUpdate will **NOT** work. Same for the other way round.
+**ALOSTOY-INSTALLER.BAT** /NoUpdate /ForceUpdate will **NOT** work. Same for the other way round.
 
 ## **Troubleshooting**
 
@@ -375,7 +384,7 @@ The error speaks for itself. Just make sure you did not **right-click and click 
 
 
 
-You can run **ALOSToy-Installer.bat** in System32 though. Just do not run the program directly with %SystemRoot%\\System32 as the working directory if it is not located there.
+You can run **ALOSTOY-INSTALLER.BAT** in System32 though. Just do not run the program directly with %SystemRoot%\\System32 as the working directory if it is not located there.
 
 ### "Relaunching as an administrator."
 
@@ -393,7 +402,7 @@ You should **disable** it while running and **re-enable** it after completion.
 
 
 
-## **License Terms**
+## **License (GNU GPL v3.0)**
 
 Copyright (C) 2026 Aarav Katariya
 
@@ -405,7 +414,7 @@ it under the terms of the GNU General Public License as published by
 
 the Free Software Foundation, either version 3 of the License, or
 
-(at your option) any later version.
+(at your option) **any later version**.
 
 
 
@@ -425,7 +434,7 @@ along with this program. If not, see [**https://www.gnu.org/licenses/**](https:/
 
 
 
-To see the full GNU GPL v3.0 License, open the **LICENSE** file on this repo.
+To see the full GNU GPL v3.0 License, open the **COPYING.txt** file.
 
 ## **Author**
 
