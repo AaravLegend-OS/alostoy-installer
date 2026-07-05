@@ -408,7 +408,7 @@ You should **disable** it while running and **re-enable** it after completion.
 
 
 
-## **License (GNU GPL v3.0)**
+## **License Terms**
 
 Copyright (C) 2026 Aarav Katariya
 
