@@ -1,5 +1,6 @@
 #Requires -PSEdition Desktop
 #Requires -Version 5.1
+# Compile this with ps2exe for the executable version seen in the installer!
 # Treat like an actual cmdlet.
 [CmdletBinding()]
 # Define parameters. WindowTitle, then starting directory.
