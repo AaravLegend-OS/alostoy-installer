@@ -189,15 +189,17 @@ You can also use -DownloadVentoyVersion and -SaveLocation or --Download-Ventoy-V
 
 
 
-**ALOSTOY-INSTALLER.BAT** /Product Standard
+```
+ALOSTOY-INSTALLER.BAT /Product Standard
 
 
 
-**ALOSTOY-INSTALLER.BAT** /Product Standard+Extensions
+ALOSTOY-INSTALLER.BAT /Product Standard+Extensions
 
 
 
-**ALOSTOY-INSTALLER.BAT** /Product Extended
+ALOSTOY-INSTALLER.BAT /Product Extended
+```
 
 
 
