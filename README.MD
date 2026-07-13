@@ -58,7 +58,7 @@ And you can install **ALOSToy** on your USB drive, turning it into a bootable Ve
 * curl
 * Internet access to download tools.esd, Ventoy and ALOSToy!
 * Admin rights, so that we can do elevated operations. (THAT INCLUDES FORMATTING!!! :O)
-* A tools.esd file which extracts to 24 files in %Root%bin.
+* A tools.esd file which extracts to 16 files in %Root%bin.
 
 
 # Download the installer from releases and then follow the installation steps.
