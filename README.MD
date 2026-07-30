@@ -58,7 +58,7 @@ And you can install **ALOSToy** on your USB drive, turning it into a bootable Ve
 * curl
 * Internet access to download tools.esd, Ventoy and ALOSToy!
 * Admin rights, so that we can do elevated operations. (THAT INCLUDES FORMATTING!!! :O)
-* A tools.esd file which extracts to 24 files in %Root%bin.
+* A tools.esd file.
 
 # **Download the installer from releases first and then follow instructions.**
 
@@ -138,7 +138,7 @@ By default, **ALOSTOY-INSTALLER.BAT** logs to ALOSToy-Installer.log in the root 
 
 
 ```
-**ALOSTOY-INSTALLER.BAT** /LogFile C:\\Logs\\ALOSToy-Installer.log
+**ALOSTOY-INSTALLER.BAT** /LogFile C:\Logs\ALOSToy-Installer.log
 ```
 
 
@@ -170,7 +170,7 @@ You can also use -VentoyVersion or --Ventoy-Version.
 
 
 ```
-**ALOSTOY-INSTALLER.BAT** /DownloadVentoyVersion 1.1.12 /SaveLocation C:\\Downloads
+**ALOSTOY-INSTALLER.BAT** /DownloadVentoyVersion 1.1.12 /SaveLocation C:\Downloads
 ```
 
 
@@ -237,7 +237,6 @@ The following example never shows the logo branding:
 
 ```
 **ALOSTOY-INSTALLER.BAT** /NoBanner
-
 ```
 
 
