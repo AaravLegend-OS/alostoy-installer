@@ -60,7 +60,8 @@ And you can install **ALOSToy** on your USB drive, turning it into a bootable Ve
 * Admin rights, so that we can do elevated operations. (THAT INCLUDES FORMATTING!!! :O)
 * A tools.esd file.
 
-# **Download the installer from releases first and then follow instructions.**
+
+# **Download the installer from the releases and then follow instructions below.**
 
 
 ## **Installation**
@@ -138,7 +139,7 @@ By default, **ALOSTOY-INSTALLER.BAT** logs to ALOSToy-Installer.log in the root 
 
 
 ```
-**ALOSTOY-INSTALLER.BAT** /LogFile C:\Logs\ALOSToy-Installer.log
+ALOSTOY-INSTALLER.BAT /LogFile C:\\Logs\\ALOSToy-Installer.log
 ```
 
 
@@ -152,7 +153,7 @@ You can also use -LogFile or --Log-File.
 
 
 ```
-**ALOSTOY-INSTALLER.BAT** /VentoyVersion 1.1.12
+ALOSTOY-INSTALLER.BAT /VentoyVersion 1.1.12
 ```
 
 
@@ -170,7 +171,7 @@ You can also use -VentoyVersion or --Ventoy-Version.
 
 
 ```
-**ALOSTOY-INSTALLER.BAT** /DownloadVentoyVersion 1.1.12 /SaveLocation C:\Downloads
+ALOSTOY-INSTALLER.BAT /DownloadVentoyVersion 1.1.12 /SaveLocation C:\\Downloads
 ```
 
 
@@ -180,7 +181,7 @@ You can even request **interactive** selections too!
 
 
 ```
-**ALOSTOY-INSTALLER.BAT** /DownloadVentoyVersion 1.1.12 /SaveLocation Prompt
+ALOSTOY-INSTALLER.BAT /DownloadVentoyVersion 1.1.12 /SaveLocation Prompt
 ```
 
 
@@ -200,13 +201,13 @@ You can also use -DownloadVentoyVersion and -SaveLocation or --Download-Ventoy-V
 
 
 ```
-**ALOSTOY-INSTALLER.BAT** /Product Standard
+ALOSTOY-INSTALLER.BAT /Product Standard
 
 
-**ALOSTOY-INSTALLER.BAT** /Product Standard+Extensions
+ALOSTOY-INSTALLER.BAT /Product Standard+Extensions
 
 
-**ALOSTOY-INSTALLER.BAT** /Product Extended
+ALOSTOY-INSTALLER.BAT /Product Extended
 ```
 
 
@@ -236,7 +237,7 @@ The following example never shows the logo branding:
 
 
 ```
-**ALOSTOY-INSTALLER.BAT** /NoBanner
+ALOSTOY-INSTALLER.BAT /NoBanner
 ```
 
 
@@ -245,7 +246,7 @@ The following example always shows the logo branding:
 
 
 ```
-**ALOSTOY-INSTALLER.BAT** /ForceBanner
+ALOSTOY-INSTALLER.BAT /ForceBanner
 ```
 
 
@@ -275,7 +276,7 @@ Specifying **NoUpdate** tells the installer **not** to check for or apply update
 Example:
 
 ```
-**ALOSTOY-INSTALLER.BAT** /NoUpdate
+ALOSTOY-INSTALLER.BAT /NoUpdate
 ```
 
 
@@ -287,7 +288,7 @@ Specifying **ForceUpdate** tells the installer to update to the newest or curren
 Example:
 
 ```
-**ALOSTOY-INSTALLER.BAT** /ForceUpdate
+ALOSTOY-INSTALLER.BAT /ForceUpdate
 ```
 
 
@@ -297,7 +298,7 @@ Specifying **AutoUpdate** tells the installer to automatically apply the latest 
 Example:
 
 ```
-**ALOSTOY-INSTALLER.BAT** /AutoUpdate
+ALOSTOY-INSTALLER.BAT /AutoUpdate
 ```
 
 
@@ -328,7 +329,7 @@ A good example:
 
 
 ```
-**ALOSTOY-INSTALLER.BAT** /Product Standard /NoBanner <---- Works
+ALOSTOY-INSTALLER.BAT /Product Standard /NoBanner <---- Works
 ```
 
 
@@ -338,7 +339,7 @@ A bad example:
 
 
 ```
-**ALOSTOY-INSTALLER.BAT** /Product Standard --No-Banner <---- Throws an error.
+ALOSTOY-INSTALLER.BAT /Product Standard --No-Banner <---- Throws an error.
 ```
 
 
