@@ -58,11 +58,9 @@ And you can install **ALOSToy** on your USB drive, turning it into a bootable Ve
 * curl
 * Internet access to download tools.esd, Ventoy and ALOSToy!
 * Admin rights, so that we can do elevated operations. (THAT INCLUDES FORMATTING!!! :O)
-* A tools.esd file which extracts to 16 files in %Root%bin.
+* A tools.esd file which extracts to 24 files in %Root%bin.
 
-
-# Download the installer from releases and then follow the installation steps.
-
+# **Download the installer from releases first and then follow instructions.**
 
 
 ## **Installation**
@@ -101,7 +99,7 @@ And you can install **ALOSToy** on your USB drive, turning it into a bootable Ve
 ## **I NEED HELP!**
 
 No worries! Use one of these to see the help or press H on the main menu with the 7 buttons. (Casing does not matter. Press H or h.)
-```batch
+```
 ALOSTOY-INSTALLER.BAT /Help
 ALOSTOY-INSTALLER.BAT /H
 ALOSTOY-INSTALLER.BAT /?
@@ -116,7 +114,7 @@ If you add either:
 -InstallGuide
 --Install-Guide
 to your help command line. Eg:
-```batch
+```
 ALOSTOY-INSTALLER.BAT /? /InstallGuide
 ALOSTOY-INSTALLER.BAT -? -InstallGuide
 ALOSTOY-INSTALLER.BAT --? --Install-Guide
@@ -139,7 +137,9 @@ By default, **ALOSTOY-INSTALLER.BAT** logs to ALOSToy-Installer.log in the root 
 
 
 
+```
 **ALOSTOY-INSTALLER.BAT** /LogFile C:\\Logs\\ALOSToy-Installer.log
+```
 
 
 
@@ -151,7 +151,9 @@ You can also use -LogFile or --Log-File.
 
 
 
+```
 **ALOSTOY-INSTALLER.BAT** /VentoyVersion 1.1.12
+```
 
 
 
@@ -167,7 +169,9 @@ You can also use -VentoyVersion or --Ventoy-Version.
 
 
 
+```
 **ALOSTOY-INSTALLER.BAT** /DownloadVentoyVersion 1.1.12 /SaveLocation C:\\Downloads
+```
 
 
 
@@ -175,7 +179,9 @@ You can even request **interactive** selections too!
 
 
 
+```
 **ALOSTOY-INSTALLER.BAT** /DownloadVentoyVersion 1.1.12 /SaveLocation Prompt
+```
 
 
 
@@ -194,15 +200,13 @@ You can also use -DownloadVentoyVersion and -SaveLocation or --Download-Ventoy-V
 
 
 ```
-ALOSTOY-INSTALLER.BAT /Product Standard
+**ALOSTOY-INSTALLER.BAT** /Product Standard
 
 
-
-ALOSTOY-INSTALLER.BAT /Product Standard+Extensions
-
+**ALOSTOY-INSTALLER.BAT** /Product Standard+Extensions
 
 
-ALOSTOY-INSTALLER.BAT /Product Extended
+**ALOSTOY-INSTALLER.BAT** /Product Extended
 ```
 
 
@@ -231,15 +235,19 @@ The following example never shows the logo branding:
 
 
 
+```
 **ALOSTOY-INSTALLER.BAT** /NoBanner
 
+```
 
 
 The following example always shows the logo branding:
 
 
 
+```
 **ALOSTOY-INSTALLER.BAT** /ForceBanner
+```
 
 
 
@@ -267,7 +275,9 @@ Specifying **NoUpdate** tells the installer **not** to check for or apply update
 
 Example:
 
+```
 **ALOSTOY-INSTALLER.BAT** /NoUpdate
+```
 
 
 
@@ -277,7 +287,9 @@ Specifying **ForceUpdate** tells the installer to update to the newest or curren
 
 Example:
 
+```
 **ALOSTOY-INSTALLER.BAT** /ForceUpdate
+```
 
 
 Specifying **AutoUpdate** tells the installer to automatically apply the latest update if a new version is found.
@@ -285,7 +297,9 @@ Specifying **AutoUpdate** tells the installer to automatically apply the latest 
 
 Example:
 
+```
 **ALOSTOY-INSTALLER.BAT** /AutoUpdate
+```
 
 
 You can also use:
@@ -314,7 +328,9 @@ A good example:
 
 
 
+```
 **ALOSTOY-INSTALLER.BAT** /Product Standard /NoBanner <---- Works
+```
 
 
 
@@ -322,7 +338,9 @@ A bad example:
 
 
 
+```
 **ALOSTOY-INSTALLER.BAT** /Product Standard --No-Banner <---- Throws an error.
+```
 
 
 
@@ -440,7 +458,7 @@ along with this program. If not, see [**https://www.gnu.org/licenses/**](https:/
 
 
 
-To see the full GNU GPL v3.0 License, open the **LICENSE** file on this repository.
+To see the full GNU GPL v3.0 License, open the **LICENSE** file on this repo.
 
 ## **Author**
 
