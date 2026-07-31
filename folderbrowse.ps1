@@ -1,6 +1,12 @@
 #Requires -PSEdition Desktop
 #Requires -Version 5.1
-# Compile this with ps2exe for the executable version seen in the installer!
+<#
+===========================================================================
+Compile this with ps2exe for the executable version seen in the installer!
+===========================================================================
+Use the following build script in this to compile folderbrowse.ps1 into
+folderbrowse.exe. It's name is build_folderbrowse.ps1.
+#>
 # Treat like an actual cmdlet.
 [CmdletBinding()]
 # Define parameters. WindowTitle, then starting directory.
