@@ -2,8 +2,11 @@
 FOLDERBROWSE BUILD SCRIPT
     A simple but effective build script for folderbrowse.ps1
     to compile the powershell script into folderbrowse.exe as
-    seen in the ALOSToy Installer. Mandatory element, place in
-    the bin folder.
+    seen in the ALOSToy Installer.
+    You are not required to download folderbrowse.ps1 and
+    folderbrowse.ico beforehand. Just download this build script
+    and when you run it, the required files are automatically
+    downloaded for you!
 Made by Aarav Katariya with love and care...
 #>
 $principal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
