@@ -6,18 +6,35 @@ FOLDERBROWSE BUILD SCRIPT
     the bin folder.
 Made by Aarav Katariya with love and care...
 #>
+$principal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { Start-Process -FilePath powershell.exe -ArgumentList "-Nop -Nol -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs; Exit 2 }
+Clear-Host
 Write-Host "Compile in progress!" -ForegroundColor Yellow
 # Install ps2exe module.
 Install-Module -Name ps2exe -Scope AllUsers -Force
-# Ensure we succeed before moving on.
-if ($?) { Import-Module ps2exe -Force }
+# Import module.
+Import-Module ps2exe -Force
+$items = @('folderbrowse.ps1','folderbrowse.ico')
+foreach ($item in $items) { if (-not (Test-Path -LiteralPath ${PSScriptRoot}\$item)) { Invoke-RestMethod -Uri https://github.com/AaravLegend-OS/alostoy-installer/raw/refs/heads/main/$item -OutFile "${PSScriptRoot}\$item" } }
+$Hash1 = (Get-FileHash -Path "${PSScriptRoot}\folderbrowse.ps1" -Algorithm SHA256).Hash.ToUpper()
+$Hash2 = (Get-FileHash -Path "${PSScriptRoot}\folderbrowse.ico" -Algorithm SHA256).Hash.ToUpper()
+if (($Hash1 -ieq "3B73706EB6250D8CDFD17B09D8878CEA39230BAD478D4D78A51A00BF0605564D") -and ($Hash2 -ieq "2758105BEB56CCF0C2FF065D58B2BED5A177323EE66CE66446FB36D4F12C303D")) { Write-Host 'Hashes are good!' -ForegroundColor Green } else {
+    Write-Error 'Hashes are bad!' -ErrorAction Continue
+    Pause
+    Exit 1
+}
 try {
-    if (Test-Path -LiteralPath ) { ps2exe -InputFile "${PSScriptRoot}folderbrowse.ps1" -OutputFile "${PSScriptRoot}folderbrowse.exe" -x64 -STA -ConHost -UNICODEEncoding -IconFile "${PSScriptRoot}\folderbrowse.ico" -Title "Folder Browser" -Description "An effective folder picker." -Company "AaravLegend-Inc" -Product "Folder Browser" -Copyright "AaravLegend-Inc 2023-2026" -Trademark "AaravLegend-Inc" -Version "1.0.0.0" -RequireAdmin -SupportOS -LongPaths }
+    if ((Test-Path -LiteralPath "${PSScriptRoot}\folderbrowse.ps1") -and (Test-Path -LiteralPath "${PSScriptRoot}\folderbrowse.ico")) { ps2exe -InputFile "${PSScriptRoot}\folderbrowse.ps1" -OutputFile "${PSScriptRoot}\folderbrowse.exe" -x64 -STA -ConHost -UNICODEEncoding -IconFile "${PSScriptRoot}\folderbrowse.ico" -Title "Folder Browser" -Description "An effective folder picker." -Company "AaravLegend-Inc" -Product "Folder Browser" -Copyright "AaravLegend-Inc 2023-2026" -Trademark "AaravLegend-Inc" -Version "1.0.0.0" -RequireAdmin -SupportOS -LongPaths }
     # If we succeed.
     if ($?) {
         Write-Host "The compile succeeded!" -ForegroundColor Green
+        foreach ($item in $items) { Remove-Item -LiteralPath "${PSScriptRoot}\$item" -Force -ErrorAction Continue }
+        if (-not (Test-Path -LiteralPath "${PSScriptRoot}\bin")) { New-Item -Path "${PSScriptRoot}\bin" -ItemType Directory -Force }
+        foreach ($file in @('folderbrowse.exe','folderbrowse.exe.config')) { Move-Item -LiteralPath "${PSScriptRoot}\$file" -Destination "${PSScriptRoot}\bin" }
         Start-Sleep -Seconds 3
         Exit 0
+    } else {
+        throw "Bad."
     }
 } catch {
     # If we fail.
