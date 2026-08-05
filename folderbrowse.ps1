@@ -12,7 +12,7 @@ folderbrowse.exe. It's name is build_folderbrowse.ps1.
 # Define parameters. WindowTitle, then starting directory.
 param(
     [string]$WindowTitle = "Pick a Folder.",
-    [int]$Timeout = 5,
+    [int]$Timeout = 0,
     [string]$StartingDirectory = $null
 )
 # Add the types and assemblies for Windows Presentation Framework, WPF Core, Windows Base and XAML.
