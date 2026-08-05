@@ -21,7 +21,7 @@ $items = @('folderbrowse.ps1','folderbrowse.ico')
 foreach ($item in $items) { if (-not (Test-Path -LiteralPath ${PSScriptRoot}\$item)) { Invoke-RestMethod -Uri https://github.com/AaravLegend-OS/alostoy-installer/raw/refs/heads/main/$item -OutFile "${PSScriptRoot}\$item" } }
 $Hash1 = (Get-FileHash -Path "${PSScriptRoot}\folderbrowse.ps1" -Algorithm SHA256).Hash.ToUpper()
 $Hash2 = (Get-FileHash -Path "${PSScriptRoot}\folderbrowse.ico" -Algorithm SHA256).Hash.ToUpper()
-if (($Hash1 -ieq "3B73706EB6250D8CDFD17B09D8878CEA39230BAD478D4D78A51A00BF0605564D") -and ($Hash2 -ieq "2758105BEB56CCF0C2FF065D58B2BED5A177323EE66CE66446FB36D4F12C303D")) { Write-Host 'Hashes are good!' -ForegroundColor Green } else {
+if (($Hash1 -ieq "80DF1986879AA5A25E4E9C869F7433AED92EE6FA9B2A7D1FE8169AAAE843A6A6") -and ($Hash2 -ieq "2758105BEB56CCF0C2FF065D58B2BED5A177323EE66CE66446FB36D4F12C303D")) { Write-Host 'Hashes are good!' -ForegroundColor Green } else {
     Write-Error 'Hashes are bad!' -ErrorAction Continue
     Pause
     Exit 1
