@@ -33,7 +33,7 @@ if (($Hash1 -ieq "80DF1986879AA5A25E4E9C869F7433AED92EE6FA9B2A7D1FE8169AAAE843A6
     Exit 1
 }
 try {
-    if ((Test-Path -LiteralPath "${PSScriptRoot}\folderbrowse.ps1") -and (Test-Path -LiteralPath "${PSScriptRoot}\folderbrowse.ico")) { ps2exe -InputFile "${PSScriptRoot}\folderbrowse.ps1" -OutputFile "${PSScriptRoot}\folderbrowse.exe" -x64 -STA -ConHost -UNICODEEncoding -IconFile "${PSScriptRoot}\folderbrowse.ico" -Title "Folder Browser" -Description "An effective folder picker." -Company "AaravLegend-Inc" -Product "Folder Browser" -Copyright "AaravLegend-Inc 2023-2026" -Trademark "AaravLegend-Inc" -Version "1.0.0.0" -RequireAdmin -SupportOS -LongPaths | Out-Null }
+    if ((Test-Path -LiteralPath "${PSScriptRoot}\folderbrowse.ps1") -and (Test-Path -LiteralPath "${PSScriptRoot}\folderbrowse.ico")) { ps2exe -InputFile "${PSScriptRoot}\folderbrowse.ps1" -OutputFile "${PSScriptRoot}\folderbrowse.exe" -x64 -STA -UNICODEEncoding -IconFile "${PSScriptRoot}\folderbrowse.ico" -Title "Folder Browser" -Description "An effective folder picker." -Company "AaravLegend-Inc" -Product "Folder Browser" -Copyright "AaravLegend-Inc 2023-2026" -Trademark "AaravLegend-Inc" -Version "1.0.0.0" -RequireAdmin -SupportOS -LongPaths | Out-Null }
     # If we succeed.
     if ($?) {
         Write-Host "The compile succeeded!" -ForegroundColor Green
