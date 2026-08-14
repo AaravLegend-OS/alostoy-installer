@@ -39,7 +39,7 @@ try {
         Write-Host "The compile succeeded!" -ForegroundColor Green
         if (-not ($KeepSourceFiles)) { foreach ($item in $items) { Remove-Item -LiteralPath "${PSScriptRoot}\$item" -Force -ErrorAction Continue } }
         if (-not (Test-Path -LiteralPath "${PSScriptRoot}\bin")) { New-Item -Path "${PSScriptRoot}\bin" -ItemType Directory -Force }
-        foreach ($file in @('folderbrowse.exe','folderbrowse.exe.config')) { Move-Item -LiteralPath "${PSScriptRoot}\$file" -Destination "${PSScriptRoot}\bin" -Force; Set-Clipboard -Value $((Get-FileHash -LiteralPath "${PSScriptRoot}\bin\$file" -Algorithm SHA256).Hash.ToUpper); Start-Sleep -Milliseconds 1500 }
+        foreach ($file in @('folderbrowse.exe','folderbrowse.exe.config')) { Move-Item -LiteralPath "${PSScriptRoot}\$file" -Destination "${PSScriptRoot}\bin" -Force; Set-Clipboard -Value $((Get-FileHash -LiteralPath "${PSScriptRoot}\bin\$file" -Algorithm SHA256).Hash.ToUpper()); Start-Sleep -Milliseconds 1500 }
         Exit 0
     } else {
         throw "Bad."
