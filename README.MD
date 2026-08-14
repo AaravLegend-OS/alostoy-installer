@@ -139,7 +139,7 @@ By default, **ALOSTOY-INSTALLER.BAT** logs to ALOSToy-Installer.log in the root 
 
 
 ```
-ALOSTOY-INSTALLER.BAT /LogFile C:\\Logs\\ALOSToy-Installer.log
+ALOSTOY-INSTALLER.BAT /LogFile C:\Logs\ALOSToy-Installer.log
 ```
 
 
@@ -171,7 +171,7 @@ You can also use -VentoyVersion or --Ventoy-Version.
 
 
 ```
-ALOSTOY-INSTALLER.BAT /DownloadVentoyVersion 1.1.12 /SaveLocation C:\\Downloads
+ALOSTOY-INSTALLER.BAT /DownloadVentoyVersion 1.1.12 /SaveLocation C:\Downloads
 ```
 
 
