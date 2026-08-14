@@ -30,7 +30,7 @@ ALOSToy Extended
 
 
 
-### ***Please note that the ALOSToy Installer is licensed under GPL v3 but aria2c is licensed under GPL v2. No code from either is combined. Instead, the installer just calls the exe to prevent license conflict.***
+### ***Please note that the ALOSToy Installer is licensed under GPL v3 but aria2c is licensed under GPL v2. No code from either is combined to avoid a derivative work. Instead, the installer just calls the exe to prevent license conflict.***
 
 
 
