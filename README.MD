@@ -34,6 +34,10 @@ ALOSToy Extended
 
 
 
+### ***The licenses for ALOSToy Installer are named "LICENSE", "COPYING", "LICENSE.TXT" and "COPYING.TXT". The licenses for aria2c are "LICENSE.ARIA2C" and "COPYING.ARIA2C".***
+
+
+
 # ***A Helpful Guide To The ALOSToy Installer (Like a Kickstart lol.)***
 
 
