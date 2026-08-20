@@ -474,5 +474,5 @@ Aarav Katariya
 
 
 
-# ***End Of The Guide***
+# ***End Of The Guide + ARM64 support is out of beta!***
 
