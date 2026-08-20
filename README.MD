@@ -42,7 +42,7 @@ ALOSToy Extended
 
 
 
-**ALOSToy Installer** is a bat installer only for Windows. (I will not make a Linux version. Sorry!!!)
+**ALOSToy Installer** is a bat installer only for Windows. (I will not make a Linux version. Sorry!)
 
 
 
@@ -65,7 +65,7 @@ And you can install **ALOSToy** on your USB drive, turning it into a bootable Ve
 * PowerShell
 * curl
 * Internet access to download tools.esd, Ventoy and ALOSToy!
-* Admin rights, so that we can do elevated operations. (THAT INCLUDES FORMATTING!!! :O)
+* Admin rights, so that we can do elevated operations. (THAT INCLUDES FORMATTING!)
 * A tools.esd file.
 
 
@@ -161,7 +161,7 @@ You can also use -LogFile or --Log-File.
 
 
 ```
-ALOSTOY-INSTALLER.BAT /VentoyVersion 1.1.12
+ALOSTOY-INSTALLER.BAT /VentoyVersion 1.1.17
 ```
 
 
@@ -179,7 +179,7 @@ You can also use -VentoyVersion or --Ventoy-Version.
 
 
 ```
-ALOSTOY-INSTALLER.BAT /DownloadVentoyVersion 1.1.12 /SaveLocation C:\Downloads
+ALOSTOY-INSTALLER.BAT /DownloadVentoyVersion 1.1.17 /SaveLocation C:\Downloads
 ```
 
 
@@ -189,7 +189,7 @@ You can even request **interactive** selections too!
 
 
 ```
-ALOSTOY-INSTALLER.BAT /DownloadVentoyVersion 1.1.12 /SaveLocation Prompt
+ALOSTOY-INSTALLER.BAT /DownloadVentoyVersion 1.1.17 /SaveLocation Prompt
 ```
 
 
