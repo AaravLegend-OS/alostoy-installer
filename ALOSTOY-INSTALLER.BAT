@@ -42,6 +42,8 @@
 @rem combined, nor is it statically or dynamically linked to avoid a
 @rem derivative work. Instead, the installer just calls the compiled exe
 @rem to prevent license incompatibility between GPLv2.0 and GPLv3.0.
+@rem This notice is only for aria2c.exe and only the exe is called AS A
+@rem SEPARATE PROCESS.
 @rem ===================================================================
 @rem =============================== folderbrowse usage ==================================
 @rem Usage: folderbrowse.exe <WindowTitle> <timeout>
@@ -65,19 +67,35 @@
 @rem "@echo off" or "@echo on"
 @echo !CmdEchoing!
 rem =========================================================================
-rem =======================================================================
+rem Save the script name to relaunch and use. (Persists across arguments and relaunches.)
+rem A for loop is more reliable because when arguments are parsed and shifted,
+rem %~nx0 could become the next argument.
+for /f "delims=" %%S in ('echo %~nx0') do set "Script=%%S"
+for /f "delims=" %%F in ('echo %~f0') do set "FullScript=%%F"
+rem Now enforce the CRLF line ending.
+>nul findstr /v "$" "!Script!" && (
+   call :WindowTitle "CRLF EMPTY LINE MISSING."
+   cls
+   echo The CRLF empty line is missing. Please re-add that empty line at the
+   echo bottom of !Script!.
+   echo Press any key to quit...
+   pause >nul
+   endlocal
+   exit 2
+)
+rem =========================================================================
 rem IMPORTANT VARIABLE. THIS VARIABLE HELPS DECIDE IF THIS PROGRAM CAN BE
 rem LICENSED UNDER ANY LATER VERSION. IF THIS IS "False", YOU CAN USE AND
 rem REDISTRIBUTE UNDER GPLV3 ONLY, BUT IF THIS IS "True", YOU CAN USE AND
 rem REDISTRIBUTE UNDER GPLV3 "OR ANY LATER VERSION". PLEASE REVIEW THIS
 rem CAREFULLY BEFORE CHANGING "Or-Any-Later-Version" BELOW. DO NOT REMOVE.
-rem =======================================================================
-rem THE VARIABLE BELOW DOES NOT AUTOMATICALLY MAKE THIS PROGRAM GPLV3 ONLY
-rem OR GPLV3 "OR ANY LATER VERSION". INSTEAD, IT CHANGES BEHAVIOUR TO HELP
-rem YOU REDISTRIBUTE UNDER V3 ONLY OR V3 "OR ANY LATER VERSION" THIS MEANS
-rem THE VARIABLE BELOW DOES NOT ALLOW AUTOMATIC "OR ANY LATER VERSION"
+rem =========================================================================
+rem THE VARIABLE BELOW DOES NOT AUTOMATICALLY MAKE THIS PROGRAM GPLV3 ONLY OR
+rem GPLV3 "OR ANY LATER VERSION". INSTEAD, IT CHANGES BEHAVIOUR TO HELP YOU
+rem REDISTRIBUTE UNDER V3 ONLY OR V3 "OR ANY LATER VERSION" THIS MEANS THE
+rem VARIABLE BELOW DOES NOT ALLOW AUTOMATIC GPLV3 "OR ANY LATER VERSION"
 rem DISTRIBUTION TO OCCUR. ONLY CHANGE IF YOU CHOOSE TO FORK THIS PROGRAM.
-rem =======================================================================
+rem =========================================================================
 set "Or-Any-Later-Version=True"
 rem Check for powershell existence and find it in path.
 rem Must happen before anything else occurs in the process.
@@ -86,7 +104,7 @@ if exist "!SystemRoot!\System32\WindowsPowershell\v1.0\powershell.exe" (
         echo You must install powershell or include it in ^^!Path^^!.
         pause >nul
         endlocal
-        exit /b 1
+        exit 1
     )
 )
 rem Define the author.
@@ -111,10 +129,6 @@ set "logfile=!Root!logs\ALOSTOY-INSTALLER_!LOGSTAMP!.LOG"
 rem Define primary and fallback font.
 set "FirstFont=CaskaydiaCove NFM"
 set "SecondFont=Courier New"
-rem Save the script name to relaunch and use. (Persists across arguments and relaunches.)
-rem A for loop is more reliable because when arguments are parsed and shifted, %~nx0 could become the next argument.
-for /f "delims=" %%S in ('echo %~nx0') do set "Script=%%S"
-for /f "delims=" %%F in ('echo %~f0') do set "FullScript=%%F"
 set "Missing=False"
 rem Define the SHA algorithm.
 set "Algorithm=SHA256"
@@ -124,6 +138,54 @@ rem It will always be 120x30.
 set "Columns=120"
 set "Lines=30"
 mode con: cols=!Columns! lines=!Lines!
+rem Place the logfile argument first before you specify custom logfile.
+rem This means even the "Starting ALOSToy Installer" header is in the
+rem user defined logfile path.
+for %%L in (%*) do (
+    if /i "%%L"=="/LogFile" (
+        if "%~2"=="" (
+            echo Missing value for LogFile.
+            endlocal
+            exit 7
+        ) else (
+            set "logfile=%~2"
+            echo Successfully set logfile path to !logfile!.
+            set "CustomLogFilePath=True"
+            set "ArgumentsPassed=True"
+            timeout /t 1 /NOBREAK >nul
+            shift
+            shift
+        )
+    ) else if /i "%%L"=="-LogFile" (
+        if "%~2"=="" (
+            echo Missing value for LogFile.
+            endlocal
+            exit 7
+        ) else (
+            set "logfile=%~2"
+            echo Successfully set logfile path to !logfile!.
+            set "CustomLogFilePath=True"
+            set "ArgumentsPassed=True"
+            timeout /t 1 /NOBREAK >nul
+            shift
+            shift
+        )
+    ) else if "%%L"=="--Log-File" (
+        if "%~2"=="" (
+            echo Missing value for LogFile.
+            endlocal
+            exit 7
+        ) else (
+            set "logfile=%~2"
+            echo Successfully set logfile path to !logfile!.
+            set "CustomLogFilePath=True"
+            set "ArgumentsPassed=True"
+            timeout /t 1 /NOBREAK >nul
+            shift
+            shift
+        )
+    )
+)
 set "GPLNotice=1"
 rem This special argument has to be parsed the manual and hard way
 rem because the installer title and gpl notice shows up before the
@@ -131,16 +193,16 @@ rem argument parser.
 for %%A in (%*) do (
     if /i "%%A"=="/HideGPLNotice" (
         set "GPLNotice=0"
-        goto Launch
+        goto Start
     ) else if /i "%%A"=="-HideGPLNotice" (
         set "GPLNotice=0"
-        goto Launch
+        goto Start
     ) else if "%%A"=="--Hide-GPL-Notice" (
         set "GPLNotice=0"
-        goto Launch
+        goto Start
     )
 )
-:Launch
+:Start
 call :InstallerTitle
 if /i "%~1"=="I_QEOff" (
     rem Definitive start. Write the starting header to the logfile to begin new install.
@@ -152,7 +214,7 @@ rem Set a blank title.
 title 
 rem Initialise all the variables.
 rem First, check the file name. If it is not the same, exit immediately.
-if "!Script!" neq "ALOSTOY-INSTALLER.BAT" exit /b 1
+if "!Script!" neq "ALOSTOY-INSTALLER.BAT" exit 1
 rem Set the hashes as early as the start. Better than hardcoded values buried everywhere.
 set "STHashA=580B1901D6307541DA38D38B2CB3E365EB81002B7DA220F678282983FBA059D6"
 set "STHashB=F18B9F2E01BD8EA4FCAF4B3D22B12384FC8B371C3690814F87FA9A06341EDEE6"
@@ -228,7 +290,7 @@ if "!NewLine!"=="`r`n" (echo >nul) else if "!NewLine!"=="`n" (echo >nul) else (
     echo `n
     pause
     endlocal
-    exit /b 4
+    exit 4
 )
 rem The official way to check for admin in batch. Even Microsoft says this too.
 net session >nul 2>&1
@@ -255,7 +317,7 @@ if "!Or-Any-Later-Version!"=="False" (
         echo DO IT IMMEDIATELY^^!
         pause >nul
         endlocal
-        exit /b 22
+        exit 22
     )
     if !Valid_LicenseDocuments! lss 2 (
         echo The license documents are not valid. Either you saved a newer
@@ -268,7 +330,7 @@ if "!Or-Any-Later-Version!"=="False" (
         echo Note: !Script! is licensed under GPLv3 ONLY.
         pause
         endlocal
-        exit /b 22
+        exit 22
     )
 )
 set "PathExt=.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC"
@@ -291,7 +353,7 @@ if /i "!CD!"=="!SYSTEMROOT!\System32" if "!FullScript!" neq "!SYSTEMROOT!\System
     echo.
     echo Do not try turning off UAC though.
     pause >nul
-    exit /b 10
+    exit 10
 )
 rem ================================================
 rem Check for the rest of the files and then SHA256
@@ -344,7 +406,7 @@ if !Valid_SubFiles! lss 7 (
     pause >nul
     start !InstallerRepo!
     endlocal
-    exit /b 23
+    exit 23
 ) else (
     rem But if we succeed, erase all the temporary variables and move on.
     set "HASH1="
@@ -372,16 +434,16 @@ for /f "tokens=3" %%A in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Sess
         powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('X86 is not supported.','ALOSToy Installer','OK','Info') | Out-Null"
         endlocal
         rem 86 is a good exit code because it represents x86.
-        exit /b 86
+        exit 86
     ) else if /i "%%A"=="ARM32" (
         powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('ARM32 is not supported.','ALOSToy Installer','OK','Info') | Out-Null"
         endlocal
         rem 32 is a good exit code because it represents ARM32.
-        exit /b 32
+        exit 32
     ) else (
         echo I am not sure...
         endlocal
-        exit /b 20
+        exit 20
     )
 )
 powershell -nop -nol -ExecutionPolicy Bypass -c "if ($env:Version -match '^1\.[0-9]\.[0-9]\.[0-9]$') { Exit 0 } else { Exit 1 }" || (
@@ -391,9 +453,9 @@ powershell -nop -nol -ExecutionPolicy Bypass -c "if ($env:Version -match '^1\.[0
     echo Press any key now and change the "Version" variable to a format like 1.X.X.X.
     pause >nul
     endlocal
-    exit /b 19
+    exit 19
 )
-if /i "!CmdEchoing!"=="on" (echo on) else if /i "!CmdEchoing!"=="off" (echo off) else (endlocal & exit /b 1)
+if /i "!CmdEchoing!"=="on" (echo on) else if /i "!CmdEchoing!"=="off" (echo off) else (endlocal & exit 1)
 rem Instead of digging this later and failing on invalid argument, place it before any logic.
 set re1=
 set re2=
@@ -471,7 +533,7 @@ goto CLI_Arguments
 rem ALL ARGUMENTS ARE CASE-INSENSITIVE.
 rem GNU --long-options ARE CASE-SENSITIVE.
 call :WindowTitle "PARSING ARGUMENTS..."
-if "%~1"=="" goto Start
+if "%~1"=="" goto StepTwo
 set "ArgName=%~1"
 set "ArgPrefix="
 rem It is important to normalise the arguments so that we can compare them in PowerShell.
@@ -495,7 +557,7 @@ if defined ArgPrefix (
         echo For this command-line "!PfxStyle!" must be used.
         echo Remember. You pick between /, - or -- and only use that.
         endlocal
-        exit /b 5
+        exit 5
     )
 )
 set "ArgKind="
@@ -539,7 +601,7 @@ if /i "!ArgKind!"=="Help" (
             echo For this command-line "!PfxStyle!" must be used.
             echo Remember. You pick between /, - or -- and only use that.
             endlocal
-            exit /b 5
+            exit 5
         )
     )
     if /i "!HelpArg!"=="InstallGuide" (
@@ -577,7 +639,7 @@ if /i "!ArgKind!"=="Help" (
             echo For this command-line "!PfxStyle!" must be used.
             echo Remember. You pick between /, - or -- and only use that.
             endlocal
-            exit /b 5
+            exit 5
         )
     )
     if not defined PfxStyle (
@@ -601,7 +663,7 @@ if /i "!ArgKind!"=="Help" (
             echo !StartPage! is outside the range of 1-!Pages!.
             pause
             endlocal
-            exit /b 21
+            exit 21
         )
     ) else if "!TargetLabel!"=="InstallGuide" (
         if !StartPage! leq !InstallGuidePages! (
@@ -613,11 +675,11 @@ if /i "!ArgKind!"=="Help" (
             echo !StartPage! is outside the range of 1-!InstallGuidePages!.
             pause
             endlocal
-            exit /b 21
+            exit 21
         )
     ) else (
         endlocal
-        exit /b 1
+        exit 1
     )
 )
 rem If you pass both "NoBanner" and "ForceBanner", "ForceBanner" takes precedence over "NoBanner".
@@ -639,29 +701,19 @@ if /i "!ArgKind!"=="ForceBanner" (
     shift
     goto CLI_Arguments
 )
-rem LogFile argument. Lets you specify a logfile to write to.
-if /i "!ArgKind!"=="LogFile" (
-    if "%~2"=="" (
-        echo Missing value for LogFile.
-        endlocal
-        exit /b 7
-    ) else (
-        set "logfile=%~2"
-        echo Successfully set logfile path to !logfile!.
-        set "CustomLogFilePath=True"
-        set "ArgumentsPassed=True"
-        timeout /t 1 /NOBREAK >nul
-        shift
-        shift
-        goto CLI_Arguments
-    )
-)
 rem Product argument. Lets you define which product to install.
+rem HOWEVER, IT DOES NOT PERFORM A FULLY AUTOMATED/SILENT SETUP.
+rem IT DOES SKIP SOME STEPS LIKE THE EULA, THE ANTIMALWARE WARNING,
+rem THE PRESS ANY KEY TO SHOW MENU, THE PRODUCT SELECTION AND IT'S
+rem LICENSE AGREEMENT, DRIVE CONFIRMATION (YOU MUST PICK DRIVE MANUALLY),
+rem VENTOY INSTALLATION (PASS < /- >VentoyInstallType / --Ventoy-Install-Type
+rem ARGUMENT), FORMAT CONFIRMATION AND THE END CHOICES, SO THE PROGRAM EXITS.
+rem ANY ERROR MAKES THE INSTALLER EXIT.
 if /i "!ArgKind!"=="Product" (
     if "%~2"=="" (
         echo Missing value for Product.
         endlocal
-        exit /b 7
+        exit 7
     )
     set "product=%~2"
     call :ValidateEdition "!product!"
@@ -678,10 +730,10 @@ if /i "!ArgKind!"=="Product" (
     ) else if "!errorlevel!"=="3" (
         echo Invalid product: !product!.
         endlocal
-        exit /b 3
+        exit 3
     ) else (
         endlocal
-        exit /b 4
+        exit 4
     )
     if "%~3" neq "" (
         set "SubSwitchArg=%~3"
@@ -701,7 +753,7 @@ if /i "!ArgKind!"=="Product" (
         if not defined SubSwitchIsVtoySwitch (
             echo This optional switch does not exist: %~3
             endlocal
-            exit /b 6
+            exit 6
         )
         if defined SubSwitchPrefix (
             if not defined PfxStyle (
@@ -712,13 +764,13 @@ if /i "!ArgKind!"=="Product" (
                 echo For this command-line "!PfxStyle!" must be used.
                 echo Remember. You pick between /, - or -- and only use that.
                 endlocal
-                exit /b 5
+                exit 5
             )
         )
         if "%~4"=="" (
             echo You provided a null value for Ventoy Install Type^^!
             endlocal
-            exit /b 7
+            exit 7
         )
         if /i "%~4"=="Install" (
             set "Vtoy_Install_Type=Install"
@@ -729,7 +781,7 @@ if /i "!ArgKind!"=="Product" (
         ) else (
             echo Not a valid value for Ventoy Install Type. ^(%~4^)
             endlocal
-            exit /b 7
+            exit 7
         )
         set "ProductDefinedWithArg=True"
         set "ArgumentsPassed=True"
@@ -753,7 +805,7 @@ if /i "!ArgKind!"=="VentoyVersion" (
     if "%~2"=="" (
         echo Missing value for VentoyVersion.
         endlocal
-        exit /b 7
+        exit 7
     )
     set "Selected_Venver=%~2"
     rem Validate the format and block depreciated Ventoy versions.
@@ -765,14 +817,14 @@ if /i "!ArgKind!"=="VentoyVersion" (
                     echo Try something else.
                     pause
                     endlocal
-                    exit /b 9
+                    exit 9
                 )
             )
             echo Invalid format for Ventoy version.
             echo The syntax is 1.X.XX. ^(Must be a number, not a string.^)
             pause
             endlocal
-            exit /b 9
+            exit 9
         ) else if "%%V"=="Valid" (
             echo Successfully set Ventoy version to !Selected_Venver!.
             set "ArgumentsPassed=True"
@@ -783,7 +835,7 @@ if /i "!ArgKind!"=="VentoyVersion" (
         ) else (
             echo I am not sure...
             endlocal
-            exit /b 9
+            exit 9
         )
     )
 )
@@ -794,7 +846,7 @@ if /i "!ArgKind!"=="DownloadVentoyVersion" (
         echo !ArgKind!.
         echo You need to use the same consistency as the rest of the command-line.
         endlocal
-        exit /b 5
+        exit 5
     )
     if defined PfxStyle if "!ArgPrefix!" neq "!PfxStyle!" (
         cls
@@ -802,14 +854,14 @@ if /i "!ArgKind!"=="DownloadVentoyVersion" (
         echo For this command-line "!PfxStyle!" must be used.
         echo Remember. You pick between /, - or -- and only use that.
         endlocal
-        exit /b 5
+        exit 5
     ) else (
         set "PfxStyle=!ArgPrefix!"
     )
     if "%~2"=="" (
         echo Missing value for DownloadVentoyVersion.
         endlocal
-        exit /b 7
+        exit 7
     )
     set "Selected_Venver=%~2"
     set "SaveArg=%~3"
@@ -825,26 +877,26 @@ if /i "!ArgKind!"=="DownloadVentoyVersion" (
             echo Missing value for SaveLocation.
             echo Either put in a valid location or "Prompt" in. ^(Note: It is case-insensitive.^)
             endlocal
-            exit /b 7
+            exit 7
         ) else if /i "%~4"=="re1" (
             echo re1 is not a valid value for SaveLocation.
             echo Either put in a valid location or "Prompt" in. ^(Note: It is case-insensitive.^)
             timeout /t 10 /NOBREAK >nul
             endlocal
-            exit /b 7
+            exit 7
         ) else if /i "%~4"=="re2" (
             echo re2 is not a valid value for SaveLocation.
             echo Either put in a valid location or "Prompt" in. ^(Note: It is case-insensitive.^)
             timeout /t 10 /NOBREAK >nul
             endlocal
-            exit /b 7
+            exit 7
         ) else (
             set "save=%~4"
             if /i "!save!" neq "!save: =!" (
                 echo Use "Prompt" to set a location that contains spaces.
                 pause
                 endlocal
-                exit /b 7
+                exit 7
             )
             echo Successfully set save location to !save!.
             shift
@@ -855,7 +907,7 @@ if /i "!ArgKind!"=="DownloadVentoyVersion" (
     ) else (
         echo Missing parameter: SaveLocation.
         endlocal
-        exit /b 6
+        exit 6
     )
     set "Vtoy_DL_Mode=1"
     rem Validate the format and block depreciated Ventoy versions.
@@ -867,14 +919,14 @@ if /i "!ArgKind!"=="DownloadVentoyVersion" (
                     echo Try something else.
                     pause
                     endlocal
-                    exit /b 9
+                    exit 9
                 )
             )
             echo Invalid format for Ventoy version.
             echo The syntax is 1.X.XX. ^(Must be a number, not a string.^)
             pause
             endlocal
-            exit /b 9
+            exit 9
         ) else if "%%V"=="Valid" (
             set "Updated=1"
             echo Successfully set Ventoy version to !Selected_Venver!.
@@ -883,7 +935,7 @@ if /i "!ArgKind!"=="DownloadVentoyVersion" (
         ) else (
             echo I am not sure...
             endlocal
-            exit /b 9
+            exit 9
         )
     )
 )
@@ -941,7 +993,7 @@ if /i "!ArgKind!"=="Inhibit_GPL_Notice" (
     shift
     goto CLI_Arguments
 )
-:InvalidArg
+:InvalidArgument
 rem Handle invalid argument.
 cls
 call :WindowTitle "INVALID COMMAND LINE"
@@ -1001,35 +1053,26 @@ if !Pages! equ !InstallGuidePages! (
     echo to not get an error.
 )
 endlocal
-exit /b 6
+exit 6
 rem This is what I mean by.
 :ValidateEdition
 rem Validate the product.
 if /i "!product!"=="Standard" (exit /b 0) else if /i "!product!"=="Extended" (exit /b 1) else if /i "!product!"=="Standard+Extensions" (exit /b 2) else (exit /b 3)
 goto :eof
-:Start
->nul findstr /v "$" "!Script!" && (
-   call :WindowTitle "CRLF EMPTY LINE MISSING."
-   cls
-   echo The CRLF empty line is missing. Please re-add that empty line at the bottom of !Script!.
-   echo Press any key to quit...
-   pause >nul
-   endlocal
-   exit /b 2
-)
+:StepTwo
 cls
 call :WindowTitle "BEGIN"
 if "!ForceUpdate!"=="1" if "!NoUpdate!"=="1" (
     echo I did mean to say you cannot put both update flags together.
     echo Quit now and relaunch with either one, not both.
     pause >nul
-    exit /b 1
+    exit 1
 )
 if "!NoUpdate!"=="1" if "!ForceUpdate!"=="1" (
     echo I did mean to say you cannot put both update flags together.
     echo Quit now and relaunch with either one, not both.
     pause >nul
-    exit /b 1
+    exit 1
 )
 cls
 call :InstallerTitle
@@ -1047,7 +1090,7 @@ if !winbuild! lss 17763 (
     echo Unsupported OS version...
     echo Press any key to quit...
     pause >nul
-    exit /b !winbuild!
+    exit !winbuild!
 )
 rem Make Product and ForceUpdate/AutoUpdate mutually exclusive.
 rem Either one or the other, not both.
@@ -1073,7 +1116,7 @@ if "!ProductDefinedWithArg!"=="True" (
         exit 26
     )
 )
-if "!Vtoy_DL_Mode!"=="0" (if "!Updated!"=="0" (goto Updater) else if "!Updated!"=="1" (goto Continue) else (endlocal & exit /b 13)) else (goto Continue)
+if "!Vtoy_DL_Mode!"=="0" (if "!Updated!"=="0" (goto Updater) else if "!Updated!"=="1" (goto Continue) else (endlocal & exit 13)) else (goto Continue)
 :Updater
 rem Update bootstrapper for ALOSToy Installer.
 powershell -nop -nol -c "$data = curl https://api.github.com/repos/AaravLegend-OS/alostoy-installer/git/refs/tag -UseBasicParsing | ConvertFrom-Json; if ($?) { $data[-1].ref -replace 'refs/tags/', '' | Out-File -Encoding 'UTF8' -FilePath './ALOSToy-Installer_Version.txt'; Exit 0 } else { Exit 1 }" >nul 2>&1
@@ -1103,7 +1146,7 @@ if !errorlevel! equ 0 (
                 goto Continue
             ) else if "%%#"=="Cancel" (
                 endlocal
-                exit /b 18
+                exit 18
             )
         )
     ) else (
@@ -1132,12 +1175,12 @@ if "!errorlevel!"=="1" (
     pause >nul
     start https://curl.se
     endlocal
-    exit /b 1
+    exit 1
 ) else if "!errorlevel!"=="2" (
     echo Error occurred with running where curl.
     pause >nul
     endlocal
-    exit /b 2
+    exit 2
 ) else (
     echo !DATE! !TIME! Curl has been found.>> "!logfile!"
 )
@@ -1149,7 +1192,7 @@ if /i "!REGION!"=="UK" (
     goto RD_DateCheck
 ) else if "!REGION!"=="FAIL" (
     echo Cannot determine region.
-    exit /b 12
+    exit 12
 ) else (
     echo !DATE! !TIME! Normal user.>> "!logfile!"
     goto PingSites
@@ -1196,7 +1239,7 @@ if !TOTAL_MIN! GEQ !START! if !TOTAL_MIN! LEQ !END! (
     echo.
     powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('You should be observing silence for all the people that died in World War One. Remember this: 22 million people died and 40 million were wounded. Read the message in the console and try again at 11:02am.','ALOSToy Installer','OK','Error') | Out-Null"
     endlocal
-    exit /b 11
+    exit 11
 )
 :PingSites
 rem Ping websites.
@@ -1226,7 +1269,7 @@ if "!Vtoy_DL_Mode!"=="0" (
         echo Exiting...
         timeout /t 3 /NOBREAK >nul
         endlocal
-        exit /b 1
+        exit 1
     )
 )
 goto EULA
@@ -1257,7 +1300,7 @@ if "!AcceptEULA!"=="0" (
         echo - Redistribution or modification is allowed only with credit.
     ) else (
         endlocal
-        exit /b 3
+        exit 3
     )
     echo - Under GPLv3, you are required to provide source code if modified,
     echo - license under the GPLv3 license and pass freedoms to others.
@@ -1274,18 +1317,18 @@ if "!AcceptEULA!"=="0" (
     if "!agree!"=="Yes" (
         cls
         echo !DATE! !TIME! The End-User License Agreement has been agreed to.>> "!logfile!"
-        if "!Vtoy_DL_Mode!"=="0" (if "!AcceptAVWarn!"=="0" (goto AVWarn) else if "!AcceptAVWarn!"=="1" (goto DLBin) else (endlocal & exit /b 1)) else if "!Vtoy_DL_Mode!"=="1" (goto DLBin) else (endlocal & exit /b 1)
+        if "!Vtoy_DL_Mode!"=="0" (if "!AcceptAVWarn!"=="0" (goto AVWarn) else if "!AcceptAVWarn!"=="1" (goto DLBin) else (endlocal & exit 1)) else if "!Vtoy_DL_Mode!"=="1" (goto DLBin) else (endlocal & exit 1)
     ) else if "!agree!"=="No" (
         cls
         echo !DATE! !TIME! The End-User License Agreement has been denied to.>> "!logfile!"
         powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Since you declined the EULA, this program will now exit.','ALOSToy Installer','OK','Error') | Out-Null"
-        exit /b 3
+        exit 3
     ) else (
         goto EULA
     )
 )
 echo !DATE! !TIME! Pre-accepted EULA.>> "!logfile!"
-if "!Vtoy_DL_Mode!"=="0" (if "!AcceptAVWarn!"=="0" (goto AVWarn) else if "!AcceptAVWarn!"=="1" (goto DLBin) else (endlocal & exit /b 1)) else if "!Vtoy_DL_Mode!"=="1" (goto DLBin) else (endlocal & exit /b 1)
+if "!Vtoy_DL_Mode!"=="0" (if "!AcceptAVWarn!"=="0" (goto AVWarn) else if "!AcceptAVWarn!"=="1" (goto DLBin) else (endlocal & exit 1)) else if "!Vtoy_DL_Mode!"=="1" (goto DLBin) else (endlocal & exit 1)
 :AVWarn
 call :WindowTitle "Will you trust this installer?"
 for /f "delims= " %%A in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('If your antivirus flags the installation files, disable it temporarily and re-enable it after installation. ALOSToy is free of malware and has been proven to stay clean. Do you trust this notice and installer?','ALOSToy Installer','YesNo','Warning')"') do (
@@ -1295,7 +1338,7 @@ for /f "delims= " %%A in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-
     ) else if "%%A"=="No" (
         call :WindowTitle "GO FIND SOMETHING ELSE OR COME BACK LATER IF YOU TRUST LATER"
         powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Then quit this program and go find something else. Eg: Easy2Boot (modern alternative) or Medicat USB (2021 alternative). However, if you trust this program later on, come back and run it.','ALOSToy Installer','OK','Error') | Out-Null"
-        exit /b 14
+        exit 14
     ) else (
         goto AVWarn
     )
@@ -1573,13 +1616,13 @@ if "!ResetVars!"=="1" (
     cls
 )
 call :WindowTitle "PLEASE WAIT FOR THE BUTTONS TO INITIALISE"
-call :PowerShell_Helper "Installer-Choices" || exit /b 1
+call :PowerShell_Helper "Installer-Choices" || exit 1
 call Button 1 3 F2 "Install ALOSToy Standard" 30 3 F2 "Install ALOSToy Extended" 59 3 F5 "Install Extensions + ALOSToy Standard (Currently !InstallExtensions!)" 2 7 F3 "Verify Your Installation" 74 7 F4 "Quit Program" 31 7 F6 "Delete Leftover Verification Databases" 91 7 F1 "Look Into The Installer"  X _Var_Box _Var_Hover
 echo.
 echo.
 echo.
-call :PowerShell_Helper "Size-Requirements" || exit /b 1
-call :PowerShell_Helper "ALOSToy-Info" || exit /b 1
+call :PowerShell_Helper "Size-Requirements" || exit 1
+call :PowerShell_Helper "ALOSToy-Info" || exit 1
 call :WindowTitle "MAKE A CHOICE."
 GetInput /M !_Var_Box! /H !_Var_Hover! 
 if "!errorlevel!"=="1" (
@@ -1602,7 +1645,7 @@ if "!errorlevel!"=="1" (
     echo Quitting...
     endlocal
     timeout /t 1 /NOBREAK >nul
-    exit /b 0
+    exit 0
 ) else if "!errorlevel!"=="6" (
     cls
     goto Del_Verification_DBs
@@ -1780,7 +1823,7 @@ if "!Vtoy_DL_Mode!"=="1" (
             echo Failed.
             pause >nul
             endlocal
-            exit /b 1
+            exit 1
         )
     ) else (
         call :WindowTitle "Getting the latest Ventoy..."
@@ -1829,7 +1872,7 @@ if "!Vtoy_DL_Mode!"=="1" (
         echo Failed.
         pause >nul
         endlocal
-        exit /b 1
+        exit 1
     )
 )
 call :WindowTitle "Getting the latest Ventoy..."
@@ -1869,7 +1912,7 @@ if "!Vtoy_DL_Mode!"=="0" (
     echo Ventoy version !Selected_Venver! downloaded to !save!.
     timeout /t 3 /NOBREAK >nul
     endlocal
-    exit /b 0
+    exit 0
 )
 :ChooseDrive
 cls
@@ -1883,7 +1926,7 @@ if /i "!drive!"=="None" (
         echo Exiting...
         timeout /t 1 /NOBREAK >nul
         endlocal
-        exit /b 1
+        exit 1
     ) else (
         echo Returning to main menu...
         if "!ConfigChanged!"=="True" set "ResetVars=1"
@@ -2011,10 +2054,10 @@ if /i "!WinInstall!"=="FOUND" (
             set "drivepath="
             goto ChooseDrive
         ) else if /i "%%Q"=="Cancel" (
-            if /i "!ProductDefinedWithArg!"=="True" (endlocal & exit /b 1) else (set "ResetVars=1" & goto Main)
+            if /i "!ProductDefinedWithArg!"=="True" (endlocal & exit 1) else (set "ResetVars=1" & goto Main)
         ) else (
            endlocal
-           exit /b 1
+           exit 1
         )
     )
 ) else if /i "!WinInstall!"=="NOTFOUND" (
@@ -2064,7 +2107,7 @@ if !errorlevel! lss 1 (
 ) else (
     echo You cannot continue as your drive is too small.
     pause
-    if "!ProductDefinedWithArg!"=="True" (endlocal & exit /b 1) else (goto ChooseDrive)
+    if "!ProductDefinedWithArg!"=="True" (endlocal & exit 1) else (goto ChooseDrive)
 )
 :GPTChoice
 rem DO NOT CONFUSE GPT WITH CHATGPT. GPT AND CHATGPT ARE TWO DIFFERENT THINGS.
@@ -2089,7 +2132,7 @@ if "!errorlevel!"=="1" (
             goto GPTChoice
         ) else if "%%A"=="Cancel" (
             cls
-            if "!ProductDefinedWithArg!"=="True" (endlocal & exit /b 1) else (set "ResetVars=1" & goto Main)
+            if "!ProductDefinedWithArg!"=="True" (endlocal & exit 1) else (set "ResetVars=1" & goto Main)
         ) else (
             set "errorcode=Invalid choice."
             goto Error
@@ -2127,7 +2170,7 @@ if "!errorlevel!"=="1" (
             goto SecureBootChoice
         ) else if "%%A"=="Cancel" (
             cls
-            if "!ProductDefinedWithArg!"=="True" (endlocal & exit /b 1) else (set "ResetVars=1" & goto Main)
+            if "!ProductDefinedWithArg!"=="True" (endlocal & exit 1) else (set "ResetVars=1" & goto Main)
         ) else (
             set "errorcode=Invalid choice."
             goto Error
@@ -2145,7 +2188,7 @@ echo !CmdEchoing!
 if "!ProductDefinedWithArg!"=="True" (if /i "!Vtoy_Install_Type!"=="Install" (goto InstallVtoy) else if /i "!Vtoy_Install_Type!"=="Update" (goto UpdateVtoy) else (goto Main))
 cd /d "!Root!"
 if /i "!NoticeAgreed!"=="False" if /i "!ConfigChanged!"=="False" (
-    for /f "delims=" %%Q in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('You are now entering the install screen. 4 buttons are going to appear. Pay attention to the buttons that will appear.','ALOSToy Installer','OKCancel','Info')"') do if /i "%%Q"=="OK" (cls) else (if /i "%%Q"=="Cancel" (if /i "!ProductDefinedWithArg!"=="True" (endlocal & exit /b 1) else (set "ResetVars=1" & goto Main)) else (goto VentoyMenu)
+    for /f "delims=" %%Q in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('You are now entering the install screen. 4 buttons are going to appear. Pay attention to the buttons that will appear.','ALOSToy Installer','OKCancel','Info')"') do if /i "%%Q"=="OK" (cls) else (if /i "%%Q"=="Cancel" (if /i "!ProductDefinedWithArg!"=="True" (endlocal & exit 1) else (set "ResetVars=1" & goto Main)) else (goto VentoyMenu)
     )
 )
 if /i "!ConfigChanged!"=="True" (
@@ -2178,7 +2221,7 @@ if "!errorlevel!"=="1" (
             set "NoFormat=1"
             goto CheckVentoyB
         ) else if /i "%%Q"=="Cancel" (
-            if "!ProductDefinedWithArg!"=="True" (endlocal & exit /b 1) else (goto Main)
+            if "!ProductDefinedWithArg!"=="True" (endlocal & exit 1) else (goto Main)
         ) else (
             set "errorcode=Invalid choice."
             goto Error
@@ -2212,7 +2255,7 @@ if "!ProductDefinedWithArg!"=="False" (
             set "confirm="
             goto VentoyMenu
         ) else if "%%A"=="Cancel" (
-            if "!ProductDefinedWithArg!"=="True" (endlocal & exit /b 1) else (set "ResetVars=1" & goto Main)
+            if "!ProductDefinedWithArg!"=="True" (endlocal & exit 1) else (set "ResetVars=1" & goto Main)
         ) else (
             set "errorcode=Invalid choice."
             goto Error
@@ -2311,7 +2354,7 @@ for /f "delims= " %%A in ('type "!Root!Ventoy2Disk\cli_done.txt"') do (
     ) else (
         echo The data is invalid in the cli_done.txt file.
         endlocal
-        exit /b 1
+        exit 1
     )
 )
 :CheckVentoyB
@@ -2347,7 +2390,7 @@ if "!NoFormat!"=="0" if "!WarnAccepted!"=="0" (
                 goto Main
             ) else (
                 endlocal
-                exit /b 1
+                exit 1
             )
         ) else (
             goto CheckVentoyB
@@ -2526,7 +2569,7 @@ if /i "!product!"=="Standard" (
         goto Extract
     )
 ) else (
-    exit /b 1
+    exit 1
     goto :eof
 )
 :Hashing
@@ -2634,7 +2677,7 @@ if /i "!product!"=="Standard" (
     )
 ) else (
     endlocal
-    exit /b 1
+    exit 1
 )
 :Files_LCT
 cls
@@ -2672,7 +2715,7 @@ if /i "!product!"=="Standard" (
                 set "errorcode=Local files are tampered with."
                 goto Error
             ) else if "%%E"=="Cancel" (
-                if "!ProductDefinedWithArg!"=="True" (endlocal & exit /b 1) else (set "ResetVars=1" & goto Main)
+                if "!ProductDefinedWithArg!"=="True" (endlocal & exit 1) else (set "ResetVars=1" & goto Main)
             )
         )
     )
@@ -2698,12 +2741,12 @@ if /i "!product!"=="Standard" (
                 set "errorcode=Local files are tampered with."
                 goto Error
             ) else if "%%E"=="Cancel" (
-                if "!ProductDefinedWithArg!"=="True" (endlocal & exit /b 1) else (set "ResetVars=1" & goto Main)
+                if "!ProductDefinedWithArg!"=="True" (endlocal & exit 1) else (set "ResetVars=1" & goto Main)
             )
         )
     )
 ) else (
-    if "!ProductDefinedWithArg!"=="True" (endlocal & exit /b 1) else (goto Main)
+    if "!ProductDefinedWithArg!"=="True" (endlocal & exit 1) else (goto Main)
 )
 :Extract
 mode con: cols=130 lines=!Lines!
@@ -2886,7 +2929,7 @@ if /i "!product!"=="Standard" (
 ) else (
     echo No product.
     endlocal
-    exit /b 2
+    exit 2
 )
 echo !CmdEchoing!
 if exist "!Root!Ventoy2Disk" rd "!Root!Ventoy2Disk" /s /q
@@ -3163,10 +3206,10 @@ if /i "!ProductDefinedWithArg!"=="False" if /i "!RequiresExit!"=="False" (
 echo Press any key to quit...
 pause >nul
 endlocal
-exit /b 1
+exit 1
 :Help
 set "BrowsingHelp=True"
-if "!StartPage!"=="1" (goto Help1) else if "!StartPage!"=="2" (goto Help2) else if "!StartPage!"=="3" (goto Help3) else if "!StartPage!"=="4" (goto Help4) else if "!StartPage!"=="5" (goto Help5) else if "!StartPage!"=="6" (goto Help6) else if "!StartPage!"=="7" (goto Help7) else if "!StartPage!"=="8" (goto Help8) else if "!StartPage!"=="9" (goto Help9) else if "!StartPage!"=="10" (goto Help10) else if "!StartPage!"=="" (set "StartPage=1" & goto Help1) else (endlocal & exit /b 8)
+if "!StartPage!"=="1" (goto Help1) else if "!StartPage!"=="2" (goto Help2) else if "!StartPage!"=="3" (goto Help3) else if "!StartPage!"=="4" (goto Help4) else if "!StartPage!"=="5" (goto Help5) else if "!StartPage!"=="6" (goto Help6) else if "!StartPage!"=="7" (goto Help7) else if "!StartPage!"=="8" (goto Help8) else if "!StartPage!"=="9" (goto Help9) else if "!StartPage!"=="10" (goto Help10) else if "!StartPage!"=="" (set "StartPage=1" & goto Help1) else (endlocal & exit 8)
 :Help1
 call :HelpTitle 1
 echo.
@@ -3338,7 +3381,7 @@ echo LOGFILE:
 echo.
 echo    /LogFile, -LogFile, --LogFile ^<path^>
 echo    Specifies a custom log file path.
-echo    If a path is provided, it can start else, it exits.
+echo    If a path is provided, it can start else, it ignores your argument.
 echo.
 choice /c FBE /n /m "Turn back a page, turn forward a page or exit? [F, B or E]"
 if "!errorlevel!"=="1" (
@@ -3362,7 +3405,7 @@ echo    Valid values are:
 echo        Standard
 echo        Extended
 echo        Standard+Extensions (Standard With Extensions)
-echo    IF THIS PARAMETER IS USED, THE INSTALLER WILL EXIT AFTER INSTALL OR ON ERROR^^!^^!^^!^^!
+echo    IF THIS PARAMETER IS USED, THE INSTALLER WILL EXIT AFTER INSTALL OR ON ERROR^^!
 echo    With this, you can pre-select an edition and automate some installation steps.
 echo    Valid values for the Ventoy Install Type argument are "Install" or "Update"^^!
 echo.
@@ -3404,7 +3447,7 @@ echo.
 echo NOTICE THAT: Parameters are case-insensitive and if you type something invalid in, it will exit.
 echo    You can combine lots of parameters together in harmony.
 echo    YOU can choose your prefix for arguments^^! Either /, - or --^^!
-echo    NEVER USE AN INVALID SYNTAX. I will exit if you do^^!^^!
+echo    NEVER USE AN INVALID SYNTAX. I will exit if you do^^!
 echo    If you were born by GNU operating systems, you know all the arguments in here
 echo    are case-sensitive JUST FOR YOU. Obviously, I care about your expectations.
 echo.
@@ -3572,7 +3615,7 @@ if "!HelpFromMain!"=="1" (
     goto Main
 ) else if "!HelpFromMain!"=="0" (
     endlocal
-    exit /b 0
+    exit 0
 )
 :InstallHelpTitle
 set "InstallGuidePage=%~1"
@@ -3587,7 +3630,7 @@ call :WindowTitle "ALOSTOY INSTALLATION GUIDE"
 goto :eof
 :InstallGuide
 set "BrowsingHelp=True"
-if "!StartPage!"=="1" (goto InstallGuide1) else if "!StartPage!"=="2" (goto InstallGuide2) else if "!StartPage!"=="3" (goto InstallGuide3) else if "!StartPage!"=="4" (goto InstallGuide4) else if "!StartPage!"=="5" (goto InstallGuide5) else if "!StartPage!"=="6" (goto InstallGuide6) else if "!StartPage!"=="7" (goto InstallGuide7) else if "!StartPage!"=="8" (goto InstallGuide8) else if "!StartPage!"=="9" (goto InstallGuide9) else if "!StartPage!"=="10" (goto InstallGuide10) else if "!StartPage!"=="" (set "StartPage=1" & goto InstallGuide1) else (endlocal & exit /b 8)
+if "!StartPage!"=="1" (goto InstallGuide1) else if "!StartPage!"=="2" (goto InstallGuide2) else if "!StartPage!"=="3" (goto InstallGuide3) else if "!StartPage!"=="4" (goto InstallGuide4) else if "!StartPage!"=="5" (goto InstallGuide5) else if "!StartPage!"=="6" (goto InstallGuide6) else if "!StartPage!"=="7" (goto InstallGuide7) else if "!StartPage!"=="8" (goto InstallGuide8) else if "!StartPage!"=="9" (goto InstallGuide9) else if "!StartPage!"=="10" (goto InstallGuide10) else if "!StartPage!"=="" (set "StartPage=1" & goto InstallGuide1) else (endlocal & exit 8)
 :InstallGuide1
 call :InstallHelpTitle 1
 echo Welcome to the ALOSToy Installer^^!
@@ -4009,7 +4052,7 @@ if "!HelpFromMain!"=="1" (
 ) else (
     title 
     endlocal
-    exit /b 0
+    exit 0
 )
 :PageFlip
 cls
@@ -4024,8 +4067,8 @@ goto :eof
 :WindowTitle
 rem Helper function to set the window title that tracks Product, Boolean of InstallExtensions,
 rem Version and Ventoy Download Mode with a general Window Title that stays consistent and shows
-rem information about activity. Can now also track the help page as well. ArgumentsPassed is gone
-rem and replaced with Archive_Part because of the need to see the full messages of instructions.
+rem information about activity. Can now also track the help page as well. ArgumentsPassed is back
+rem but does not show. Now includes Archive_Part because of the need to see the full messages.
 set "Input=%~1"
 if "!BrowsingHelp!"=="True" (
     if defined Page (set "BaseHeader=[ALOSTOY INSTALLER V!VERSION!] [!LANG!-!LOCALE!] [START PAGE: !STARTPAGE!] [PAGE !PAGE!]")
@@ -4111,7 +4154,7 @@ copy "!Script!" "!Script!_V!VERSION!_!Timestamp!.BAK" /y >nul && (
         echo Failed to update. Hash does not mismatch.
         if "!ProductDefinedWithArg!"=="False" (echo We will continue anyway.) else if "!ProductDefinedWithArg!"=="True" (echo We will exit in this case.)
         timeout /t 3 /NOBREAK >nul
-        if "!ProductDefinedWithArg!"=="False" (goto Continue) else if "!ProductDefinedWithArg!"=="True" (endlocal & exit /b 1)
+        if "!ProductDefinedWithArg!"=="False" (goto Continue) else if "!ProductDefinedWithArg!"=="True" (endlocal & exit 1)
     )
     rem Find user's 7-Zip installation. Alternatively, summon PowerShell for extraction of updated ALOSTOY-INSTALLER.ZIP.
     for /f "skip=2 tokens=2*" %%Y in ('reg query HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\7-Zip /v InstallLocation') do (
@@ -4142,22 +4185,13 @@ copy "!Script!" "!Script!_V!VERSION!_!Timestamp!.BAK" /y >nul && (
     goto Continue
 )
 :DisableQuickEdit
-rem Define a dynamic assembly. (Generate P/Invoke on the fly.)
-set "d1=$t = [AppDomain]::CurrentDomain.DefineDynamicAssembly(4, 1).DefineDynamicModule(2, $False).DefineType(0);"
-rem Define the GetStdHandle method.
-set "d2=$t.DefinePInvokeMethod('GetStdHandle', 'kernel32.dll', 22, 1, [IntPtr], @([Int32]), 1, 3).SetImplementationFlags(128);"
-rem Define the SetConsoleMode method.
-set "d3=$t.DefinePInvokeMethod('SetConsoleMode', 'kernel32.dll', 22, 1, [Boolean], @([IntPtr], [Int32]), 1, 3).SetImplementationFlags(128);"
-rem Finally, set the flags to perform the desired function. In this case, ENABLE_EXTENDED_FLAGS + ENABLE_INSERT_MODE.
+rem We use an I_QEOff flag to not infinitely relaunch.
+powershell -nop -nol -c "$QEOff = [AppDomain]::CurrentDomain.DefineDynamicAssembly(4, 1).DefineDynamicModule(2, $False).DefineType(0); $QEOff.DefinePInvokeMethod('GetStdHandle', 'kernel32.dll', 22, 1, [IntPtr], @([Int32]), 1, 3).SetImplementationFlags(128); $QEOff.DefinePInvokeMethod('SetConsoleMode', 'kernel32.dll', 22, 1, [Boolean], @([IntPtr], [Int32]), 1, 3).SetImplementationFlags(128); $Object = $QEOff.CreateType(); $Quick_Edit_Lock = $Object::SetConsoleMode($Object::GetStdHandle(-10), 0x00A0); & cmd.exe '/c' 'cd /d !Root! & !Script! I_QEOff !UserArguments!'" & endlocal & exit 0
 rem =================================================================================================================
-rem We prefer 0x00A0 instead of 0x0080 because it also enables the insert mode while disabling quick edit because
-rem setting ENABLE_EXTENDED_FLAGS (0x0080) turns off both Quick Edit and Insert Mode to properly initalise. 0x00A0
+rem   We prefer 0x00A0 instead of 0x0080 because it also enables the insert mode while disabling quick edit because
+rem  setting ENABLE_EXTENDED_FLAGS (0x0080) turns off both Quick Edit and Insert Mode to properly initalise. 0x00A0
 rem                          turns both off but then enables insert mode immediately after.
 rem =================================================================================================================
-set "d4=$k = $t.CreateType(); $b = $k::SetConsoleMode($k::GetStdHandle(-10), 0x00A0);"
-rem Then relaunch with this command and pass a quick edit off flag.
-rem We use an I_QEOff flag to not infinitely relaunch.
-powershell -nop -nol -c "!d1! !d2! !d3! !d4! & cmd.exe '/c' 'cd /d !Root! & !Script! I_QEOff !UserArguments!'" & endlocal & exit 0
 rem ================================================================================================
 rem     AN EXHAUSIVE LIST OF SetConsoleMode FLAGS. BOTH STD_INPUT_HANDLE AND STD_OUTPUT_HANDLE.
 rem   CAUTION: UNLESS YOU ARE A TECHNICIAL USER, YOU CAN KEEP SCROLLING BUT IF YOU ARE AN ADVANCED
@@ -4199,7 +4233,7 @@ rem 0x0013 = 0x0003+0x0010 - Normal output mode with worldwide LVB.
 rem 0x0017 = 0x0007+0x0010 - Use Virutal Terminal with worldwide LVB.
 rem ================================================================================================
 :Banner_Art
-if /i "%~1"=="/PreInstall" (set "Text=        WELCOME TO THE INSTALLER. THANK YOU FOR CHOOSING TO INSTALL ALOSTOY V1.0.") else if /i "%~1"=="/PostInstall" (set "Text=    THANK YOU FOR INSTALLING ALOSTOY V1.0. YOU NOW HAVE THE BEST BOOTABLE USB DRIVE.") else (exit /b 2)
+if /i "%~1"=="/PreInstall" (set "Text=        WELCOME TO THE INSTALLER. THANK YOU FOR CHOOSING TO INSTALL ALOSTOY V1.0.") else if /i "%~1"=="/PostInstall" (set "Text=    THANK YOU FOR INSTALLING ALOSTOY V1.0. YOU NOW HAVE THE BEST BOOTABLE USB DRIVE.") else (exit 2)
 for /f %%A in ('"prompt $E & for %%B in (1) do rem"') do set "ESC=%%A"
 mode con: cols=100 lines=40
 set "C0=!ESC![38;2;255;0;76m"
@@ -4319,7 +4353,7 @@ rem 7fb4ed08cef6a6b4d39dd19260d8c80291a78dfdf9af7d461571e23cbbc43805  ventoy-1.1
 rem a8c66e94e04ee8c7ec4a8474ea576f4fbf26641e344ad223d711752628d0a814  ventoy-1.1.17-livecd.iso
 rem d250e97a7595fdac4f97debc630d7a8da942319274a76cb32384596b659dbaeb  ventoy-1.1.17-windows.zip
 rem ==============================================================================================
-for /f "skip=2 tokens=1,2" %%A in ('type "!Root!sha256.txt"') do if /i "%%B"=="ventoy-!Vtoy_Ver!-windows.zip" (set "Expected_Ventoy_Hash=%%A") else (echo Unknown. %%B %%A ventoy-!Vtoy_Ver!-windows.zip & pause & exit /b 1)
+for /f "skip=2 tokens=1,2" %%A in ('type "!Root!sha256.txt"') do if /i "%%B"=="ventoy-!Vtoy_Ver!-windows.zip" (set "Expected_Ventoy_Hash=%%A") else (echo Unknown. %%B %%A ventoy-!Vtoy_Ver!-windows.zip & pause & exit 1)
 echo Verifying ventoy.zip ^| It should be !Expected_Ventoy_Hash!...
 for /f "delims=" %%V in ('powershell -nop -nol -c "(Get-FileHash '!Root!ventoy.zip' -Algorithm $env:Algorithm).Hash.ToUpper()"') do set "Actual_Ventoy_Hash=%%V"
 if /i "!Actual_Ventoy_Hash!"=="!Expected_Ventoy_Hash!" (
@@ -4403,9 +4437,9 @@ if "!ARE!"=="0" (
 ) else if !Valid_LicenseDocuments! lss 2 (
     echo The licenses are still bad. This program will quit.
     timeout /t 3 /NOBREAK >nul
-    exit /b 1
+    exit 1
 ) else (
-    exit /b 0
+    exit / 0
     goto :eof
 )
 :SetFont
@@ -5571,4 +5605,4 @@ exit 0
 :Post_Ventoy-Choices
 rem End of installer, please leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 5575. Made by Aarav Katariya with love and care...
+rem Total line count: 5609. Made by Aarav Katariya with love and care...
