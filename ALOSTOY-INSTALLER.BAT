@@ -72,7 +72,7 @@
 @setlocal EnableExtensions EnableDelayedExpansion
 @rem We will turn off command echoing and then later reset
 @rem PATH and other system variables to their defaults.
-@set "CmdEchoing=off"
+@set "CmdEchoing=on"
 @rem ========================================================================
 @rem This does NOT print "off" or "on" literally. The echo command treats on
 @rem or off like a command to toggle command echoing. It is as if you use
@@ -86,6 +86,8 @@ for /f "delims=" %%S in ('echo %~nx0') do set "Script=%%S"
 for /f "delims=" %%F in ('echo %~f0') do set "FullScript=%%F"
 rem Store the root directory for use (Contains trailing slash).
 set "Root=%~dp0"
+rem Define the SHA algorithm.
+set "Algorithm=SHA256"
 rem Check the file name. If it is not the same, exit immediately. (Case-Sensitive)
 if "!Script!" neq "ALOSTOY-INSTALLER.BAT" exit 1
 rem Define the author.
@@ -135,7 +137,9 @@ rem REDISTRIBUTE UNDER V3 ONLY OR V3 "OR ANY LATER VERSION" THIS MEANS THE
 rem VARIABLE BELOW DOES NOT ALLOW AUTOMATIC GPLV3 "OR ANY LATER VERSION"
 rem DISTRIBUTION TO OCCUR. ONLY CHANGE IF YOU CHOOSE TO FORK THIS PROGRAM.
 rem =========================================================================
-set "Or-Any-Later-Version=True"
+set "Or-Any-Later-Version=False"
+if "!Or-Any-Later-Version!"=="True" if exist "!Root!LICENSE.TXT" (set "EXISTS=1" & set "FILE=!Root!LICENSE.TXT") else (set "EXISTS=0")
+if "!Or-Any-Later-Version!"=="False" if exist "!Root!GPLV3_ONLY_INFO.TXT" (set "EXISTS=1" & set "FILE=!Root!GPLV3_ONLY_INFO.TXT") else (set "EXISTS=0")
 rem Check for powershell existence and find it in path.
 rem Must happen before anything else occurs in the process.
 if exist "!SystemRoot!\System32\WindowsPowershell\v1.0\powershell.exe" (
@@ -160,54 +164,6 @@ set "Uri=!InstallerRepo!/raw/refs/heads/main/tools.esd"
 rem Write a new timestamped log.
 if not exist "!Root!logs" md "!Root!logs"
 set "logfile=!Root!logs\ALOSTOY-INSTALLER_!LOGSTAMP!.LOG"
-rem Place the logfile argument first before you specify custom logfile.
-rem This means even the "Starting ALOSToy Installer" header is in the
-rem user defined logfile path.
-for %%L in (!UserArgs!) do (
-    if /i "%%L"=="/LogFile" (
-        if "%~2"=="" (
-            echo Missing value for LogFile.
-            endlocal
-            exit 7
-        ) else (
-            set "logfile=%~2"
-            echo Successfully set logfile path to !logfile!.
-            set "CustomLogFilePath=True"
-            set "ArgumentsPassed=True"
-            timeout /t 1 /NOBREAK >nul
-            shift
-            shift
-        )
-    ) else if /i "%%L"=="-LogFile" (
-        if "%~2"=="" (
-            echo Missing value for LogFile.
-            endlocal
-            exit 7
-        ) else (
-            set "logfile=%~2"
-            echo Successfully set logfile path to !logfile!.
-            set "CustomLogFilePath=True"
-            set "ArgumentsPassed=True"
-            timeout /t 1 /NOBREAK >nul
-            shift
-            shift
-        )
-    ) else if "%%L"=="--Log-File" (
-        if "%~2"=="" (
-            echo Missing value for LogFile.
-            endlocal
-            exit 7
-        ) else (
-            set "logfile=%~2"
-            echo Successfully set logfile path to !logfile!.
-            set "CustomLogFilePath=True"
-            set "ArgumentsPassed=True"
-            timeout /t 1 /NOBREAK >nul
-            shift
-            shift
-        )
-    )
-)
 set "GPLNotice=1"
 rem This special argument has to be parsed the manual and hard way
 rem because the installer title and gpl notice shows up before the
@@ -225,19 +181,10 @@ for %%A in (!UserArgs!) do (
     )
 )
 :Start
-if /i "%~1"=="I_QEOff" (
-    rem Definitive start. Write the starting header to the logfile to begin new install.
-    echo ========================================================================================================================>> "!logfile!"
-    echo ================================ Starting ALOSToy Installer... ^(!D! !T!^) ================================>> "!logfile!"
-    echo ========================================================================================================================>> "!logfile!"
-)
 rem Define primary and fallback font.
 set "FirstFont=CaskaydiaCove NFM"
 set "SecondFont=Courier New"
 set "Missing=False"
-rem Define the SHA algorithm.
-set "Algorithm=SHA256"
-cls
 rem Define the number of columms and lines.
 rem It will always be 120x30.
 set "Columns=120"
@@ -307,6 +254,7 @@ set "FormatAccepted=0"
 set "RedoInstall=No"
 set "ArgumentsPassed=False"
 set "StartHelp=0"
+set "NoBackup=0"
 rem Validate the line ending choice.
 if "!NewLine!"=="`r`n" (echo >nul) else if "!NewLine!"=="`n" (echo >nul) else (
     echo Your line endings are not valid.
@@ -489,14 +437,12 @@ for %%# in (!UserArgs!) do (
 )
 rem You might want to restart in an x64 process if an x86 process started ALOSToy-Installer.bat on Windows 11 or Windows 10 x64.
 if exist !SystemRoot!\Sysnative\cmd.exe if not defined re1 (
-    echo !DATE! !TIME! x86 process caught running !FullScript!. Restarting in the x64 process...>> "!logfile!"
     start !SystemRoot!\Sysnative\cmd.exe /c ""!FullScript!" !UserArgs! re1"
     cls
     exit 16
 )
 rem You might want to restart in an ARM32 process if it was initiated by x64 process on ARM64 Windows 10 or Windows 11 on ARM.
 if exist !SystemRoot!\SysArm32\cmd.exe if "!PROCESSOR_ARCHITECTURE!"=="AMD64" if not defined re2 (
-    echo !DATE! !TIME! x64 process caught running !FullScript!. Restarting in the ARM32 process...>> "!logfile!"
     start !SystemRoot!\SysArm32\cmd.exe /c ""!FullScript!" !UserArgs! re2"
     cls
     exit 16
@@ -507,6 +453,7 @@ rem the argument supplied is not a help argument.
 rem Requires code duplication. (Batch limitation.)
 if /i "%~1"=="/?" (set "StartHelp=1") else if /i "%~1"=="-?" (set "StartHelp=1") else if "%~1"=="--?" (set "StartHelp=1") else if /i "%~1"=="/H" (set "StartHelp=1") else if /i "%~1"=="-H" (set "StartHelp=1") else if "%~1"=="--H" (set "StartHelp=1") else if /i "%~1"=="/Help" (set "StartHelp=1") else if /i "%~1"=="-Help" (set "StartHelp=1") else if "%~1"=="--Help" (set "StartHelp=1")
 if "!StartHelp!"=="0" if "!QuickEdit!"=="On" goto DisableQuickEdit
+goto CLI_Arguments
 :CLI_Arguments
 rem ALL ARGUMENTS ARE CASE-INSENSITIVE.
 rem GNU --long-options ARE CASE-SENSITIVE.
@@ -543,7 +490,7 @@ rem Parse arguments cleanly in PowerShell. It works for me and is more efficient
 rem It makes sense because batch cannot do or, and, is, like, in or match checks.
 rem Using variable case-sensitivity for arguments.
 rem A much better argparser. Love it.
-for /f "delims=" %%A in ('powershell -nop -nol -ExecutionPolicy Bypass -c "function Match([string]$Left, [string]$Right) { if ($env:CaseSensitive -match '^(1|true|yes|on)$') { return $Left -ceq $Right } else { return $Left -ieq $Right } }; if ((Match $env:ArgName '?') -or (Match $env:ArgName 'Help') -or (Match $env:ArgName 'H')) { Write-Output 'Help' } elseif ((Match $env:ArgName 'NoBanner') -or (Match $env:ArgName 'No-Banner')) { Write-Output 'NoBanner' } elseif ((Match $env:ArgName 'ForceBanner') -or (Match $env:ArgName 'Force-Banner')) { Write-Output 'ForceBanner' } elseif ((Match $env:ArgName 'LogFile') -or (Match $env:ArgName 'Log-File')) { Write-Output 'LogFile' } elseif (Match $env:ArgName 'Product') { Write-Output 'Product' } elseif ((Match $env:ArgName 'VentoyVersion') -or (Match $env:ArgName 'Ventoy-Version')) { Write-Output 'VentoyVersion' } elseif ((Match $env:ArgName 'DownloadVentoyVersion') -or (Match $env:ArgName 'Download-Ventoy-Version')) { Write-Output 'DownloadVentoyVersion' } elseif ((Match $env:ArgName 're1') -or (Match $env:ArgName 're2') -or (Match $env:ArgName 'qedit')) { Write-Output 'Arch_Relaunch' } elseif ((Match $env:ArgName 'NoUpdate') -or (Match $env:ArgName 'No-Update')) { Write-Output 'Do_Not_Update' } elseif ((Match $env:ArgName 'ForceUpdate') -or (Match $env:ArgName 'Force-Update')) { Write-Output 'Always_Update' } elseif (Match $env:ArgName 'Updated') { Write-Output 'Successful_Update' } elseif ((Match $env:ArgName 'AutoUpdate') -or (Match $env:ArgName 'Auto-Update')) { Write-Output 'Auto_Update_Prg' } elseif ((Match $env:ArgName 'HideGPLNotice') -or (Match $env:ArgName 'Hide-GPL-Notice')) { Write-Output 'Inhibit_GPL_Notice' } elseif (Match $env:ArgName 'I_QEOff') { Write-Output 'I_QEOff' } else { Write-Output 'Other' }"') do set "ArgKind=%%A"
+for /f "delims=" %%A in ('powershell -nop -nol -ExecutionPolicy Bypass -c "function Match([string]$Left, [string]$Right) { if ($env:CaseSensitive -match '^(1|true|yes|on)$') { return $Left -ceq $Right } else { return $Left -ieq $Right } }; if ((Match $env:ArgName '?') -or (Match $env:ArgName 'Help') -or (Match $env:ArgName 'H')) { Write-Output 'Help' } elseif ((Match $env:ArgName 'NoBanner') -or (Match $env:ArgName 'No-Banner')) { Write-Output 'NoBanner' } elseif ((Match $env:ArgName 'ForceBanner') -or (Match $env:ArgName 'Force-Banner')) { Write-Output 'ForceBanner' } elseif ((Match $env:ArgName 'LogFile') -or (Match $env:ArgName 'Log-File')) { Write-Output 'LogFile' } elseif (Match $env:ArgName 'Product') { Write-Output 'Product' } elseif ((Match $env:ArgName 'VentoyVersion') -or (Match $env:ArgName 'Ventoy-Version')) { Write-Output 'VentoyVersion' } elseif ((Match $env:ArgName 'DownloadVentoyVersion') -or (Match $env:ArgName 'Download-Ventoy-Version')) { Write-Output 'DownloadVentoyVersion' } elseif ((Match $env:ArgName 're1') -or (Match $env:ArgName 're2') -or (Match $env:ArgName 'qedit')) { Write-Output 'Arch_Relaunch' } elseif ((Match $env:ArgName 'NoUpdate') -or (Match $env:ArgName 'No-Update')) { Write-Output 'Do_Not_Update' } elseif ((Match $env:ArgName 'ForceUpdate') -or (Match $env:ArgName 'Force-Update')) { Write-Output 'Always_Update' } elseif (Match $env:ArgName 'Updated') { Write-Output 'Successful_Update' } elseif ((Match $env:ArgName 'AutoUpdate') -or (Match $env:ArgName 'Auto-Update')) { Write-Output 'Auto_Update_Prg' } elseif ((Match $env:ArgName 'NoBackup') -or (Match $env:ArgName 'No-Backup')) { Write-Output 'NoUpdateBackup' } elseif ((Match $env:ArgName 'HideGPLNotice') -or (Match $env:ArgName 'Hide-GPL-Notice')) { Write-Output 'Inhibit_GPL_Notice' } elseif (Match $env:ArgName 'I_QEOff') { Write-Output 'I_QEOff' } else { Write-Output 'Other' }"') do set "ArgKind=%%A"
 rem Help arguments. Open the Command-Line Help Guide...
 if /i "!ArgKind!"=="Help" (
     call :WindowTitle "Starting Help Guide..."
@@ -679,14 +626,31 @@ if /i "!ArgKind!"=="ForceBanner" (
     shift
     goto CLI_Arguments
 )
+rem Logfile argument. Lets you define a custom logfile path.
+if /i "!ArgKind!"=="LogFile" (
+    if "%~2"=="" (
+        echo Missing value for LogFile.
+        endlocal
+        exit 7
+    ) else (
+        set "logfile=%~2"
+        echo Successfully set logfile path to !logfile!.
+        set "CustomLogFilePath=True"
+        set "ArgumentsPassed=True"
+        timeout /t 1 /NOBREAK >nul
+        shift
+        shift
+        goto CLI_Arguments
+    )
+)
 rem Product argument. Lets you define which product to install.
 rem HOWEVER, IT DOES NOT PERFORM A FULLY AUTOMATED/SILENT SETUP.
 rem IT DOES SKIP SOME STEPS LIKE THE EULA, THE ANTIMALWARE WARNING,
-rem THE PRESS ANY KEY TO SHOW MENU, THE PRODUCT SELECTION AND IT'S
-rem LICENSE AGREEMENT, DRIVE CONFIRMATION (YOU MUST PICK DRIVE MANUALLY),
-rem VENTOY INSTALLATION (PASS < /- >VentoyInstallType / --Ventoy-Install-Type
-rem ARGUMENT), FORMAT CONFIRMATION AND THE END CHOICES, SO THE PROGRAM EXITS.
-rem ANY ERROR MAKES THE INSTALLER EXIT.
+rem THE PRESS ANY KEY TO SHOW MENU, THE PRODUCT SELECTION, THE LICENSE
+rem AGREEMENT, DRIVE CONFIRMATION (YOU MUST PICK DRIVE MANUALLY), VENTOY
+rem INSTALLATION (PASS < /- >VentoyInstallType / --Ventoy-Install-Type
+rem ARGUMENT), FORMAT CONFIRMATION AND END CHOICES, SO THE PROGRAM EXITS.
+rem ANY ERROR OR CANCELLATION MAKES THE INSTALLER EXIT.
 if /i "!ArgKind!"=="Product" (
     if "%~2"=="" (
         echo Missing value for Product.
@@ -952,10 +916,17 @@ if /i "!ArgKind!"=="Successful_Update" (
     shift
     goto CLI_Arguments
 )
-rem Auto update program
+rem Auto update program argument.
 if /i "!ArgKind!"=="Auto_Update_Prg" (
     set "AutoUpdate=1"
     set "ArgumentsPassed=True"
+    shift
+    goto CLI_Arguments
+)
+rem Backup prevention argument during update. Do not document.
+rem Can be used though. Good to use with ForceUpdate.
+if /i "!ArgKind!"=="NoUpdateBackup" (
+    set "NoBackup=1"
     shift
     goto CLI_Arguments
 )
@@ -1041,6 +1012,12 @@ goto :eof
 cls
 call :WindowTitle "STARTING [Part 2]"
 call :InstallerTitle
+if /i "%~1"=="I_QEOff" (
+    rem Definitive start. Write the starting header to the logfile to begin new install.
+    echo ========================================================================================================================>> "!logfile!"
+    echo ================================ Starting ALOSToy Installer... ^(!D! !T!^) ================================>> "!logfile!"
+    echo ========================================================================================================================>> "!logfile!"
+)
 echo Working Directory: !CD!
 if /i "!AlwaysShowBanner!"=="Yes" set "ShowBanner=Yes"
 rem Show the Ventoy Download Mode message if selected.
@@ -4161,25 +4138,26 @@ rem Exit 0
 rem :Post_RunPS
 rem echo PowerShell ends and returns to batch.
 set "block=%~1"
-rem Change the iex $section[1] to a compiled scriptblock. Far safer.
 if /i "%~2"=="/Maximised" (powershell -nop -nol -WindowStyle Maximized -c "$section = [io.file]::ReadAllText($env:FullScript) -split '(?ms)^:!block!\r?\n(.*?)\r?\n:Post_!block!'; & ([scriptblock]::Create($section[1]))") else (powershell -nop -nol -c "chcp 65001 > $null; $i18n = New-Object System.Text.UTF8Encoding; [Console]::InputEncoding = $i18n; [Console]::OutputEncoding = $i18n; $OutputEncoding = $i18n; $section = [io.file]::ReadAllText($env:FullScript) -split '(?ms)^:!block!\r?\n(.*?)\r?\n:Post_!block!'; & ([scriptblock]::Create($section[1]))")
 exit /b !errorlevel!
 :ExitMessages
 if "%~1"=="" (set "WS=Hidden") else (set "WS=%~1")
 powershell -nop -nol -ExecutionPolicy Bypass -WindowStyle !WS! -c "Add-Type -AssemblyName PresentationFramework; if ($env:ProductDefinedWithArg -ieq 'True') { [System.Windows.MessageBox]::Show('Your bootable ALOSToy !product! drive has been successfully created. Enjoy.','ALOSToy Installer','OK','Info') }; [System.Windows.MessageBox]::Show('Share this installer with your friends or other people as well. Help them save their pc''s too.','ALOSToy Installer','OK','Info') | Out-Null; [System.Windows.MessageBox]::Show('If you have any other custom Windows PE''s you want to carry, copy them to !drivepath!:\WinPE or any ALOSToy drive with the /WinPE folder.','ALOSToy Installer','OK','Info') | Out-Null; [System.Windows.MessageBox]::Show(\"If you have any of your own Windows Installation Media, copy them to:!NewLine!!drivepath!:\OSimages\Windows or any other drive with /OSImages/Windows.!NewLine!!NewLine!If you have any of your own Linux Installation Media, copy them to:!NewLine!!drivepath!:\OSimages\Linux or any other drive with /OSimages/Linux.\",'ALOSToy Installer','OK','Info') | Out-Null; if ($env:RedoInstall -ieq 'No') { [System.Windows.MessageBox]::Show('!Author! thanks you for installing ALOSToy !product!. Click OK to exit.','ALOSToy Installer','OK','Info') | Out-Null }"
 set "WS="
-set "PSCmdTemp="
 goto :eof
 :ApplyUpdate
 cls
+echo ========================================================================================================================
+echo ================================ Updating ALOSToy Installer... (!DATE! !TIME!) ================================
+echo ========================================================================================================================
 set "Timestamp=!DATE!-!TIME!"
 set "Timestamp=!Timestamp:/=-!"
 set "Timestamp=!Timestamp::=-!"
 set "Timestamp=!Timestamp: =0!"
-echo Backing up current version of !Version! to "!Script!_V!VERSION!_!Timestamp!.BAK"...
-copy "!Script!" "!Script!_V!VERSION!_!Timestamp!.BAK" /y >nul && (
+if "!NoBackup!"=="1" (set "SuccessfulBackup=1") else (copy "!Script!" "!Script!_V!VERSION!_!Timestamp!.BAK" /y >nul && set "SuccessfulBackup=1")
+if "!SuccessfulBackup!"=="1" (
     set "Timestamp="
-    echo Successful backup. Now Updating ALOSToy Installer...
+    set "SuccessfulBackup="
     echo !DATE! !TIME! Found ALOSToy Installer Version !Newest!. Downloading right now to "!Root!"...>> "!logfile!"
     curl !InstallerRepo!/releases/download/!Newest!/ALOSTOY-INSTALLER.ZIP -O -L >> "!logfile!" 2>&1
     curl !InstallerRepo!/raw/refs/heads/main/HASH.TXT -O -L >> "!logfile!" 2>&1
@@ -4196,15 +4174,15 @@ copy "!Script!" "!Script!_V!VERSION!_!Timestamp!.BAK" /y >nul && (
     rem Find user's 7-Zip installation. Alternatively, summon PowerShell for extraction of updated ALOSTOY-INSTALLER.ZIP.
     for /f "skip=2 tokens=2*" %%Y in ('reg query HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\7-Zip /v InstallLocation') do (
         set "SZ=%%Z"
-        if exist "!SZ!7z.exe" ("!SZ!7z.exe" x -y -r -aoa -bso1 -bse1 -bsp1 -o"!Root!" "!Root!ALOSTOY-INSTALLER.ZIP" >> "!logfile!") else (echo Use powershell instead. & powershell -nop -nol -ExecutionPolicy Bypass -c "Expand-Archive -LiteralPath '!Root!ALOSTOY-INSTALLER.ZIP' -DestinationPath '!Root!' -Force; if ($?) { Exit 0 } else { Exit 1 }")
+        if exist "!SZ!7z.exe" ("!SZ!7z.exe" x -y -r -aoa -bso1 -bse1 -bsp1 -o"!Root!" "!Root!ALOSTOY-INSTALLER.ZIP" >> "!logfile!") else (powershell -nop -nol -ExecutionPolicy Bypass -c "Expand-Archive -LiteralPath '!Root!ALOSTOY-INSTALLER.ZIP' -DestinationPath '!Root!' -Force; if ($?) { Exit 0 } else { Exit 1 }")
         if !errorlevel! equ 0 (
             del ALOSTOY-INSTALLER.ZIP /f /q
             del hash.txt /f /q
             cls
             set "SZ="
+            call :WindowTitle "UPDATE SUCCESSFUL"
             echo The update has succeeded. !Script! is restarting...
-            powershell -nop -nol -c "Start-Process cmd.exe -Verb RunAs -ArgumentList '/c cd /d "!Root!\" & call "!Script!" !UserArgs! !ArgPrefix!Updated'" >nul 2>&1
-            title 
+            powershell -nop -nol -c "Start-Process conhost.exe -Verb RunAs -ArgumentList 'cmd.exe /c cd /d "!Root!\" & call "!Script!" !UserArgs! !ArgPrefix!Updated'" >nul 2>&1
             endlocal
             exit 0
         ) else (
@@ -4218,12 +4196,16 @@ copy "!Script!" "!Script!_V!VERSION!_!Timestamp!.BAK" /y >nul && (
     echo The backup could not be created^^!
     echo We will continue to use V!VERSION! anyway.
     echo Check if the backup logic is working.
+    timeout /t 3 /NOBREAK >nul
     cls
     goto Continue
 )
 :DisableQuickEdit
 rem We use an I_QEOff flag to not infinitely relaunch.
-powershell -nop -nol -c "$QEOff = [AppDomain]::CurrentDomain.DefineDynamicAssembly(4, 1).DefineDynamicModule(2, $False).DefineType(0); $QEOff.DefinePInvokeMethod('GetStdHandle', 'kernel32.dll', 22, 1, [IntPtr], @([Int32]), 1, 3).SetImplementationFlags(128); $QEOff.DefinePInvokeMethod('SetConsoleMode', 'kernel32.dll', 22, 1, [Boolean], @([IntPtr], [Int32]), 1, 3).SetImplementationFlags(128); $Object = $QEOff.CreateType(); $Quick_Edit_Lock = $Object::SetConsoleMode($Object::GetStdHandle(-10), 0x00A0); & cmd.exe '/c cd /d !Root! & call !Script! I_QEOff !UserArgs!'" & endlocal & exit 0
+rem But we fix our relaunch commands for a good purpose.
+powershell -nop -nol -c "$QEOff = [AppDomain]::CurrentDomain.DefineDynamicAssembly(4, 1).DefineDynamicModule(2, $False).DefineType(0); $QEOff.DefinePInvokeMethod('GetStdHandle', 'kernel32.dll', 22, 1, [IntPtr], @([Int32]), 1, 3).SetImplementationFlags(128); $QEOff.DefinePInvokeMethod('SetConsoleMode', 'kernel32.dll', 22, 1, [Boolean], @([IntPtr], [Int32]), 1, 3).SetImplementationFlags(128); $Object = $QEOff.CreateType(); $Quick_Edit_Lock = $Object::SetConsoleMode($Object::GetStdHandle(-10), 0x00A0); $Arguments = '/c cd /d ' + [char]34 + '!Root!' + [char]34 + ' & call ' + [char]34 + '!Script!' + [char]34 + ' I_QEOff !UserArgs!'; Start-Process cmd.exe -ArgumentList $Arguments -NoNewWindow"
+endlocal
+exit 0
 rem =================================================================================================================
 rem   We prefer 0x00A0 instead of 0x0080 because it also enables the insert mode while disabling quick edit because
 rem  setting ENABLE_EXTENDED_FLAGS (0x0080) turns off both Quick Edit and Insert Mode to properly initalise. 0x00A0
@@ -4413,8 +4395,7 @@ cls
 echo ========================================================================================================================
 echo ================================ Starting ALOSToy Installer... (!D! !T!) ================================
 echo ========================================================================================================================
-if "!Or-Any-Later-Version!"=="True" if exist "!Root!LICENSE.TXT" (set "EXISTS=1" & set "FILE=!Root!LICENSE.TXT") else (set "EXISTS=0")
-if "!Or-Any-Later-Version!"=="False" if exist "!Root!GPLV3_ONLY_INFO.TXT" (set "EXISTS=1" & set "FILE=!Root!GPLV3_ONLY_INFO.TXT") else (set "EXISTS=0")
+echo !EXISTS!
 if "!GPLNotice!"=="1" if "!EXISTS!"=="1" (
     type "!FILE!"
     echo To see the full GNU GPL License, open the COPYING.TXT file.
@@ -4422,15 +4403,16 @@ if "!GPLNotice!"=="1" if "!EXISTS!"=="1" (
     if "!Or-Any-Later-Version!"=="True" (echo GPLv3 or any later version.) else if "!Or-Any-Later-Version!"=="False" (echo GPLv3 ONLY.)
     echo ========================================================================================================================
 ) else (
-    cls
+    rem cls
     echo The license file are non-existent. This means you may not have any
-    echo GNU GPL rights to use unless you redownload the license files to
+    echo GNU GPL v3 rights to use unless you redownload the license files to
     echo !Root!.
     echo.
     echo You are required to redownload the licenses from:
     echo !InstallerRepo!
     echo.
     echo Press any key to download the license files...
+    pause >nul
     if "!Or-Any-Later-Version!"=="False" (
         echo Note: !Script!'s code is GPL v3 ONLY. You may NOT redistribute
         echo under any later or previous version, only the GNU GPL v3 license.
@@ -4438,9 +4420,8 @@ if "!GPLNotice!"=="1" if "!EXISTS!"=="1" (
         echo Note: !Script!'s code is GPL v3 or any later version.
         echo You may redistribute under GPLv3 or any future version of your choice.
     )
-    pause >nul
     if "!Or-Any-Later-Version!"=="False" (
-        for %%A in (COPYING.TXT LICENSE.TXT) do curl "!InstallerRepo!/raw/refs/heads/main/backup_license/%%A" -O -L >> "!logfile!" 2>&1
+        for %%A in (COPYING.TXT LICENSE.TXT GPLV3_ONLY_INFO.TXT) do curl "!InstallerRepo!/raw/refs/heads/main/backup_license/%%A" -O -L >> "!logfile!" 2>&1
         call :LicenseHasher AfterRedownload || (
             endlocal
             exit 23
@@ -4451,8 +4432,6 @@ if "!GPLNotice!"=="1" if "!EXISTS!"=="1" (
         echo because you chose to redistribute under any later version.
     )
 )
-set "EXISTS="
-set "FILE="
 goto :eof
 :LicenseHasher
 rem Maintain the integrity of the license files. The GNU GPL licenses forbid
@@ -4462,12 +4441,13 @@ rem DO NOT ASK ME TO REMOVE THIS IN ISSUES OR COMMENTS! I WILL NOT RESPOND!
 set "ARE=0"
 if /i "%~1"=="AfterRedownload" set "ARE=1"
 set "Valid_LicenseDocuments=0"
-for /f "tokens=1,2 usebackq" %%H in (`powershell -nop -nol -c "if ((Test-Path -LiteralPath \"!FILE!\") -and (Test-Path -LiteralPath \"$env:Root\COPYING.TXT\")) { $LICENSE = (Get-FileHash -Path \"!FILE!\" -Algorithm $env:Algorithm).Hash.ToUpper(); $COPYING = (Get-FileHash -Path \"$env:Root\COPYING.TXT\" -Algorithm $env:Algorithm).Hash.ToUpper(); '{0} {1}' -f $LICENSE,$COPYING; Exit 0 } else { Exit 1 }"`) do (
-    if !errorlevel! equ 1 set "Missing=True"
-    rem LICENSE.TXT
-    if /i "%%H"=="7F545FE11D2817185E365A03E5DD7FAD1C9F858702FA09E361D5ABF5A8FFF4E6" (set /a "Valid_LicenseDocuments+=1") else if /i "%%H"=="3692DDC2873A867742B76E284B132AF2A536806451C7A5E922E56F0B4EC851FF" (set /a "Valid_LicenseDocuments+=1")
-    rem COPYING.TXT
-    if /i "%%I"=="3972DC9744F6499F0F9B2DBF76696F2AE7AD8AF9B23DDE66D6AF86C9DFB36986" (set /a "Valid_LicenseDocuments+=1")
+for /f "tokens=1,2,3 usebackq" %%H in (`powershell -nop -nol -c "chcp 65001 > $null; $i18n = New-Object System.Text.UTF8Encoding; [Console]::InputEncoding = $i18n; [Console]::OutputEncoding = $i18n; $OutputEncoding = $i18n; $section = [io.file]::ReadAllText($env:FullScript) -split '(?ms)^:HashLicenses\r?\n(.*?)\r?\n:Post_HashLicenses'; & ([scriptblock]::Create($section[1]))"`) do (
+    if /i "%%H"=="MISSING" (set "Missing=True") else if /i "%%H"=="Hashes:" (
+        rem LICENSE.TXT
+        if /i "%%I"=="7F545FE11D2817185E365A03E5DD7FAD1C9F858702FA09E361D5ABF5A8FFF4E6" (set /a "Valid_LicenseDocuments+=1") else if /i "%%I"=="3692DDC2873A867742B76E284B132AF2A536806451C7A5E922E56F0B4EC851FF" (set /a "Valid_LicenseDocuments+=1")
+        rem COPYING.TXT
+        if /i "%%J"=="3972DC9744F6499F0F9B2DBF76696F2AE7AD8AF9B23DDE66D6AF86C9DFB36986" (set /a "Valid_LicenseDocuments+=1")
+    )
 )
 if "!ARE!"=="0" (
     exit /b 0
@@ -4475,11 +4455,22 @@ if "!ARE!"=="0" (
 ) else if !Valid_LicenseDocuments! lss 2 (
     echo The licenses are still bad. This program will quit.
     timeout /t 3 /NOBREAK >nul
-    exit 1
+    exit /b 1
 ) else (
-    exit / 0
+    exit /b 0
     goto :eof
 )
+:HashLicenses
+if ((Test-Path -LiteralPath $env:FILE) -and (Test-Path -LiteralPath (Join-Path $env:Root 'COPYING.TXT'))) {
+    $LICENSE = (Get-FileHash -LiteralPath $env:FILE -Algorithm SHA256).Hash.ToUpper()
+    $COPYING = (Get-FileHash -LiteralPath (Join-Path $env:Root 'COPYING.TXT') -Algorithm SHA256).Hash.ToUpper()
+    'Hashes: {0} {1}' -f $LICENSE,$COPYING
+    Exit 0
+} else {
+    'MISSING'
+    Exit 1
+}
+:Post_HashLicenses
 :SetFont
 Add-Type -TypeDefinition @"
 using System;
@@ -5642,4 +5633,4 @@ exit 0
 :Post_Ventoy-Choices
 rem End of installer, please leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 5646. Made by Aarav Katariya with love and care...
+rem Total line count: 5637. Made by Aarav Katariya with love and care...
