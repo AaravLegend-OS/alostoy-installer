@@ -2,7 +2,6 @@
 @rem                ALOSToy Installer By Aarav Katariya
 @rem                  Program encoding: UTF-8 (No BOM)
 @rem                      Program language: EN-GB
-@rem                      Is emergency update: False
 @rem    Repo: https://www.github.com/AaravLegend-OS/alostoy-installer
 @rem                       Newline sequence: CRLF
 @rem           Program license: GPL v3 "or any later version"
@@ -42,15 +41,16 @@
 @rem REM TO MARK A COMMENT. IT IS FAR SAFER. YOU WILL FIND OUT WHEN YOU
 @rem USE A "::" COMMENT INSIDE AN IF, FOR, || OR && BLOCK!
 @rem ===================================================================
-@rem Please note that the ALOSToy Installer is licensed under GPL v3 but
+@rem Please note that the ALOSToy Installer is licensed under GPLv3 but
 @rem aria2c is licensed under GPL v2. No code from either program is
 @rem combined, nor is it statically or dynamically linked to avoid a
 @rem derivative work. Instead, the installer just calls the compiled exe
 @rem to prevent license incompatibility between GPLv2.0 and GPLv3.0.
 @rem This notice is only for aria2c.exe and only the exe is called AS A
-@rem SEPARATE PROCESS THAT IS NOT DISTRIBUTED TOGETHER. aria2c.exe can
-@rem be distributed under GPLv2 or any later version so this is more of
+@rem SEPARATE PROCESS THAT IS NOT DISTRIBUTED TOGETHER. Aria2c can be
+@rem distributed under GPLv2 or any later version so this is more of
 @rem "Mere Aggregation" instead of a combined work (which this is not).
+@rem (Courts may interpret Mere Aggregation differently than others.)
 @rem ===================================================================
 @rem Ventoy is licensed under GNU GPLv3 or any later version. The code
 @rem can be combined or linked statically or dynamically, but the author
@@ -1031,7 +1031,7 @@ if "!Vtoy_DL_Mode!"=="0" (
     if errorlevel 1 (echo Unfortunately, Google Public DNS is blocked.) else (echo !CmdEchoing!)
     rem DNS access is not always required. If it is blocked, your connection may not be as secure.
 )
-rem Prefer HTTP(S) ping over ICMP. Many corporations and
+rem Prefer HTTP(S) ping over ICMP ping. Many corporations and
 rem organisations block any ICMP connections on their networks.
 curl.exe -o NUL https://github.com >> "!logfile!" 2>&1
 if errorlevel 1 set "GithubBlocked=True"
@@ -4388,6 +4388,7 @@ if /i "!Actual_Ventoy_Hash!"=="!Expected_Ventoy_Hash!" (
     rem But if we fail, we cannot proceed and must throw an error.
     echo ventoy.zip is not OK.
     echo The hash is !Actual_Ventoy_Hash!.
+    del ventoy.zip sha256.txt /f /q >nul
     timeout /t 3 /NOBREAK >nul
     exit /b 1
 )
@@ -4399,8 +4400,12 @@ echo ===========================================================================
 if "!GPLNotice!"=="1" if "!EXISTS!"=="1" (
     type "!FILE!"
     echo To see the full GNU GPL License, open the COPYING.TXT file.
-    if "!ArgumentsPassed!"=="True" echo Arguments passed: !UserArgs!
     if "!Or-Any-Later-Version!"=="True" (echo GPLv3 or any later version.) else if "!Or-Any-Later-Version!"=="False" (echo GPLv3 ONLY.)
+    if "!ArgumentsPassed!"=="True" (
+        set "Args="
+        for %%A in (!UserArgs!) do if /i not "%%A"=="I_QEOff" if /i not "%%A"=="!ArgPrefix!Updated" set "Args=!Args! %%A"
+        echo Arguments passed: !Args!
+    )
     echo ========================================================================================================================
 ) else (
     rem cls
@@ -4415,7 +4420,7 @@ if "!GPLNotice!"=="1" if "!EXISTS!"=="1" (
     pause >nul
     if "!Or-Any-Later-Version!"=="False" (
         echo Note: !Script!'s code is GPL v3 ONLY. You may NOT redistribute
-        echo under any later or previous version, only the GNU GPL v3 license.
+        echo under any later or previous version, only the GNU GPL v3 license is allowed.
     ) else if "!Or-Any-Later-Version!"=="True" (
         echo Note: !Script!'s code is GPL v3 or any later version.
         echo You may redistribute under GPLv3 or any future version of your choice.
@@ -5631,6 +5636,6 @@ else {
 Write-Output $text
 exit 0
 :Post_Ventoy-Choices
-rem End of installer, please leave an empty line and do not change the line endings.
+rem End of installer, leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 5637 (5636 without extra newline). Made by Aarav Katariya with love and care...
+rem Total line count: 5642 (5641 without extra newline). Made by Aarav Katariya with love and care...
