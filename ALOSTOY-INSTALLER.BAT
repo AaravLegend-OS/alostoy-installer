@@ -137,7 +137,7 @@ rem REDISTRIBUTE UNDER V3 ONLY OR V3 "OR ANY LATER VERSION" THIS MEANS THE
 rem VARIABLE BELOW DOES NOT ALLOW AUTOMATIC GPLV3 "OR ANY LATER VERSION"
 rem DISTRIBUTION TO OCCUR. ONLY CHANGE IF YOU CHOOSE TO FORK THIS PROGRAM.
 rem =========================================================================
-set "Or-Any-Later-Version=False"
+set "Or-Any-Later-Version=True"
 if "!Or-Any-Later-Version!"=="True" if exist "!Root!LICENSE.TXT" (set "EXISTS=1" & set "FILE=!Root!LICENSE.TXT") else (set "EXISTS=0")
 if "!Or-Any-Later-Version!"=="False" if exist "!Root!GPLV3_ONLY_INFO.TXT" (set "EXISTS=1" & set "FILE=!Root!GPLV3_ONLY_INFO.TXT") else (set "EXISTS=0")
 rem Check for powershell existence and find it in path.
@@ -4396,7 +4396,6 @@ cls
 echo ========================================================================================================================
 echo ================================ Starting ALOSToy Installer... (!D! !T!) ================================
 echo ========================================================================================================================
-echo !EXISTS!
 if "!GPLNotice!"=="1" if "!EXISTS!"=="1" (
     type "!FILE!"
     echo To see the full GNU GPL License, open the COPYING.TXT file.
@@ -5634,4 +5633,4 @@ exit 0
 :Post_Ventoy-Choices
 rem End of installer, please leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 5638. Made by Aarav Katariya with love and care...
+rem Total line count: 5637 (5636 without extra newline). Made by Aarav Katariya with love and care...
