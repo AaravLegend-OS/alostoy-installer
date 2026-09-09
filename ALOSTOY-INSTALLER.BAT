@@ -4449,7 +4449,7 @@ set "Valid_LicenseDocuments=0"
 for /f "tokens=1,2,3 usebackq" %%H in (`powershell -nop -nol -c "chcp 65001 > $null; $i18n = New-Object System.Text.UTF8Encoding; [Console]::InputEncoding = $i18n; [Console]::OutputEncoding = $i18n; $OutputEncoding = $i18n; $section = [io.file]::ReadAllText($env:FullScript) -split '(?ms)^:HashLicenses\r?\n(.*?)\r?\n:Post_HashLicenses'; & ([scriptblock]::Create($section[1]))"`) do (
     if /i "%%H"=="MISSING" (set "Missing=True") else if /i "%%H"=="Hashes:" (
         rem LICENSE.TXT
-        if /i "%%I"=="7F545FE11D2817185E365A03E5DD7FAD1C9F858702FA09E361D5ABF5A8FFF4E6" (set /a "Valid_LicenseDocuments+=1") else if /i "%%I"=="3692DDC2873A867742B76E284B132AF2A536806451C7A5E922E56F0B4EC851FF" (set /a "Valid_LicenseDocuments+=1")
+        if /i "%%I"=="7F545FE11D2817185E365A03E5DD7FAD1C9F858702FA09E361D5ABF5A8FFF4E6" (set /a "Valid_LicenseDocuments+=1") else if /i "%%I"=="F3F3786ADE093D4EA620147AB7CED3FEB1C49E5A6F04C186D4490F1D70C945D7" (set /a "Valid_LicenseDocuments+=1")
         rem COPYING.TXT
         if /i "%%J"=="3972DC9744F6499F0F9B2DBF76696F2AE7AD8AF9B23DDE66D6AF86C9DFB36986" (set /a "Valid_LicenseDocuments+=1")
     )
