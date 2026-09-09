@@ -72,7 +72,7 @@
 @setlocal EnableExtensions EnableDelayedExpansion
 @rem We will turn off command echoing and then later reset
 @rem PATH and other system variables to their defaults.
-@set "CmdEchoing=on"
+@set "CmdEchoing=off"
 @rem ========================================================================
 @rem This does NOT print "off" or "on" literally. The echo command treats on
 @rem or off like a command to toggle command echoing. It is as if you use
@@ -4147,6 +4147,7 @@ set "WS="
 goto :eof
 :ApplyUpdate
 cls
+call :WindowTitle "UPDATING FROM V!VERSION! TO V!NEWEST!..."
 echo ========================================================================================================================
 echo ================================ Updating ALOSToy Installer... (!DATE! !TIME!) ================================
 echo ========================================================================================================================
@@ -5633,4 +5634,4 @@ exit 0
 :Post_Ventoy-Choices
 rem End of installer, please leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 5637. Made by Aarav Katariya with love and care...
+rem Total line count: 5638. Made by Aarav Katariya with love and care...
