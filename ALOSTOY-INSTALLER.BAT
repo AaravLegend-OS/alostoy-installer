@@ -53,7 +53,7 @@
 @rem (Courts may interpret Mere Aggregation differently than others.)
 @rem ===================================================================
 @rem Ventoy is licensed under GNU GPLv3 or any later version. The code
-@rem can be combined or linked statically or dynamically, but the author
+@rem can be combined/linked statically or dynamically, but the author
 @rem chose not to combine the code because it would create a combined/
 @rem derivative work.
 @rem ===================================================================
@@ -1495,7 +1495,7 @@ $Root = $env:Root
 # Run SHA256 checks.
 foreach ($Entry in $Hashes.GetEnumerator()) {
     if (-not (Test-Path $Entry.Key -PathType Leaf)) {
-        # Stop installation if there is a missing file.
+        # Stop installation if there is a missing file. (Will never get reached.)
         Write-Host "[ERROR] Missing: $($Entry.Key)." -ForegroundColor Red
         # Write to log.
         Write-Output "[ERROR] Missing: $($Entry.Key). $(Get-Date)" >> $env:logfile
@@ -1508,7 +1508,7 @@ foreach ($Entry in $Hashes.GetEnumerator()) {
     # Calculate the SHA256 hash of every file.
     $Actual = (Get-FileHash $Entry.Key -Algorithm $env:Algorithm).Hash.ToUpper()
     if ($Actual -cne $Entry.Value) {
-        # Stop installation if there is a tampered file.
+        # Stop installation if there is a tampered file. (Can get reached.)
         Write-Host "[ERROR] $($Entry.Key)'s hash does not match! We got: $($Entry.Value)." -ForegroundColor Red
         # Write to log.
         Write-Output "[ERROR] $($Entry.Key)'s hash does not match! We got: $($Entry.Value). $(Get-Date)" >> $env:logfile
@@ -2013,31 +2013,6 @@ if not defined drivepath goto ConfirmDrive
 echo Drive validation in progress...
 rem Using call :PowerShell_Helper <PS_Label> will not work in a for /f loop.
 for /f "delims=" %%W in ('powershell -nop -nol -c "chcp 65001 > $null; $i18n = New-Object System.Text.UTF8Encoding; [Console]::InputEncoding = $i18n; [Console]::OutputEncoding = $i18n; $OutputEncoding = $i18n; $section = [io.file]::ReadAllText($env:FullScript) -split '(?ms)^:Find_WinInstall\r?\n(.*?)\r?\n:Post_Find_WinInstall'; & ([scriptblock]::Create($section[1]))"') do set "WinInstall=%%W"
-goto Post_Find_WinInstall
-:Find_WinInstall
-if ([string]::IsNullOrWhiteSpace($env:drivepath)) {
-    Write-Output 'NOTFOUND'
-    return
-}
-$root = "${env:drivepath}:\"
-$kernel = Join-Path -Path $root -ChildPath 'Windows\System32\ntoskrnl.exe'
-try {
-    if (-not (Test-Path -LiteralPath $kernel -PathType Leaf)) {
-        Write-Output 'NOTFOUND'
-        return
-    }
-    Import-Module Dism -ErrorAction Stop
-    $Info = Get-WindowsEdition -Path $root -ErrorAction Stop
-    $Packages = @(Get-WindowsPackage -Path $root -ErrorAction Stop)
-    [PSCustomObject]@{
-        STATUS = 'FOUND'
-        Edition = $Info.Edition
-        PackageCount = $Packages.Count
-    } | Select-Object -ExpandProperty STATUS
-} catch {
-    Write-Output 'ERROR'
-}
-:Post_Find_WinInstall
 if /i "!WinInstall!"=="FOUND" (
     for /f "delims= " %%Q in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('I detected a Windows installation on Drive !drivepath!. Do you want to continue? If you do, you can lose that installation and all its files.','ALOSToy Installer','YesNoCancel','Warning')"') do (
         if /i "%%Q"=="Yes" (
@@ -2064,36 +2039,6 @@ if /i "!WinInstall!"=="FOUND" (
 echo Validating size...
 set size=0
 call :PowerShell_Helper "SizeValidation"
-goto Post_SizeValidation
-:SizeValidation
-# Validate the size of the drive.
-$size = (Get-Volume -DriveLetter $env:drivepath).Size
-# On all size checks, we add a small buffer so that
-# you have some small amount of space left to use.
-if ($env:product -ieq "Standard") {
-    if ($env:InstallExtensions -ieq "True") {
-        if ($size -lt 123842994200) {
-            Exit 1
-        } else {
-            Exit 0
-        }
-    } elseif ($env:InstallExtensions -ieq "False") {
-        if ($size -lt 54104350800) {
-            Exit 1
-        } else {
-            Exit 0
-        }
-    } else {
-        Exit 2
-    }
-} elseif ($env:product -ieq "Extended") {
-    if ($size -lt 193504030800) {
-        Exit 1
-    } else {
-        Exit 0
-    }
-}
-:Post_SizeValidation
 if !errorlevel! lss 1 (
     goto GPTChoice
 ) else (
@@ -4439,7 +4384,7 @@ goto :eof
 :LicenseHasher
 rem Maintain the integrity of the license files. The GNU GPL licenses forbid
 rem editing the documents. "Everyone is permitted to copy and distribute
-rem verbatim copies of this license document but changing it is not allowed."
+rem verbatim copies of this license document, but changing it is not allowed."
 rem DO NOT ASK ME TO REMOVE THIS IN ISSUES OR COMMENTS! I WILL NOT RESPOND!
 set "ARE=0"
 if /i "%~1"=="AfterRedownload" set "ARE=1"
@@ -4463,6 +4408,13 @@ if "!ARE!"=="0" (
     exit /b 0
     goto :eof
 )
+rem =====================================================
+rem The rest of the code below down to the end of the
+rem installer file, is all embedded PowerShell that will
+rem be called by the batch script. Aarav Katariya moved
+rem them down here for organisation and separation of
+rem batch logic and embedded PowerShell logic.
+rem =====================================================
 :HashLicenses
 if ((Test-Path -LiteralPath $env:FILE) -and (Test-Path -LiteralPath (Join-Path $env:Root 'COPYING.TXT'))) {
     $LICENSE = (Get-FileHash -LiteralPath $env:FILE -Algorithm SHA256).Hash.ToUpper()
@@ -4606,11 +4558,59 @@ public static class ConsoleFont
 "@
 if ([ConsoleFont]::SetPreferredFont(16)) { Exit 0 } else { Exit 1 }
 :Post_SetFont
-rem ======================================================================
-rem All of these giant blocks like "ALOSToy-Info, Size-Requirements", etc
-rem have a purpose. It is to display the messages in a few different
-rem languages. Everything below is all PowerShell.
-rem ======================================================================
+:Find_WinInstall
+if ([string]::IsNullOrWhiteSpace($env:drivepath)) {
+    Write-Output 'NOTFOUND'
+    return
+}
+$root = "${env:drivepath}:\"
+$kernel = Join-Path -Path $root -ChildPath 'Windows\System32\ntoskrnl.exe'
+try {
+    if (-not (Test-Path -LiteralPath $kernel -PathType Leaf)) {
+        Write-Output 'NOTFOUND'
+        return
+    }
+    Import-Module Dism -ErrorAction Stop
+    $Info = Get-WindowsEdition -Path $root -ErrorAction Stop
+    $Packages = @(Get-WindowsPackage -Path $root -ErrorAction Stop)
+    [PSCustomObject]@{
+        STATUS = 'FOUND'
+        Edition = $Info.Edition
+        PackageCount = $Packages.Count
+    } | Select-Object -ExpandProperty STATUS
+} catch {
+    Write-Output 'ERROR'
+}
+:Post_Find_WinInstall
+:SizeValidation
+# Validate the size of the drive.
+$size = (Get-Volume -DriveLetter $env:drivepath).Size
+# On all size checks, we add a small buffer so that
+# you have some small amount of space left to use.
+if ($env:product -ieq "Standard") {
+    if ($env:InstallExtensions -ieq "True") {
+        if ($size -lt 123842994200) {
+            Exit 1
+        } else {
+            Exit 0
+        }
+    } elseif ($env:InstallExtensions -ieq "False") {
+        if ($size -lt 54104350800) {
+            Exit 1
+        } else {
+            Exit 0
+        }
+    } else {
+        Exit 2
+    }
+} elseif ($env:product -ieq "Extended") {
+    if ($size -lt 193504030800) {
+        Exit 1
+    } else {
+        Exit 0
+    }
+}
+:Post_SizeValidation
 :ALOSToy-Info
 $Language = $env:lang
 if ($Language -eq "en") {
