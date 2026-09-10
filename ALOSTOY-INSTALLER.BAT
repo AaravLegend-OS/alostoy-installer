@@ -459,7 +459,11 @@ rem ALL ARGUMENTS ARE CASE-INSENSITIVE.
 rem GNU --long-options ARE CASE-SENSITIVE.
 call :WindowTitle "PARSING ARGUMENTS..."
 if "%~1"=="" goto StepTwo
-if /i "%~1"=="I_QEOff" goto StepTwo
+if /i "%~1"=="I_QEOff" (
+    rem Ignore this argument but shift it.
+    shift
+    goto CLI_Arguments
+)
 set "ArgName=%~1"
 set "ArgPrefix="
 rem It is important to normalise the arguments so that we can compare them in PowerShell.
@@ -5631,4 +5635,4 @@ exit 0
 :Post_Ventoy-Choices
 rem End of installer, leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 5635 (5634 without extra newline). Made by Aarav Katariya with love and care...
+rem Total line count: 5639 (5638 without extra newline). Made by Aarav Katariya with love and care...
