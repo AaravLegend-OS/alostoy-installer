@@ -10,6 +10,10 @@ Very tiny updates or emergency updates will be published **under the same versio
 
 
 
+Normally, updates are pushed out with their **own version numbers and tags**.
+
+
+
 Any versions before the latest will **not be supported any further**. You are expected to update to the latest version.
 
 
