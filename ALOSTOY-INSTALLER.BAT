@@ -2066,17 +2066,19 @@ set size=0
 call :PowerShell_Helper "SizeValidation"
 goto Post_SizeValidation
 :SizeValidation
+# Validate the size of the drive.
 $size = (Get-Volume -DriveLetter $env:drivepath).Size
+# On all size checks, we add a small buffer so that
+# you have some small amount of space left to use.
 if ($env:product -ieq "Standard") {
     if ($env:InstallExtensions -ieq "True") {
-        if ($size -lt 54104350750) {
+        if ($size -lt 123842994200) {
             Exit 1
         } else {
             Exit 0
         }
-    }
-    elseif ($env:InstallExtensions -ieq "False") {
-        if ($size -lt 123842994200) {
+    } elseif ($env:InstallExtensions -ieq "False") {
+        if ($size -lt 54104350800) {
             Exit 1
         } else {
             Exit 0
@@ -2084,15 +2086,13 @@ if ($env:product -ieq "Standard") {
     } else {
         Exit 2
     }
-}
-elseif ($env:product -ieq "Extended") {
-    if ($size -lt 193504030750) {
+} elseif ($env:product -ieq "Extended") {
+    if ($size -lt 193504030800) {
         Exit 1
     } else {
         Exit 0
     }
 }
-Exit 0
 :Post_SizeValidation
 if !errorlevel! lss 1 (
     goto GPTChoice
@@ -2320,7 +2320,8 @@ for /f "delims= " %%A in ('type "!Root!Ventoy2Disk\cli_done.txt"') do (
                     echo Open the dropdown menu for the drive to select. It is on the Main Menu and select !drivepath!:.
                     echo Finally click install and confirm this is the correct drive. ^(Double check this drive is !drivepath!.^)
                     echo When it is complete, close Ventoy2Disk and then we will continue.
-                    start /wait "" "Ventoy2Disk.exe"
+                    echo Also, try unplugging the device with !drivepath! and plugging it back in.
+                    start /wait "" "!Root!Ventoy2Disk\altexe\Ventoy2Disk_!Arch!.exe"
                     for /f "delims= " %%Q in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Did it work? Please tell the truth.','ALOSToy Installer','YesNoCancel','Question')"') do (
                         if "%%Q"=="Yes" (
                             goto CheckVentoyB
@@ -5635,4 +5636,4 @@ exit 0
 :Post_Ventoy-Choices
 rem End of installer, leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 5639 (5638 without extra newline). Made by Aarav Katariya with love and care...
+rem Total line count: 5640 (5639 without extra newline). Made by Aarav Katariya with love and care...
