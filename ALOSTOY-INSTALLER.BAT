@@ -459,6 +459,7 @@ rem ALL ARGUMENTS ARE CASE-INSENSITIVE.
 rem GNU --long-options ARE CASE-SENSITIVE.
 call :WindowTitle "PARSING ARGUMENTS..."
 if "%~1"=="" goto StepTwo
+if /i "%~1"=="I_QEOff" goto StepTwo
 set "ArgName=%~1"
 set "ArgPrefix="
 rem It is important to normalise the arguments so that we can compare them in PowerShell.
@@ -490,7 +491,7 @@ rem Parse arguments cleanly in PowerShell. It works for me and is more efficient
 rem It makes sense because batch cannot do or, and, is, like, in or match checks.
 rem Using variable case-sensitivity for arguments.
 rem A much better argparser. Love it.
-for /f "delims=" %%A in ('powershell -nop -nol -ExecutionPolicy Bypass -c "function Match([string]$Left, [string]$Right) { if ($env:CaseSensitive -match '^(1|true|yes|on)$') { return $Left -ceq $Right } else { return $Left -ieq $Right } }; if ((Match $env:ArgName '?') -or (Match $env:ArgName 'Help') -or (Match $env:ArgName 'H')) { Write-Output 'Help' } elseif ((Match $env:ArgName 'NoBanner') -or (Match $env:ArgName 'No-Banner')) { Write-Output 'NoBanner' } elseif ((Match $env:ArgName 'ForceBanner') -or (Match $env:ArgName 'Force-Banner')) { Write-Output 'ForceBanner' } elseif ((Match $env:ArgName 'LogFile') -or (Match $env:ArgName 'Log-File')) { Write-Output 'LogFile' } elseif (Match $env:ArgName 'Product') { Write-Output 'Product' } elseif ((Match $env:ArgName 'VentoyVersion') -or (Match $env:ArgName 'Ventoy-Version')) { Write-Output 'VentoyVersion' } elseif ((Match $env:ArgName 'DownloadVentoyVersion') -or (Match $env:ArgName 'Download-Ventoy-Version')) { Write-Output 'DownloadVentoyVersion' } elseif ((Match $env:ArgName 're1') -or (Match $env:ArgName 're2') -or (Match $env:ArgName 'qedit')) { Write-Output 'Arch_Relaunch' } elseif ((Match $env:ArgName 'NoUpdate') -or (Match $env:ArgName 'No-Update')) { Write-Output 'Do_Not_Update' } elseif ((Match $env:ArgName 'ForceUpdate') -or (Match $env:ArgName 'Force-Update')) { Write-Output 'Always_Update' } elseif (Match $env:ArgName 'Updated') { Write-Output 'Successful_Update' } elseif ((Match $env:ArgName 'AutoUpdate') -or (Match $env:ArgName 'Auto-Update')) { Write-Output 'Auto_Update_Prg' } elseif ((Match $env:ArgName 'NoBackup') -or (Match $env:ArgName 'No-Backup')) { Write-Output 'NoUpdateBackup' } elseif ((Match $env:ArgName 'HideGPLNotice') -or (Match $env:ArgName 'Hide-GPL-Notice')) { Write-Output 'Inhibit_GPL_Notice' } elseif (Match $env:ArgName 'I_QEOff') { Write-Output 'I_QEOff' } else { Write-Output 'Other' }"') do set "ArgKind=%%A"
+for /f "delims=" %%A in ('powershell -nop -nol -ExecutionPolicy Bypass -c "function Match([string]$Left, [string]$Right) { if ($env:CaseSensitive -match '^(1|true|yes|on)$') { return $Left -ceq $Right } else { return $Left -ieq $Right } }; if ((Match $env:ArgName '?') -or (Match $env:ArgName 'Help') -or (Match $env:ArgName 'H')) { Write-Output 'Help' } elseif ((Match $env:ArgName 'NoBanner') -or (Match $env:ArgName 'No-Banner')) { Write-Output 'NoBanner' } elseif ((Match $env:ArgName 'ForceBanner') -or (Match $env:ArgName 'Force-Banner')) { Write-Output 'ForceBanner' } elseif ((Match $env:ArgName 'LogFile') -or (Match $env:ArgName 'Log-File')) { Write-Output 'LogFile' } elseif (Match $env:ArgName 'Product') { Write-Output 'Product' } elseif ((Match $env:ArgName 'VentoyVersion') -or (Match $env:ArgName 'Ventoy-Version')) { Write-Output 'VentoyVersion' } elseif ((Match $env:ArgName 'DownloadVentoyVersion') -or (Match $env:ArgName 'Download-Ventoy-Version')) { Write-Output 'DownloadVentoyVersion' } elseif ((Match $env:ArgName 're1') -or (Match $env:ArgName 're2') -or (Match $env:ArgName 'qedit')) { Write-Output 'Arch_Relaunch' } elseif ((Match $env:ArgName 'NoUpdate') -or (Match $env:ArgName 'No-Update')) { Write-Output 'Do_Not_Update' } elseif ((Match $env:ArgName 'ForceUpdate') -or (Match $env:ArgName 'Force-Update')) { Write-Output 'Always_Update' } elseif (Match $env:ArgName 'Updated') { Write-Output 'Successful_Update' } elseif ((Match $env:ArgName 'AutoUpdate') -or (Match $env:ArgName 'Auto-Update')) { Write-Output 'Auto_Update_Prg' } elseif ((Match $env:ArgName 'NoBackup') -or (Match $env:ArgName 'No-Backup')) { Write-Output 'NoUpdateBackup' } elseif ((Match $env:ArgName 'HideGPLNotice') -or (Match $env:ArgName 'Hide-GPL-Notice')) { Write-Output 'Inhibit_GPL_Notice' } else { Write-Output 'Other' }"') do set "ArgKind=%%A"
 rem Help arguments. Open the Command-Line Help Guide...
 if /i "!ArgKind!"=="Help" (
     call :WindowTitle "Starting Help Guide..."
@@ -930,12 +931,6 @@ if /i "!ArgKind!"=="NoUpdateBackup" (
     shift
     goto CLI_Arguments
 )
-rem Quick Edit disable. Do not document or use unless !Script! disables quick edit.
-if /i "!ArgKind!"=="I_QEOff" (
-    set "QuickEdit=Off"
-    shift
-    goto CLI_Arguments
-)
 rem Hide GPL Notice. Do not document. Can be used.
 if /i "!ArgKind!"=="Inhibit_GPL_Notice" (
     set "ArgumentsPassed=True"
@@ -1364,7 +1359,7 @@ for %%A in (
     "!Root!\bin\hash_database\ALOSToy_v1.0_Standard_With_Extensions.md5"
 ) do if exist "%%~A" set /a "present+=1"
 if !present! equ 18 (
-    call :PowerShell_Helper "Hash_BinFiles" && (if "!Vtoy_DL_Mode!"=="0" (goto Main) else if "!Vtoy_DL_Mode!"=="1" (goto Vtoy_dl)) || (
+    call :PowerShell_Helper "Hash_BinFiles" && (if "!Vtoy_DL_Mode!"=="0" (goto Main) else if "!Vtoy_DL_Mode!"=="1" (goto Collect_Ventoy)) || (
         set "errorcode=Bin files do not match their hashes."
         set "RequiresExit=True"
         goto Error
@@ -1379,7 +1374,7 @@ if exist "!Root!tools.esd" (
         if not exist "!Root!bin" md "!Root!bin" >nul 2>&1
         dism /apply-image /imagefile:"!Root!tools.esd" /index:1 /applydir:"!Root!\bin" /quiet /logfile:"!Root!\dism.log"
         del /f /q "!Root!tools.esd" >nul 2>&1
-        call :PowerShell_Helper "Hash_BinFiles" && (if "!Vtoy_DL_Mode!"=="0" (goto Main) else if "!Vtoy_DL_Mode!"=="1" (goto Vtoy_dl)) || (
+        call :PowerShell_Helper "Hash_BinFiles" && (if "!Vtoy_DL_Mode!"=="0" (goto Main) else if "!Vtoy_DL_Mode!"=="1" (goto Collect_Ventoy)) || (
             set "errorcode=Bin files do not match their hashes."
             set "RequiresExit=True"
             goto Error
@@ -1409,7 +1404,7 @@ if exist "!Root!tools.esd" (
             if not exist "!Root!bin" md "!Root!bin" >nul 2>&1
             dism /apply-image /imagefile:"!Root!tools.esd" /index:1 /applydir:"!Root!\bin" /quiet /logfile:"!Root!\dism.log"
             del /f /q "!Root!tools.esd" >nul 2>&1
-            call :PowerShell_Helper "Hash_BinFiles" && (if "!Vtoy_DL_Mode!"=="0" (goto Main) else if "!Vtoy_DL_Mode!"=="1" (goto Vtoy_dl)) || (
+            call :PowerShell_Helper "Hash_BinFiles" && (if "!Vtoy_DL_Mode!"=="0" (goto Main) else if "!Vtoy_DL_Mode!"=="1" (goto Collect_Ventoy)) || (
                 set "errorcode=Bin files do not match their hashes."
                 set "RequiresExit=True"
                 goto Error
@@ -1431,7 +1426,7 @@ if exist "!Root!tools.esd" (
         if not exist "!Root!bin" md "!Root!bin" >nul 2>&1
         dism /apply-image /imagefile:"!Root!tools.esd" /index:1 /applydir:"!Root!\bin" /quiet /logfile:"!Root!dism.log"
         del /f /q "!Root!tools.esd" >nul 2>&1
-        call :PowerShell_Helper "Hash_BinFiles" && (if "!Vtoy_DL_Mode!"=="0" (goto Main) else if "!Vtoy_DL_Mode!"=="1" (goto Vtoy_dl)) || (
+        call :PowerShell_Helper "Hash_BinFiles" && (if "!Vtoy_DL_Mode!"=="0" (goto Main) else if "!Vtoy_DL_Mode!"=="1" (goto Collect_Ventoy)) || (
             set "errorcode=Bin files do not match their hashes."
             set "RequiresExit=True"
             goto Error
@@ -1451,7 +1446,7 @@ if exist "!Root!tools.esd" (
         )
     )
 )
-call :PowerShell_Helper "Hash_BinFiles" && (if "!Vtoy_DL_Mode!"=="0" (goto Main) else if "!Vtoy_DL_Mode!"=="1" (goto Vtoy_dl)) || (
+call :PowerShell_Helper "Hash_BinFiles" && (if "!Vtoy_DL_Mode!"=="0" (goto Main) else if "!Vtoy_DL_Mode!"=="1" (goto Collect_Ventoy)) || (
     set "errorcode=Bin files do not match their hashes."
     set "RequiresExit=True"
     goto Error
@@ -1757,7 +1752,7 @@ if "!AcceptEULA!"=="0" (
     pause
     call powershell.exe -nop -nol -ExecutionPolicy Bypass -WindowStyle Normal -c "Write-Output 'User agreed to license terms.' | Out-File $env:logfile -Encoding UTF8 -Append -NoClobber -Force"
 )
-goto Vtoy_dl
+goto Collect_Ventoy
 :Extended_Briefing
 cls
 echo !CmdEchoing!
@@ -1774,8 +1769,8 @@ if "!AcceptEULA!"=="0" (
     pause
     call powershell.exe -nop -nol -ExecutionPolicy Bypass -WindowStyle Normal -c "Write-Output 'User agreed to license terms.' | Out-File $env:logfile -Encoding UTF8 -Append -NoClobber -Force"
 )
-goto Vtoy_dl
-:Vtoy_dl
+goto Collect_Ventoy
+:Collect_Ventoy
 cls
 rem Remove existing hash variables if defined.
 if defined Actual_Ventoy_Hash set "Actual_Ventoy_Hash="
@@ -1800,7 +1795,6 @@ if "!Vtoy_DL_Mode!"=="1" (
         echo Collecting Ventoy V!Selected_Venver!...
         if exist "!Root!Ventoy2Disk" rd "!Root!Ventoy2Disk" /s /q >nul 2>&1
         curl https://github.com/ventoy/Ventoy/releases/download/v!Selected_Venver!/ventoy-!Selected_Venver!-windows.zip -o ./ventoy.zip -L >> "!logfile!" 2>&1 && (
-            echo Successful.
             call :HashVentoyZip !Selected_Venver! && (
                 "!Root!bin\7-Zip\!Arch!\7z.exe" x -y -r -aoa -bso1 -bse1 -bsp1 -o"!save!\" "ventoy.zip" >> "!logfile!"
                 if !errorlevel! gtr 1 (
@@ -1848,7 +1842,6 @@ if "!Vtoy_DL_Mode!"=="1" (
     echo Collecting Ventoy V!Selected_Venver!...
     if exist "!Root!Ventoy2Disk" rd "!Root!Ventoy2Disk" /s /q >nul 2>&1
     curl https://github.com/ventoy/Ventoy/releases/download/v!Selected_Venver!/ventoy-!Selected_Venver!-windows.zip -o ./ventoy.zip -L >> "!logfile!" 2>&1 && (
-        echo Successful.
         call :HashVentoyZip !Selected_Venver! && (
             "!Root!bin\7-Zip\!Arch!\7z.exe" x -y -r -aoa -bso1 -bse1 -bsp1 -o"!Root!\" "!Root!ventoy.zip" >> "!logfile!"
             if !errorlevel! gtr 1 (
@@ -3188,7 +3181,7 @@ if /i "!ProductDefinedWithArg!"=="False" if /i "!RequiresExit!"=="False" (
             timeout /t 1 /NOBREAK >nul
             set "RequiresExit=False"
             set "ResetVars=1"
-            if "!Vtoy_DL_Mode!"=="0" (goto Main) else if "!Vtoy_DL_Mode!"=="1" (goto Vtoy_dl)
+            if "!Vtoy_DL_Mode!"=="0" (goto Main) else if "!Vtoy_DL_Mode!"=="1" (goto Collect_Ventoy)
         ) else if /i "%%E"=="No" (
             echo Ok then.
         ) else (
@@ -5638,4 +5631,4 @@ exit 0
 :Post_Ventoy-Choices
 rem End of installer, leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 5642 (5641 without extra newline). Made by Aarav Katariya with love and care...
+rem Total line count: 5635 (5634 without extra newline). Made by Aarav Katariya with love and care...
