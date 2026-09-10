@@ -2607,7 +2607,7 @@ if "!errorlevel!"=="1" (goto Files_DL) else if "!errorlevel!"=="2" (goto Files_L
 :Files_DL
 cls
 echo !CmdEchoing!
-start /b powershell -nop -nologo -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('The logfile: !Root!aria2c_download.log will take up several gigabytes of your %~d0 drive space.','ALOSToy Installer','OK','Warn')"
+start /b powershell -nop -nologo -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('The logfile: !Root!aria2c_download.log will take up several gigabytes of your %~d0 drive space.','ALOSToy Installer','OK','Warn') | Out-Null"
 if /i "!product!"=="Standard" (
     echo Downloading standard version... This will take a long time...
     for /l %%X in (1,1,4) do (
