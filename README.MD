@@ -436,7 +436,7 @@ You should **disable** it while running and **re-enable** it after completion.
 
 ## **License Terms**
 
-Copyright (C) 2026 Aarav Katariya
+Copyright (C) 2023-2026 Aarav Katariya
 
 
 
