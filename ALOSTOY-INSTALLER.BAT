@@ -94,7 +94,7 @@ if "!Script!" neq "ALOSTOY-INSTALLER.BAT" exit 1
 rem Define the author.
 set "Author=Aarav Katariya"
 rem Define the version. (Will always remain in 1.X.X.X format.)
-set "Version=1.0.2.0"
+set "Version=1.0.2.1"
 for /f "skip=2 tokens=2*" %%A in ('reg query "HKEY_CURRENT_USER\Control Panel\International" /v "LocaleName"') do (
     set "OSLanguage=%%B"
     set "lang=!OSLanguage:~0,2!"
@@ -1685,6 +1685,11 @@ if "!errorlevel!"=="1" (
             goto Main
         )
     )
+) else if "!errorlevel!"=="70" (
+    cls
+    start /b powershell -nop -nol -WindowStyle Hidden -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('You are going to reboot directly into the firmware. Take caution while in there. Do not mess up the firmware settings or else your pc may not work the way you want...','ALOSToy Installer','OK','Warning') | Out-Null; & ${env:SystemRoot}\System32\shutdown.exe /r /fw /t 0"
+    endlocal
+    exit 0
 ) else if "!errorlevel!"=="71" (
     cls
     echo Opening the github repository...
@@ -1713,6 +1718,11 @@ if "!errorlevel!"=="1" (
             goto Main
         )
     )
+) else if "!errorlevel!"=="102" (
+    cls
+    start /b powershell -nop -nol -WindowStyle Hidden -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('You are going to reboot directly into the Windows Recovery Environment. Be careful in there and do not mess up any settings.','ALOSToy Installer','OK','Warning') | Out-Null; & ${env:SystemRoot}\System32\shutdown.exe /r /o /t 0"
+    endlocal
+    exit 0
 ) else if "!errorlevel!"=="103" (
     cls
     echo Opening the github repository...
@@ -3772,7 +3782,7 @@ if "!errorlevel!"=="1" (
     goto InstallGuideExit
 ) else if "!errorlevel!"=="5" (
     cls
-    powershell -nop -nologo -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show(\"Extra main menu keyboard shortcuts:!NewLine!!NewLine!D: Redownload bin files.!NewLine!G: Open the Github repository.!NewLine!H: Show command line help.!NewLine!I: Show installation help.!NewLine!R: Restart the program.!NewLine!U: Force update the program to new or current version.\",'ALOSToy Installer','OK','Info') | Out-Null; [System.Windows.MessageBox]::Show('All keyboard shortcuts work whether you input UPPERCASE or lowercase.','ALOSToy Installer','OK','Info') | Out-Null"
+    powershell -nop -nologo -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show(\"Extra main menu keyboard shortcuts:!NewLine!!NewLine!D: Redownload bin files.!NewLine!Lowercase F: Reboot to Windows Recovery Environment.!NewLine!Uppercase F: Reboot to firmware setup.!NewLine!G: Open the Github repository.!NewLine!H: Show command line help.!NewLine!I: Show installation help.!NewLine!R: Restart the program.!NewLine!U: Force update the program to new or current version.\",'ALOSToy Installer','OK','Info') | Out-Null; [System.Windows.MessageBox]::Show('All keyboard shortcuts work whether you input UPPERCASE or lowercase. Except F which has a different shortcut depending on casing.','ALOSToy Installer','OK','Info') | Out-Null"
     goto InstallGuide4
 ) else (
     goto InstallGuide4
@@ -5646,5 +5656,5 @@ exit 0
 :Post_Ventoy-Choices
 rem End of installer, leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 5651 (5650 without extra newline).
+rem Total line count: 5661 (5660 without extra newline).
 rem Made by Aarav Katariya with love and care...
