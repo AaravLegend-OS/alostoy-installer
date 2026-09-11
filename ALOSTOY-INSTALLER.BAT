@@ -3,14 +3,14 @@
 @rem                  Program encoding: UTF-8 (No BOM)
 @rem                      Program language: EN-GB
 @rem    Repo: https://www.github.com/AaravLegend-OS/alostoy-installer
-@rem                       Newline sequence: CRLF
-@rem           Program license: GPL v3 "or any later version"
+@rem                   Newline sequence: CRLF (Windows)
+@rem          Program license: GNU GPLv3 "or any later version"
 @rem                     (User choice if they fork.)
 @rem             Supports upgrade from GPLv3 to future: True
 @rem                     (User choice if they fork.)
 @rem              SPDX-License-Identifier: GPL-v3.0-or-later
 @rem                     (User choice if they fork.)
-@rem Please read GPLV3_ONLY_INFO.TXT for redistribution under GPLv3 only.
+@rem   Please read GPLV3_ONLY_INFO.TXT for GPLv3 only redistribution.
 @rem ===================================================================
 @rem                   An overview of the installer:
 @rem This utility can save your life! It can create a bootable USB
@@ -84,6 +84,7 @@ rem A for loop is more reliable because when arguments are parsed and shifted,
 rem %~nx0 could become the next argument.
 for /f "delims=" %%S in ('echo %~nx0') do set "Script=%%S"
 for /f "delims=" %%F in ('echo %~f0') do set "FullScript=%%F"
+for /f "delims=" %%P in ('echo %~n0') do set "PartialScript=%%P"
 rem Store the root directory for use (Contains trailing slash).
 set "Root=%~dp0"
 rem Define the SHA algorithm.
@@ -265,34 +266,40 @@ if "!NewLine!"=="`r`n" (echo >nul) else if "!NewLine!"=="`n" (echo >nul) else (
     endlocal
     exit 4
 )
+if /i "%~1"=="/?" (set "StartHelp=1") else if /i "%~1"=="-?" (set "StartHelp=1") else if "%~1"=="--?" (set "StartHelp=1") else if /i "%~1"=="/H" (set "StartHelp=1") else if /i "%~1"=="-H" (set "StartHelp=1") else if "%~1"=="--H" (set "StartHelp=1") else if /i "%~1"=="/Help" (set "StartHelp=1") else if /i "%~1"=="-Help" (set "StartHelp=1") else if "%~1"=="--Help" (set "StartHelp=1")
 set "QuickEdit=On"
 rem Arguments starting with "I_" are supposed to be internal use only.
 if /i "%~1"=="I_QEOff" set "QuickEdit=Off"
 if "!Or-Any-Later-Version!"=="False" (
-    call :LicenseHasher
-    rem Properly enforce the license rules.
-    if "!Missing!"=="True" (
-        echo The license documents are missing. We can no longer prove if
-        echo !Script! is legitimately licensed or not. Go and
-        echo redownload them from !InstallerRepo!.
-        timeout /t 3 /NOBREAK >nul
-        echo DO IT IMMEDIATELY^^!
-        pause >nul
-        endlocal
-        exit 22
-    )
-    if !Valid_LicenseDocuments! lss 2 (
-        echo The license documents are not valid. Either you saved a newer
-        echo version, or you modified one or more license documents. This
-        echo is not permitted under the GNU GPL v3.0 as stated by the Free
-        echo Software Foundation. Please redownload the unmodified copies
-        echo of COPYING.TXT and LICENSE.TXT from:
-        echo !InstallerRepo!
-        echo.
-        echo Note: !Script! is licensed under GPLv3 ONLY.
-        pause
-        endlocal
-        exit 22
+    rem Allow user to still open help even with mismatched license files.
+    if !StartHelp! lss 1 (
+        call :LicenseHasher
+        rem Properly enforce the license rules.
+        if "!Missing!"=="True" (
+            echo The license documents are missing. We can no longer prove if
+            echo !Script! is legitimately licensed or not. Go and
+            echo redownload them from !InstallerRepo!.
+            timeout /t 3 /NOBREAK >nul
+            echo DO IT IMMEDIATELY^^!
+            pause >nul
+            endlocal
+            exit 22
+        )
+        if !Valid_LicenseDocuments! lss 2 (
+            echo The license documents are not valid. Either you saved a newer
+            echo version, or you modified one or more license documents. This
+            echo is not permitted under the GNU GPL v3 as stated by the Free
+            echo Software Foundation. Please redownload the unmodified copies
+            echo of COPYING.TXT and LICENSE.TXT from:
+            echo !InstallerRepo!
+            echo.
+            rem This statement is only valid if "Or-Any-Later-Version"
+            rem is set to False.
+            echo Note: !Script! is licensed under GPLv3 ONLY.
+            pause
+            endlocal
+            exit 22
+        )
     )
 )
 set "PathExt=.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC"
@@ -451,7 +458,6 @@ call :InstallerTitle
 rem Disable Quick Edit only if neccesary and that
 rem the argument supplied is not a help argument.
 rem Requires code duplication. (Batch limitation.)
-if /i "%~1"=="/?" (set "StartHelp=1") else if /i "%~1"=="-?" (set "StartHelp=1") else if "%~1"=="--?" (set "StartHelp=1") else if /i "%~1"=="/H" (set "StartHelp=1") else if /i "%~1"=="-H" (set "StartHelp=1") else if "%~1"=="--H" (set "StartHelp=1") else if /i "%~1"=="/Help" (set "StartHelp=1") else if /i "%~1"=="-Help" (set "StartHelp=1") else if "%~1"=="--Help" (set "StartHelp=1")
 if "!StartHelp!"=="0" if "!QuickEdit!"=="On" goto DisableQuickEdit
 goto CLI_Arguments
 :CLI_Arguments
@@ -3227,8 +3233,8 @@ echo     /NoUpdate
 echo     -NoUpdate
 echo     --No-Update
 echo         Tells the installer not to update.
-echo          It does not matter if there is a new update, it will not when specified.
-echo          Useful for keeping the same version for longer.
+echo         It does not matter if there is a new update, it will not when specified.
+echo         Useful for keeping the same version for longer.
 echo.
 echo      /ForceUpdate
 echo      -ForceUpdate
@@ -3262,19 +3268,19 @@ if "!errorlevel!"=="1" (
 call :HelpTitle 4
 echo.
 echo   Examples:
-echo       !Script! /NoBanner /LogFile C:\Logs\%~n0.log /Product Standard
+echo       !Script! /NoBanner /LogFile C:\Logs\!PartialScript!.log /Product Standard
 echo       !Script! /Product Extended /VentoyVersion 1.1.00
 echo       !Script! /Product Standard+Extensions /ForceBanner /VentoyVersion 1.1.00
 echo       !Script! /DownloadVentoyVersion 1.1.00 /SaveLocation D:\Data\Ventoy\versions
 echo       !Script! /DownloadVentoyVersion Latest /SaveLocation Prompt
 echo.
-echo       !Script! -NoBanner -LogFile C:\Logs\%~n0.log -Product Standard
+echo       !Script! -NoBanner -LogFile C:\Logs\!PartialScript!.log -Product Standard
 echo       !Script! -Product Extended -VentoyVersion 1.1.00
 echo       !Script! -Product Standard+Extensions -ForceBanner -VentoyVersion 1.1.00
 echo       !Script! -DownloadVentoyVersion 1.1.00 -SaveLocation D:\Data\Ventoy\versions
 echo       !Script! -DownloadVentoyVersion Latest -SaveLocation Prompt
 echo.
-echo       !Script! --No-Banner --LogFile C:\Logs\%~n0.log --Product Standard
+echo       !Script! --No-Banner --LogFile C:\Logs\!PartialScript!.log --Product Standard
 echo       !Script! --Product Extended --Ventoy-Version 1.1.00
 echo       !Script! --Product Standard+Extensions -ForceBanner --Ventoy-Version 1.1.00
 echo       !Script! --Download-Ventoy-Version 1.1.00 --Save-Location D:\Data\Ventoy\versions
@@ -3624,10 +3630,10 @@ echo smaller size, we will stop you. The size requirements for the Extended vers
 echo is 192GiB. If you try to install with a smaller size, we will stop you. Try to
 echo get a USB 3.2 Gen2 drive and plug it into the fastest port. Prefer USB 3.2 ports.
 echo.
-echo The next thing you want to do is double-click !Script!. It is very important that
-echo you do not click "Run As Administrator" as that will set the working directory to
-echo !SystemRoot!\System32 which can cause lots of missing file errors or even
-echo inability to modify files. However, !Script! handles this edge case.
+echo The next thing to do is double-click !Script!. It is very important
+echo not to click "Run As Administrator" as that will set the working directory to
+echo !SystemRoot!\System32 which can cause lots of missing file errors or even inability
+echo to modify files. However, !Script! handles this edge case.
 echo.
 echo STARTUP ROUTINE:
 echo.
@@ -3912,9 +3918,9 @@ echo.
 echo However, if the files are automatically found in the files directory of the
 echo root directory, the installer will automatically !Algorithm! verify them to prove
 echo that the main parts of Standard, Standard+Extensions or Extended is legitimate
-echo from !Author! and not a hacker. If all of them pass, we will extract all the main
-echo compressed archive parts to the target drive. Regardless of where they are found.
-echo Extraction takes time depending on your USB drive and/or USB port. Wait for it.
+echo from !Author! and not a hacker. If all of them pass, we will extract all
+echo the main compressed archive parts to the target drive. Regardless of where they
+echo are found. Extraction takes time depending on your USB drive and/or USB port.
 echo.
 echo Turn over to see more.
 echo. 
@@ -5640,4 +5646,5 @@ exit 0
 :Post_Ventoy-Choices
 rem End of installer, leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 5644 (5643 without extra newline). Made by Aarav Katariya with love and care...
+rem Total line count: 5651 (5650 without extra newline).
+rem Made by Aarav Katariya with love and care...
