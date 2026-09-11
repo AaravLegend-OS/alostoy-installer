@@ -3517,12 +3517,13 @@ if "!errorlevel!"=="1" (
 call :HelpTitle 10
 echo.
 echo I embedded PowerShell in my batch script. It is perfect. Here is how I do it:
-echo I have a subroutine at the bottom of my script called PowerShell_Helper.
+echo I have a subroutine near the bottom of my script called PowerShell_Helper.
 echo What it does is call PowerShell with the specified block to call.
 echo PowerShell will read all text in a specified section and execute that code. Eg:
 echo ========================================================================================================================
 echo echo PowerShell will read all text in :RunPS to :Post_RunPS.
 echo call :PowerShell_Helper "RunPS"
+echo goto Post_RunPS
 echo :RunPS
 echo # This is inside PowerShell!
 echo Write-Host "Hello from PowerShell."
@@ -4072,6 +4073,9 @@ goto :eof
 :PowerShell_Helper
 rem A PowerShell helper to read all the text in a specific section.
 rem Eg:
+rem echo PowerShell will read all text in :RunPS to :Post_RunPS.
+rem call :PowerShell_Helper "RunPS"
+rem goto Post_RunPS
 rem :RunPS
 rem # This is inside PowerShell!
 rem Write-Host "Hello from PowerShell."
@@ -5636,4 +5640,4 @@ exit 0
 :Post_Ventoy-Choices
 rem End of installer, leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 5640 (5639 without extra newline). Made by Aarav Katariya with love and care...
+rem Total line count: 5644 (5643 without extra newline). Made by Aarav Katariya with love and care...
