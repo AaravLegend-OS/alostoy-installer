@@ -492,6 +492,7 @@ if defined ArgPrefix (
         echo I am sorry. You mixed prefixes. This is not compatible with your current session.
         echo For this command-line "!PfxStyle!" must be used.
         echo Remember. You pick between /, - or -- and only use that.
+        pause
         endlocal
         exit 5
     )
@@ -536,6 +537,7 @@ if /i "!ArgKind!"=="Help" (
             echo I am sorry. You mixed prefixes. This is not compatible with your current session.
             echo For this command-line "!PfxStyle!" must be used.
             echo Remember. You pick between /, - or -- and only use that.
+            pause
             endlocal
             exit 5
         )
@@ -574,6 +576,7 @@ if /i "!ArgKind!"=="Help" (
             echo I am sorry. You mixed prefixes. This is not compatible with your current session.
             echo For this command-line "!PfxStyle!" must be used.
             echo Remember. You pick between /, - or -- and only use that.
+            pause
             endlocal
             exit 5
         )
@@ -705,6 +708,8 @@ if /i "!ArgKind!"=="Product" (
         if defined SubSwitchPrefix (if /i "!SubSwitchPrefix!"=="--" (if "!SubSwitchArg!"=="Ventoy-Install-Type" set "SubSwitchIsVtoySwitch=1") else (if /i "!SubSwitchArg!"=="VentoyInstallType" set "SubSwitchIsVtoySwitch=1"))
         if not defined SubSwitchIsVtoySwitch (
             echo This optional switch does not exist: %~3
+            if "!ArgPrefix!"=="--" (echo If you pass !ArgPrefix!Product with other arguments, you need to pass !ArgPrefix!Product last and then decide if you want to pass !ArgPrefix!Ventoy-Install-Type.) else (echo If you pass !ArgPrefix!Product with other arguments, you need to pass !ArgPrefix!Product last and then decide if you want to pass !ArgPrefix!VentoyInstallType.)
+            pause
             endlocal
             exit 6
         )
@@ -716,12 +721,14 @@ if /i "!ArgKind!"=="Product" (
                 echo I am sorry. You mixed prefixes. This is not compatible with your current session.
                 echo For this command-line "!PfxStyle!" must be used.
                 echo Remember. You pick between /, - or -- and only use that.
+                pause
                 endlocal
                 exit 5
             )
         )
         if "%~4"=="" (
             echo You provided a null value for Ventoy Install Type^^!
+            pause
             endlocal
             exit 7
         )
@@ -733,6 +740,7 @@ if /i "!ArgKind!"=="Product" (
             echo Successfully set the install type to "Update".
         ) else (
             echo Not a valid value for Ventoy Install Type. ^(%~4^)
+            pause
             endlocal
             exit 7
         )
@@ -806,6 +814,7 @@ if /i "!ArgKind!"=="DownloadVentoyVersion" (
         echo I am sorry. You mixed prefixes. This is not compatible with your current session.
         echo For this command-line "!PfxStyle!" must be used.
         echo Remember. You pick between /, - or -- and only use that.
+        pause
         endlocal
         exit 5
     ) else (
@@ -1006,6 +1015,7 @@ if !Pages! equ !InstallGuidePages! (
     echo Please adhere to those because it would be very important
     echo to not get an error.
 )
+pause >nul
 endlocal
 exit 6
 rem This is what I mean by.
@@ -2901,7 +2911,7 @@ cls
 if exist "!drivepath!:\ventoyversion.txt" del "!drivepath!:\ventoyversion.txt" /f /q
 rem Now show the choices or a success message and exit depending on if the product was defined with an argument.
 if /i "!ProductDefinedWithArg!"=="True" (
-    call :ExitMessages "Normal"
+    call :ExitMessages
     endlocal
     rem Exit the script with code 0. Do it twice and goto eof to ensure fully closed.
     exit 0
@@ -3221,9 +3231,10 @@ echo    /DownloadVentoyVersion    ^<version ^| Latest^>
 echo    -DownloadVentoyVersion    ^<version ^| Latest^>
 echo    --Download-Ventoy-Version ^<version ^| Latest^>
 echo        Same idea as the VentoyVersion argument but ONLY download that version and exit afterward.
-echo        Version syntax for Ventoy is 1.X.XX.
-echo        Or you can input "Latest" to grab the latest version.
+echo        Version syntax for Ventoy is 1.X.XX. Or you can input "Latest" to grab the latest version.
 echo        You must use this with the SaveLocation parameter (/SaveLocation, -SaveLocation or --Save-Location).
+echo.
+echo If you use Product argument with other arguments, you MUST place the product argument last^^!
 echo.
 choice /c FBE /n /m "Turn back a page, turn forward a page or exit? [F, B or E]"
 if "!errorlevel!"=="1" (
@@ -3279,20 +3290,20 @@ call :HelpTitle 4
 echo.
 echo   Examples:
 echo       !Script! /NoBanner /LogFile C:\Logs\!PartialScript!.log /Product Standard
-echo       !Script! /Product Extended /VentoyVersion 1.1.00
-echo       !Script! /Product Standard+Extensions /ForceBanner /VentoyVersion 1.1.00
+echo       !Script! /VentoyVersion 1.1.00 /Product Extended
+echo       !Script! /ForceBanner /VentoyVersion 1.1.00 /Product Standard+Extensions
 echo       !Script! /DownloadVentoyVersion 1.1.00 /SaveLocation D:\Data\Ventoy\versions
 echo       !Script! /DownloadVentoyVersion Latest /SaveLocation Prompt
 echo.
 echo       !Script! -NoBanner -LogFile C:\Logs\!PartialScript!.log -Product Standard
-echo       !Script! -Product Extended -VentoyVersion 1.1.00
-echo       !Script! -Product Standard+Extensions -ForceBanner -VentoyVersion 1.1.00
+echo       !Script! -VentoyVersion 1.1.00 -Product Extended
+echo       !Script! -ForceBanner -VentoyVersion 1.1.00 -Product Standard+Extensions
 echo       !Script! -DownloadVentoyVersion 1.1.00 -SaveLocation D:\Data\Ventoy\versions
 echo       !Script! -DownloadVentoyVersion Latest -SaveLocation Prompt
 echo.
 echo       !Script! --No-Banner --LogFile C:\Logs\!PartialScript!.log --Product Standard
-echo       !Script! --Product Extended --Ventoy-Version 1.1.00
-echo       !Script! --Product Standard+Extensions -ForceBanner --Ventoy-Version 1.1.00
+echo       !Script! --Ventoy-Version 1.1.00 --Product Extended
+echo       !Script! --Force-Banner --Ventoy-Version 1.1.00 --Product Standard+Extensions
 echo       !Script! --Download-Ventoy-Version 1.1.00 --Save-Location D:\Data\Ventoy\versions
 echo       !Script! --Download-Ventoy-Version Latest --Save-Location Prompt
 echo.
@@ -3359,9 +3370,10 @@ echo    Valid values are:
 echo        Standard
 echo        Extended
 echo        Standard+Extensions (Standard With Extensions)
-echo    IF THIS PARAMETER IS USED, THE INSTALLER WILL EXIT AFTER INSTALL OR ON ERROR^^!
 echo    With this, you can pre-select an edition and automate some installation steps.
-echo    Valid values for the Ventoy Install Type argument are "Install" or "Update"^^!
+echo    There is also a VentoyInstallType argument. You can pass this argument with either:
+echo    "/VentoyInstallType" ^| "-VentoyInstallType" ^| or "--Ventoy-Install-Type".
+echo    Valid values for the VentoyInstallType argument are "Install" or "Update"^^!
 echo.
 echo VENTOY VERSION:
 echo.
@@ -4105,7 +4117,7 @@ if /i "%~2"=="/Maximised" (powershell -nop -nol -WindowStyle Maximized -c "$sect
 exit /b !errorlevel!
 :ExitMessages
 if "%~1"=="" (set "WS=Hidden") else (set "WS=%~1")
-powershell -nop -nol -ExecutionPolicy Bypass -WindowStyle !WS! -c "Add-Type -AssemblyName PresentationFramework; if ($env:ProductDefinedWithArg -ieq 'True') { [System.Windows.MessageBox]::Show('Your bootable ALOSToy !product! drive has been successfully created. Enjoy.','ALOSToy Installer','OK','Info') }; [System.Windows.MessageBox]::Show('Share this installer with your friends or other people as well. Help them save their pc''s too.','ALOSToy Installer','OK','Info') | Out-Null; [System.Windows.MessageBox]::Show('If you have any other custom Windows PE''s you want to carry, copy them to !drivepath!:\WinPE or any ALOSToy drive with the /WinPE folder.','ALOSToy Installer','OK','Info') | Out-Null; [System.Windows.MessageBox]::Show(\"If you have any of your own Windows Installation Media, copy them to:!NewLine!!drivepath!:\OSimages\Windows or any other drive with /OSImages/Windows.!NewLine!!NewLine!If you have any of your own Linux Installation Media, copy them to:!NewLine!!drivepath!:\OSimages\Linux or any other drive with /OSimages/Linux.\",'ALOSToy Installer','OK','Info') | Out-Null; if ($env:RedoInstall -ieq 'No') { [System.Windows.MessageBox]::Show('!Author! thanks you for installing ALOSToy !product!. Click OK to exit.','ALOSToy Installer','OK','Info') | Out-Null }"
+powershell -nop -nol -ExecutionPolicy Bypass -WindowStyle !WS! -c "Add-Type -AssemblyName PresentationFramework; if ($env:ProductDefinedWithArg -ieq 'True') { [System.Windows.MessageBox]::Show('Your bootable ALOSToy !product! drive has been successfully created. Enjoy.','ALOSToy Installer','OK','Info') | Out-Null }; [System.Windows.MessageBox]::Show('Share this installer with your friends or other people as well. Help them save their pc''s too.','ALOSToy Installer','OK','Info') | Out-Null; [System.Windows.MessageBox]::Show('If you have any other custom Windows PE''s you want to carry, copy them to !drivepath!:\WinPE or any ALOSToy drive with the /WinPE folder.','ALOSToy Installer','OK','Info') | Out-Null; [System.Windows.MessageBox]::Show(\"If you have any of your own Windows Installation Media, copy them to:!NewLine!!drivepath!:\OSimages\Windows or any other drive with /OSImages/Windows.!NewLine!!NewLine!If you have any of your own Linux Installation Media, copy them to:!NewLine!!drivepath!:\OSimages\Linux or any other drive with /OSimages/Linux.\",'ALOSToy Installer','OK','Info') | Out-Null; if ($env:RedoInstall -ieq 'No') { [System.Windows.MessageBox]::Show('!Author! thanks you for installing ALOSToy !product!. Click OK to exit.','ALOSToy Installer','OK','Info') | Out-Null }"
 set "WS="
 goto :eof
 :ApplyUpdate
@@ -5656,5 +5668,5 @@ exit 0
 :Post_Ventoy-Choices
 rem End of installer, leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 5661 (5660 without extra newline).
+rem Total line count: 5673 (5672 without extra newline).
 rem Made by Aarav Katariya with love and care...
