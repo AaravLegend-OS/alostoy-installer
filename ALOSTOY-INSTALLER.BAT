@@ -3196,7 +3196,7 @@ echo    /SaveLocation    ^<SaveLocation ^| Prompt^>
 echo    -SaveLocation    ^<SaveLocation ^| Prompt^>
 echo    --Save-Location  ^<SaveLocation ^| Prompt^>
 echo        Specifies the location to save.
-echo        Or you can input "Prompt" to interactively select the save location.
+echo        Or you can input "Prompt" to interactively select the save location. (For paths with spaces.)
 echo        You must use this argument with /DownloadVentoyVersion, -DownloadVentoyVersion or --Download-Ventoy-Version.
 echo        This is not compatible on it's own without that parent argument mentioned above.
 echo.
@@ -3289,19 +3289,19 @@ if "!errorlevel!"=="1" (
 call :HelpTitle 4
 echo.
 echo   Examples:
-echo       !Script! /NoBanner /LogFile C:\Logs\!PartialScript!.log /Product Standard
+echo       !Script! /NoBanner /LogFile C:\Logs\!PartialScript!.LOG /Product Standard
 echo       !Script! /VentoyVersion 1.1.00 /Product Extended
 echo       !Script! /ForceBanner /VentoyVersion 1.1.00 /Product Standard+Extensions
 echo       !Script! /DownloadVentoyVersion 1.1.00 /SaveLocation D:\Data\Ventoy\versions
 echo       !Script! /DownloadVentoyVersion Latest /SaveLocation Prompt
 echo.
-echo       !Script! -NoBanner -LogFile C:\Logs\!PartialScript!.log -Product Standard
+echo       !Script! -NoBanner -LogFile C:\Logs\!PartialScript!.LOG -Product Standard
 echo       !Script! -VentoyVersion 1.1.00 -Product Extended
 echo       !Script! -ForceBanner -VentoyVersion 1.1.00 -Product Standard+Extensions
 echo       !Script! -DownloadVentoyVersion 1.1.00 -SaveLocation D:\Data\Ventoy\versions
 echo       !Script! -DownloadVentoyVersion Latest -SaveLocation Prompt
 echo.
-echo       !Script! --No-Banner --LogFile C:\Logs\!PartialScript!.log --Product Standard
+echo       !Script! --No-Banner --LogFile C:\Logs\!PartialScript!.LOG --Product Standard
 echo       !Script! --Ventoy-Version 1.1.00 --Product Extended
 echo       !Script! --Force-Banner --Ventoy-Version 1.1.00 --Product Standard+Extensions
 echo       !Script! --Download-Ventoy-Version 1.1.00 --Save-Location D:\Data\Ventoy\versions
@@ -3326,27 +3326,28 @@ if "!errorlevel!"=="1" (
 :Help5
 call :HelpTitle 5
 echo HELP SWITCHES:
-echo    /Help, -Help, --Help, /H, -H, --H, /?, -?, --?
-echo    Displays the help menu and usage instructions.
-echo    Call this to get help and I will help you understand the command line.
-echo    You can also use:
+echo     /Help, -Help, --Help, /H, -H, --H, /?, -?, --?
+echo     Displays the help menu and usage instructions.
+echo     Call this to get help and I will help you understand the command line.
+echo     You can also use: /InstallGuide, -InstallGuide or --Install-Guide to
+echo     bring up the ALOSToy Installation Guide.
 echo.
 echo ALOSTOY LOGO BANNER ART:
 echo.
-echo    /NoBanner, -NoBanner, --No-Banner
-echo    This can inhibit showing my banner at pre-install and post-install.
-echo    It will skip the lovely banner that I spent a long time making. :(
+echo     /NoBanner, -NoBanner, --No-Banner
+echo     This can inhibit showing my banner at pre-install and post-install.
+echo     It will skip the lovely banner that I spent a long time making. :(
 echo.
-echo    /ForceBanner, -ForceBanner, --Force-Banner
-echo    Always force my banner to show no matter what.
-echo    Takes priority over /NoBanner if both are provided.
-echo    My branding will always show no matter what. :)
+echo     /ForceBanner, -ForceBanner, --Force-Banner
+echo     Always force my banner to show no matter what.
+echo     Takes priority over /NoBanner if both are provided.
+echo     My branding will always show no matter what. :)
 echo.
 echo LOGFILE:
 echo.
-echo    /LogFile, -LogFile, --LogFile ^<path^>
-echo    Specifies a custom log file path.
-echo    If a path is provided, it can start else, it ignores your argument.
+echo     /LogFile, -LogFile, --LogFile ^<path^>
+echo     Specifies a custom log file path.
+echo     If a path is provided, it can start else, it ignores your argument.
 echo.
 choice /c FBE /n /m "Turn back a page, turn forward a page or exit? [F, B or E]"
 if "!errorlevel!"=="1" (
@@ -3364,25 +3365,25 @@ if "!errorlevel!"=="1" (
 call :HelpTitle 6
 echo PRODUCT SELECTION:
 echo.
-echo    /Product, -Product, --Product ^<value^>
-echo    Choose a product to install.
-echo    Valid values are:
-echo        Standard
-echo        Extended
-echo        Standard+Extensions (Standard With Extensions)
-echo    With this, you can pre-select an edition and automate some installation steps.
-echo    There is also a VentoyInstallType argument. You can pass this argument with either:
-echo    "/VentoyInstallType" ^| "-VentoyInstallType" ^| or "--Ventoy-Install-Type".
-echo    Valid values for the VentoyInstallType argument are "Install" or "Update"^^!
+echo     /Product, -Product, --Product ^<value^>
+echo     Choose a product to install.
+echo     Valid values are:
+echo         Standard
+echo         Extended
+echo         Standard+Extensions (Standard With Extensions)
+echo     With this, you can pre-select an edition and automate some installation steps.
+echo     There is also a VentoyInstallType argument. You can pass this argument with either:
+echo     "/VentoyInstallType" ^| "-VentoyInstallType" ^| or "--Ventoy-Install-Type".
+echo     Valid values for the VentoyInstallType argument are "Install" or "Update"^^!
 echo.
 echo VENTOY VERSION:
 echo.
-echo    /VentoyVersion, -VentoyVersion, --Ventoy-Version ^<version^>
-echo    Sets the Ventoy version to use.
-echo    Must match format: 1.X.XX (only numbers can be used).
-echo    Example: !EgVer!
-echo    There are a few versions that are deprecated by Ventoy so you can't use those.
-echo    Type correctly or else you can get an error. (I love regex... (^^1\.\d\.\d{2}$))
+echo     /VentoyVersion, -VentoyVersion, --Ventoy-Version ^<version^>
+echo     Sets the Ventoy version to use.
+echo     Must match format: 1.X.XX (only numbers can be used).
+echo     Example: !EgVer!
+echo     There are a few versions that are deprecated by Ventoy so you can't use those.
+echo     Type correctly or else you can get an error. (I love regex... (^^1\.\d\.\d{2}$))
 echo.
 choice /c FBE /n /m "Turn back a page, turn forward a page or exit? [F, B or E]"
 if "!errorlevel!"=="1" (
@@ -3400,22 +3401,22 @@ if "!errorlevel!"=="1" (
 call :HelpTitle 7
 echo VENTOY DOWNLOAD MODE:
 echo.
-echo    /DownloadVentoyVersion, -DownloadVentoyVersion, --Download-Ventoy-Version ^<version^>
-echo    Downloads a specific Ventoy version and exits afterward.
-echo    Requires an additional parameter:
-echo        /SaveLocation, -SaveLocation, --Save-Location ^<path ^| Prompt^>
-echo        Defines where the downloaded file will be saved.
-echo        You can interactively select a location by supplying "Prompt".
-echo        Do not miss out this parameter. It will exit otherwise.
-echo        Must match format: 1.X.XX (only numbers can be used).
-echo        There are a few versions that are deprecated by Ventoy so you cannot use those.
+echo     /DownloadVentoyVersion, -DownloadVentoyVersion, --Download-Ventoy-Version ^<version^>
+echo     Downloads a specific Ventoy version and exits afterward.
+echo     Requires an additional parameter:
+echo         /SaveLocation, -SaveLocation, --Save-Location ^<path ^| Prompt^>
+echo         Defines where the downloaded file will be saved.
+echo         You can interactively select a location by supplying "Prompt".
+echo         Do not miss out this parameter. It will exit otherwise.
+echo         Must match format: 1.X.XX (only numbers can be used).
+echo         There are a few versions that are deprecated by Ventoy so you cannot use those.
 echo.
 echo NOTICE THAT: Parameters are case-insensitive and if you type something invalid in, it will exit.
-echo    You can combine lots of parameters together in harmony.
-echo    YOU can choose your prefix for arguments^^! Either /, - or --^^!
-echo    NEVER USE AN INVALID SYNTAX. I will exit if you do^^!
-echo    If you were born by GNU operating systems, you know all the arguments in here
-echo    are case-sensitive JUST FOR YOU. Obviously, I care about your expectations.
+echo     You can combine lots of parameters together in harmony.
+echo     YOU can choose your prefix for arguments^^! Either /, - or --^^!
+echo     NEVER USE AN INVALID SYNTAX. I will exit if you do^^!
+echo     If you were born by GNU operating systems, you know all the arguments in here
+echo     are case-sensitive JUST FOR YOU. Obviously, I care about your expectations.
 echo.
 echo If you start in Ventoy Download Mode, you WILL get a different EULA.
 echo.
@@ -4052,10 +4053,10 @@ echo Returning to previous page...
 timeout /t 1 /NOBREAK >nul
 goto :eof
 :WindowTitle
-rem Helper function to set the window title that tracks Product, Boolean of InstallExtensions,
-rem Version and Ventoy Download Mode with a general Window Title that stays consistent and shows
-rem information about activity. Can now also track the help page as well. ArgumentsPassed is back
-rem but does not show. Now includes Archive_Part because of the need to see the full messages.
+rem Helper function to set the window title that tracks Product, Boolean of InstallExtensions, Version,
+rem Ventoy Download Mode, Drive with a general Window Title that stays consistent and shows information
+rem about activity. Can now also track the help page as well. ArgumentsPassed is back but does not show.
+rem Now includes Archive_Part because of the need to see the archive progress.
 set "Input=%~1"
 if "!BrowsingHelp!"=="True" (
     if defined Page (set "BaseHeader=[ALOSTOY INSTALLER V!VERSION!] [!LANG!-!LOCALE!] [START PAGE: !STARTPAGE!] [PAGE !PAGE!]")
@@ -4085,6 +4086,9 @@ if "!BrowsingHelp!"=="True" (
         set "BaseHeader=[ALOSTOY INSTALLER V!VERSION!] [!LANG!-!LOCALE!]"
     )
 )
+rem This might not be necessary.
+if "!BrowsingHelp!"=="False" if defined ArgPrefix (set "BaseHeader=!BaseHeader! [PREFIX: !ARGPREFIX!]")
+rem But this WILL be necessary.
 if defined Archive_Part if defined Parts (set "BaseHeader=!BaseHeader! [ARCHIVE PART: !ARCHIVE_PART! OF !PARTS!]")
 title !BaseHeader! ^<-----^> !Input!
 set "Input="
@@ -5668,5 +5672,5 @@ exit 0
 :Post_Ventoy-Choices
 rem End of installer, leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 5673 (5672 without extra newline).
+rem Total line count: 5677 (5676 without extra newline).
 rem Made by Aarav Katariya with love and care...
