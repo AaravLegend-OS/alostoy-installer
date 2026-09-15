@@ -362,7 +362,7 @@ if defined HASH3 if /i "!HASH3!"=="782944F445BCFB294C4027D86E969DEF80884A439669B
 if defined HASH4 if /i "!HASH4!"=="89489AC860E420AC64856F2C2960769C56E87C028A79BB01562DC1373E819BA8" (set /a "Valid_SubFiles+=1")
 if defined HASH5 if /i "!HASH5!"=="5F7C42892C1E86C3A7123F8A5A933ED584A21A2DA89EF19C84D52B9985C08CBD" (set /a "Valid_SubFiles+=1")
 if defined HASH6 if /i "!HASH6!"=="EA2DF8BFB65952E18FB2ADAB6613D69F99AB175A5912F663212454FC0616A036" (set /a "Valid_SubFiles+=1")
-if defined HASH7 if /i "!HASH7!"=="EBE2ABDE48B2099ECEE76EAF981AD4D7840BFFA3E57E1DAA5859103C985AA4BB" (set /a "Valid_SubFiles+=1")
+if defined HASH7 if /i "!HASH7!"=="265AFF5A342CAF71BCA1B83F6C337CF1537BBBF7F154F1CF4B0A469B0AD49B50" (set /a "Valid_SubFiles+=1")
 rem Enforce the subfile requirement immediately.
 rem If we get to the fail, exit immediately. Assume untrusted source.
 rem Remember. Zero-trust policy. I do not trust any entity personally.
