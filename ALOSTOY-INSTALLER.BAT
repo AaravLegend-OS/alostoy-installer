@@ -79,6 +79,17 @@
 @rem "@echo off" or "@echo on"
 @echo !CmdEchoing!
 rem =========================================================================
+rem Check for powershell existence and find it in path.
+rem Must happen before anything else occurs in the process.
+if exist "!SystemRoot!\System32\WindowsPowershell\v1.0\powershell.exe" (
+    for %%# in (powershell.exe) do @if "%%~$PATH:#"=="" (
+        echo You must install powershell or include it in ^^!Path^^!.
+        pause >nul
+        endlocal
+        exit 1
+    )
+)
+rem =========================================================================
 rem Save the script name to relaunch and use. (Persists across arguments and relaunches.)
 rem A for loop is more reliable because when arguments are parsed and shifted,
 rem %~nx0 could become the next argument.
@@ -114,57 +125,6 @@ if !errorlevel! gtr 0 (
         exit 1
     )
 )
-rem Now enforce the CRLF line ending.
->nul findstr /v "$" "!Script!" && (
-   call :WindowTitle "CRLF EMPTY LINE MISSING."
-   cls
-   echo The CRLF empty line is missing. Please re-add that empty line at the
-   echo bottom of !Script!.
-   echo Press any key to quit...
-   pause >nul
-   endlocal
-   exit 2
-)
-rem =========================================================================
-rem IMPORTANT VARIABLE. THIS VARIABLE HELPS DECIDE IF THIS PROGRAM CAN BE
-rem LICENSED UNDER ANY LATER VERSION. IF THIS IS "False", YOU CAN USE AND
-rem REDISTRIBUTE UNDER GPLV3 ONLY, BUT IF THIS IS "True", YOU CAN USE AND
-rem REDISTRIBUTE UNDER GPLV3 "OR ANY LATER VERSION". PLEASE REVIEW THIS
-rem CAREFULLY BEFORE CHANGING "Or-Any-Later-Version" BELOW. DO NOT REMOVE.
-rem =========================================================================
-rem THE VARIABLE BELOW DOES NOT AUTOMATICALLY MAKE THIS PROGRAM GPLV3 ONLY OR
-rem GPLV3 "OR ANY LATER VERSION". INSTEAD, IT CHANGES BEHAVIOUR TO HELP YOU
-rem REDISTRIBUTE UNDER V3 ONLY OR V3 "OR ANY LATER VERSION" THIS MEANS THE
-rem VARIABLE BELOW DOES NOT ALLOW AUTOMATIC GPLV3 "OR ANY LATER VERSION"
-rem DISTRIBUTION TO OCCUR. ONLY CHANGE IF YOU CHOOSE TO FORK THIS PROGRAM.
-rem =========================================================================
-set "Or-Any-Later-Version=True"
-if "!Or-Any-Later-Version!"=="True" if exist "!Root!LICENSE.TXT" (set "EXISTS=1" & set "FILE=!Root!LICENSE.TXT") else (set "EXISTS=0")
-if "!Or-Any-Later-Version!"=="False" if exist "!Root!GPLV3_ONLY_INFO.TXT" (set "EXISTS=1" & set "FILE=!Root!GPLV3_ONLY_INFO.TXT") else (set "EXISTS=0")
-rem Check for powershell existence and find it in path.
-rem Must happen before anything else occurs in the process.
-if exist "!SystemRoot!\System32\WindowsPowershell\v1.0\powershell.exe" (
-    for %%# in (powershell.exe) do @if "%%~$PATH:#"=="" (
-        echo You must install powershell or include it in ^^!Path^^!.
-        pause >nul
-        endlocal
-        exit 1
-    )
-)
-set "UserArgs=%*"
-set "D=!DATE!"
-set "T=!TIME!"
-rem Strip special characters out.
-set "LogStamp=!D!-!T!"
-set "LogStamp=!LogStamp:/=-!"
-set "LogStamp=!LogStamp::=-!"
-set "LogStamp=!LogStamp: =0!"
-rem Define the main url. ALWAYS HTTPS, NEVER HTTP.
-set "InstallerRepo=https://github.com/AaravLegend-OS/alostoy-installer"
-set "Uri=!InstallerRepo!/raw/refs/heads/main/tools.esd"
-rem Write a new timestamped log.
-if not exist "!Root!logs" md "!Root!logs"
-set "logfile=!Root!logs\ALOSTOY-INSTALLER_!LOGSTAMP!.LOG"
 set "GPLNotice=1"
 rem This special argument has to be parsed the manual and hard way
 rem because the installer title and gpl notice shows up before the
@@ -182,16 +142,58 @@ for %%A in (!UserArgs!) do (
     )
 )
 :Start
-rem Define primary and fallback font.
-set "FirstFont=CaskaydiaCove NFM"
-set "SecondFont=Courier New"
-set "Missing=False"
+set "UserArgs=%*"
+set "D=!DATE!"
+set "T=!TIME!"
 rem Define the number of columms and lines.
 rem It will always be 120x30.
 set "Columns=120"
 set "Lines=30"
 mode con: cols=!Columns! lines=!Lines!
+rem =========================================================================
+rem IMPORTANT VARIABLE. THIS VARIABLE HELPS DECIDE IF THIS PROGRAM CAN BE
+rem LICENSED UNDER ANY LATER VERSION. IF THIS IS "False", YOU CAN USE AND
+rem REDISTRIBUTE UNDER GPLV3 ONLY, BUT IF THIS IS "True", YOU CAN USE AND
+rem REDISTRIBUTE UNDER GPLV3 "OR ANY LATER VERSION". PLEASE REVIEW THIS
+rem CAREFULLY BEFORE CHANGING "Or-Any-Later-Version" BELOW. DO NOT REMOVE.
+rem =========================================================================
+rem THE VARIABLE BELOW DOES NOT AUTOMATICALLY MAKE THIS PROGRAM GPLV3 ONLY OR
+rem GPLV3 "OR ANY LATER VERSION". INSTEAD, IT CHANGES BEHAVIOUR TO HELP YOU
+rem REDISTRIBUTE UNDER V3 ONLY OR V3 "OR ANY LATER VERSION" THIS MEANS THE
+rem VARIABLE BELOW DOES NOT ALLOW AUTOMATIC GPLV3 "OR ANY LATER VERSION"
+rem DISTRIBUTION TO OCCUR. ONLY CHANGE IF YOU CHOOSE TO FORK THIS PROGRAM.
+rem =========================================================================
+set "Or-Any-Later-Version=True"
+if "!Or-Any-Later-Version!"=="True" if exist "!Root!LICENSE.TXT" (set "EXISTS=1" & set "FILE=!Root!LICENSE.TXT") else (set "EXISTS=0")
+if "!Or-Any-Later-Version!"=="False" if exist "!Root!GPLV3_ONLY_INFO.TXT" (set "EXISTS=1" & set "FILE=!Root!GPLV3_ONLY_INFO.TXT") else (set "EXISTS=0")
+rem Show the "Starting ALOSToy Installer" title.
 call :InstallerTitle
+rem Now enforce the CRLF line ending.
+>nul findstr /v "$" "!Script!" && (
+   call :WindowTitle "CRLF EMPTY LINE MISSING."
+   cls
+   echo The CRLF empty line is missing. Please re-add that empty line at the
+   echo bottom of !Script!.
+   echo Press any key to quit...
+   pause >nul
+   endlocal
+   exit 2
+)
+rem Strip special characters out.
+set "LogStamp=!D!-!T!"
+set "LogStamp=!LogStamp:/=-!"
+set "LogStamp=!LogStamp::=-!"
+set "LogStamp=!LogStamp: =0!"
+rem Define the main url. ALWAYS HTTPS, NEVER HTTP.
+set "InstallerRepo=https://github.com/AaravLegend-OS/alostoy-installer"
+set "Uri=!InstallerRepo!/raw/refs/heads/main/tools.esd"
+rem Write a new timestamped log.
+if not exist "!Root!logs" md "!Root!logs"
+set "logfile=!Root!logs\ALOSTOY-INSTALLER_!LOGSTAMP!.LOG"
+rem Define primary and fallback font.
+set "FirstFont=CaskaydiaCove NFM"
+set "SecondFont=Courier New"
+set "Missing=False"
 rem Initialise all the variables.
 rem Set the hashes as early as the start. Better than hardcoded values buried everywhere.
 set "STHashA=A9A8F1044BE74B8301A7102A1037CCA39565C7662F22514215B6EAB55F0ED83B"
@@ -216,6 +218,7 @@ rem use `n for Unix style Line Feed newlines. This program uses CRLF
 rem line endings because this is written on a Windows system. Just
 rem change the variable "NewLine" to decide your line endings in
 rem message boxes. The ending will be validated after it is set.
+rem Please note that this variable is for PowerShell message boxes only.
 set "NewLine=`r`n"
 rem Initialise the rest.
 set "InstallExtensions=False"
@@ -352,16 +355,25 @@ for /f "usebackq delims=" %%A in (`powershell -nop -nol -c "@('COPY_SCRIPT_TO_CL
     if "!COUNTER!"=="6" set "HASH6=%%A"
     if "!COUNTER!"=="7" set "HASH7=%%A"
 )
+rem =====================================================================
 rem Compare expected hash to actual hash. It might not seem necessary to
 rem hash the subfiles that come with the zipfile but actually, it proves
 rem that you got this program, ALOSTOY-INSTALLER.BAT, is from the author
-rem (Aarav Katariya) and not a hacker or scammer.
+rem            (Aarav Katariya) and not a hacker or scammer.
+rem =====================================================================
+rem COPY_SCRIPT_TO_CLIPBOARD.BAT
 if defined HASH1 if /i "!HASH1!"=="5CBAD9C202662DE56E042C79F45B95DA67293D55341369F841E9027E388C3F1B" (set /a "Valid_SubFiles+=1")
+rem MAKE_TOOLS_ESD.BAT
 if defined HASH2 if /i "!HASH2!"=="EC6A2C047BA35ADFFD2D639C860B82B6F27B3C1E273141722D07A07FF130DA17" (set /a "Valid_SubFiles+=1")
+rem NEW_ALOSTOY-INSTALLER.ZIP.BAT
 if defined HASH3 if /i "!HASH3!"=="782944F445BCFB294C4027D86E969DEF80884A439669BDB49C5F59D7A31BBF5E" (set /a "Valid_SubFiles+=1")
+rem SHOW_COMMAND_LINE_HELP.BAT
 if defined HASH4 if /i "!HASH4!"=="89489AC860E420AC64856F2C2960769C56E87C028A79BB01562DC1373E819BA8" (set /a "Valid_SubFiles+=1")
+rem SHOW_INSTALLATION_HELP.BAT
 if defined HASH5 if /i "!HASH5!"=="5F7C42892C1E86C3A7123F8A5A933ED584A21A2DA89EF19C84D52B9985C08CBD" (set /a "Valid_SubFiles+=1")
-if defined HASH6 if /i "!HASH6!"=="EA2DF8BFB65952E18FB2ADAB6613D69F99AB175A5912F663212454FC0616A036" (set /a "Valid_SubFiles+=1")
+rem FORCE_UPDATE_AND_RUN.BAT
+if defined HASH6 if /i "!HASH6!"=="532960D3D365E4952F15B8A8BA75D745B708C39D82B4AB6B730CAFB957EF3F89" (set /a "Valid_SubFiles+=1")
+rem README.MD
 if defined HASH7 if /i "!HASH7!"=="9E97B2CAEFC95845C1EDD6C2F31E3E70E1CDD1A7544075B7F43B5E5620B950DE" (set /a "Valid_SubFiles+=1")
 rem Enforce the subfile requirement immediately.
 rem If we get to the fail, exit immediately. Assume untrusted source.
@@ -454,7 +466,6 @@ if exist !SystemRoot!\SysArm32\cmd.exe if "!PROCESSOR_ARCHITECTURE!"=="AMD64" if
     cls
     exit 16
 )
-call :InstallerTitle
 rem Disable Quick Edit only if neccesary and that
 rem the argument supplied is not a help argument.
 rem Requires code duplication. (Batch limitation.)
@@ -1024,14 +1035,18 @@ rem Validate the product.
 if /i "!product!"=="Standard" (exit /b 0) else if /i "!product!"=="Extended" (exit /b 1) else if /i "!product!"=="Standard+Extensions" (exit /b 2) else (exit /b 3)
 goto :eof
 :StepTwo
-cls
 call :WindowTitle "STARTING [Part 2]"
-call :InstallerTitle
 if /i "%~1"=="I_QEOff" (
     rem Definitive start. Write the starting header to the logfile to begin new install.
     echo ========================================================================================================================>> "!logfile!"
     echo ================================ Starting ALOSToy Installer... ^(!D! !T!^) ================================>> "!logfile!"
     echo ========================================================================================================================>> "!logfile!"
+)
+echo ========================================================================================================================
+if "!ArgumentsPassed!"=="True" (
+    set "Args="
+    for %%A in (!UserArgs!) do if /i not "%%A"=="I_QEOff" if /i not "%%A"=="!ArgPrefix!Updated" set "Args=!Args! %%A"
+    echo Arguments passed: !Args!
 )
 echo Working Directory: !CD!
 if /i "!AlwaysShowBanner!"=="Yes" set "ShowBanner=Yes"
@@ -3238,12 +3253,24 @@ echo If you use Product argument with other arguments, you MUST place the produc
 echo.
 choice /c FBE /n /m "Turn back a page, turn forward a page or exit? [F, B or E]"
 if "!errorlevel!"=="1" (
+    rem This is important to know!
+    if "!ArgPrefix!"=="--" (set "ExtraProductArg=--Ventoy-Install-Type") else (set "ExtraProductArg=!ArgPrefix!VentoyInstallType")
+    start /b powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show(\"Clarification Update:!NewLine!!NewLine!The !ArgPrefix!Product argument only has to be used last if you do not specifiy !ExtraProductArg!.!NewLine!If you do specify !ExtraProductArg!, then you do not have to place !ArgPrefix!Product as the last argument.\",'ALOSToy Installer','OK','Info') | Out-Null"
+    set "ExtraProductArg="
     call :PageFlip
     goto Help3
 ) else if "!errorlevel!"=="2" (
+    rem This is important to know!
+    if "!ArgPrefix!"=="--" (set "ExtraProductArg=--Ventoy-Install-Type") else (set "ExtraProductArg=!ArgPrefix!VentoyInstallType")
+    start /b powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show(\"Clarification Update:!NewLine!!NewLine!The !ArgPrefix!Product argument only has to be used last if you do not specifiy !ExtraProductArg!.!NewLine!If you do specify !ExtraProductArg!, then you do not have to place !ArgPrefix!Product as the last argument.\",'ALOSToy Installer','OK','Info') | Out-Null"
+    set "ExtraProductArg="
     call :PageFlipBack
     goto Help1
 ) else if "!errorlevel!"=="3" (
+    rem This is important to know!
+    if "!ArgPrefix!"=="--" (set "ExtraProductArg=--Ventoy-Install-Type") else (set "ExtraProductArg=!ArgPrefix!VentoyInstallType")
+    start /b powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show(\"Clarification Update:!NewLine!!NewLine!The !ArgPrefix!Product argument only has to be used last if you do not specifiy !ExtraProductArg!.!NewLine!If you do specify !ExtraProductArg!, then you do not have to place !ArgPrefix!Product as the last argument.\",'ALOSToy Installer','OK','Info') | Out-Null"
+    set "ExtraProductArg="
     goto HelpExit
 ) else (
     goto Help2
@@ -4381,11 +4408,6 @@ if "!GPLNotice!"=="1" if "!EXISTS!"=="1" (
     type "!FILE!"
     set "GPLNotice_Footer=To see the full GNU GPL License, open the COPYING.TXT file."
     if "!Or-Any-Later-Version!"=="True" (echo !GPLNotice_Footer! GPLv3 or any later version.) else if "!Or-Any-Later-Version!"=="False" (echo !GPLNotice_Footer! GPLv3 ONLY.)
-    if "!ArgumentsPassed!"=="True" (
-        set "Args="
-        for %%A in (!UserArgs!) do if /i not "%%A"=="I_QEOff" if /i not "%%A"=="!ArgPrefix!Updated" set "Args=!Args! %%A"
-        echo Arguments passed: !Args!
-    )
     echo ========================================================================================================================
 ) else (
     rem cls
@@ -5673,5 +5695,5 @@ exit 0
 :Post_Ventoy-Choices
 rem End of installer, leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 5678 (5677 without extra newline).
+rem Total line count: 5700 (5699 without extra newline).
 rem Made by Aarav Katariya with love and care...
