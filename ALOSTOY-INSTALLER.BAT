@@ -3273,6 +3273,7 @@ echo         to choose if you want to apply new updates. Useful if you want the 
 echo         version without be nagged for clicks.
 echo.
 echo   All of these options can be used with any other argument or switch.
+echo.
 choice /c FBE /n /m "Turn back a page, turn forward a page or exit? [F, B or E]"
 if "!errorlevel!"=="1" (
     call :PageFlip
@@ -3572,7 +3573,7 @@ echo.
 choice /c CBE /n /m "Copy command to clipboard, turn back a page or exit? (Note: You have reached the end of the guide.) [C, B or E]"
 if "!errorlevel!"=="1" (
     cls
-    start /b powershell -nop -nol -c "Set-Clipboard ([string]::Concat('powershell -nop -nol -c ',[char]34,'chcp 65001 > $null; $i18n = New-Object System.Text.UTF8Encoding; [Console]::InputEncoding = $i18n; [Console]::OutputEncoding = $i18n; $OutputEncoding = $i18n; $section = [io.file]::ReadAllText(''%%~f0'') -split ''(?ms)^:YourPSBlock\r?\n(.*?)\r?\n:Post_YourPSBlock''; & ([scriptblock]::Create($section[1])) <YourArguments>',[char]34)); if ($?) { Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Command has been copied to clipboard.','ALOSToy Installer','OK','Info') | Out-Null; [System.Windows.MessageBox]::Show('Using a scriptblock is FAR safer. !Author! used to use Invoke-Expression but stopped using it for much better scriptblocks.','ALOSToy Installer','OK','Info') | Out-Null; [System.Windows.MessageBox]::Show('There is a placeholder for arguments called <YourArguments>. If you want to use arguments, remove the placeholder that you see and replace it with your own arguments defined in your embedding block. Use param() to define arguments in a custom embedding block.','ALOSToy Installer','OK','Info') | Out-Null; [System.Windows.MessageBox]::Show('Then add your arguments in your command to call the embedding block with your custom arguments. If you do not want to pass arguments to embedded script blocks, remove the placeholder entirely.','ALOSToy Installer','OK','Info') | Out-Null; Exit 0 } else { Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Command could not be copied to clipboard','ALOSToy Installer','OK','Error') | Out-Null; Exit 1 }" >nul 2>&1
+    start /b powershell -nop -nol -c "Set-Clipboard ([string]::Concat('powershell -nop -nol -c ',[char]34,'chcp 65001 > $null; $i18n = New-Object System.Text.UTF8Encoding; [Console]::InputEncoding = $i18n; [Console]::OutputEncoding = $i18n; $OutputEncoding = $i18n; $section = [io.file]::ReadAllText(''%%~f0'') -split ''(?ms)^:YourPSBlock\r?\n(.*?)\r?\n:Post_YourPSBlock''; & ([scriptblock]::Create($section[1])) <YourArguments>',[char]34)); if ($?) { Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Command has been copied to clipboard.','ALOSToy Installer','OK','Info') | Out-Null; [System.Windows.MessageBox]::Show('Using a scriptblock is FAR safer. !Author! used to use Invoke-Expression but stopped using it for much better scriptblocks.','ALOSToy Installer','OK','Info') | Out-Null; [System.Windows.MessageBox]::Show(\"There is a placeholder for arguments called ^<YourArguments^>. If you want to use arguments, remove the placeholder that you see and replace it with your own arguments defined in your embedding block.!NewLine!!NewLine!Use param() to define arguments in a custom embedding block.\",'ALOSToy Installer','OK','Info') | Out-Null; [System.Windows.MessageBox]::Show('Then add your arguments in your command to call the embedding block with your custom arguments. If you do not want to pass arguments to embedded script blocks, remove the <YourArguments> placeholder entirely.','ALOSToy Installer','OK','Info') | Out-Null; Exit 0 } else { Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Command could not be copied to clipboard','ALOSToy Installer','OK','Error') | Out-Null; Exit 1 }" >nul 2>&1
     goto Help10
 ) else if "!errorlevel!"=="2" (
     call :PageFlipBack
@@ -5672,5 +5673,5 @@ exit 0
 :Post_Ventoy-Choices
 rem End of installer, leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 5677 (5676 without extra newline).
+rem Total line count: 5678 (5677 without extra newline).
 rem Made by Aarav Katariya with love and care...
