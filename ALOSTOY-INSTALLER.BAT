@@ -1042,7 +1042,6 @@ if /i "%~1"=="I_QEOff" (
     echo ================================ Starting ALOSToy Installer... ^(!D! !T!^) ================================>> "!logfile!"
     echo ========================================================================================================================>> "!logfile!"
 )
-echo ========================================================================================================================
 if "!ArgumentsPassed!"=="True" (
     set "Args="
     for %%A in (!UserArgs!) do if /i not "%%A"=="I_QEOff" if /i not "%%A"=="!ArgPrefix!Updated" set "Args=!Args! %%A"
@@ -4414,6 +4413,7 @@ if "!GPLNotice!"=="1" if "!EXISTS!"=="1" (
     type "!FILE!"
     set "GPLNotice_Footer=To see the full GNU GPL License, open the COPYING.TXT file."
     if "!Or-Any-Later-Version!"=="True" (echo !GPLNotice_Footer! GPLv3 or any later version.) else if "!Or-Any-Later-Version!"=="False" (echo !GPLNotice_Footer! GPLv3 ONLY.)
+    echo ========================================================================================================================
 ) else (
     rem cls
     echo The license file are non-existent. This means you may not have any
