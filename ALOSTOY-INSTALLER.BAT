@@ -372,9 +372,9 @@ if defined HASH4 if /i "!HASH4!"=="89489AC860E420AC64856F2C2960769C56E87C028A79B
 rem SHOW_INSTALLATION_HELP.BAT
 if defined HASH5 if /i "!HASH5!"=="5F7C42892C1E86C3A7123F8A5A933ED584A21A2DA89EF19C84D52B9985C08CBD" (set /a "Valid_SubFiles+=1")
 rem FORCE_UPDATE_AND_RUN.BAT
-if defined HASH6 if /i "!HASH6!"=="532960D3D365E4952F15B8A8BA75D745B708C39D82B4AB6B730CAFB957EF3F89" (set /a "Valid_SubFiles+=1")
+if defined HASH6 if /i "!HASH6!"=="70FA2E58652EF26C7745CB807B18BB5567D42B593BBADDFD450FF466F9F34F23" (set /a "Valid_SubFiles+=1")
 rem README.MD
-if defined HASH7 if /i "!HASH7!"=="9E97B2CAEFC95845C1EDD6C2F31E3E70E1CDD1A7544075B7F43B5E5620B950DE" (set /a "Valid_SubFiles+=1")
+if defined HASH7 if /i "!HASH7!"=="797DC75305E6A20CB6F6A499F5E584667DECDD2973B09587A77759E2C281D5A3" (set /a "Valid_SubFiles+=1")
 rem Enforce the subfile requirement immediately.
 rem If we get to the fail, exit immediately. Assume untrusted source.
 rem Remember. Zero-trust policy. I do not trust any entity personally.
@@ -1047,6 +1047,7 @@ if "!ArgumentsPassed!"=="True" (
     set "Args="
     for %%A in (!UserArgs!) do if /i not "%%A"=="I_QEOff" if /i not "%%A"=="!ArgPrefix!Updated" set "Args=!Args! %%A"
     echo Arguments passed: !Args!
+    echo ========================================================================================================================
 )
 echo Working Directory: !CD!
 if /i "!AlwaysShowBanner!"=="Yes" set "ShowBanner=Yes"
@@ -1174,20 +1175,25 @@ if !errorlevel! equ 0 (
     rem Only proceed to update requirement checking if this succeeds.
     set /p Newest= <./ALOSToy-Installer_Version.txt
     del ALOSToy-Installer_Version.txt /f /q
-    if "!ForceUpdate!"=="1" set "RequiresUpdate=True"
-    rem Better update comparison. Actually take advantage of [System.Version] data type to compare versions.
+    rem ===================================================================================
+    rem By moving these flag checks, a bug is fixed where ForceUpdate, AutoUpdate and
+    rem Product arguments sometimes cannot auto or force update when passed by an external
+    rem script packaged in the zipfile. Specifically FORCE_UPDATE_AND_RUN.BAT.
+    rem ===================================================================================
+    rem If AutoUpdate is set to 1, automatically update without prompt.
+    if "!AutoUpdate!"=="1" goto ApplyUpdate
+    rem Else if the "Product" argument is passed, automatically update without prompt.
+    if "!ProductDefinedWithArg!"=="True" goto ApplyUpdate
+    rem Else if the "ForceUpdate" argument is passed, automatically update without prompt.
+    if "!ForceUpdate!"=="1" goto ApplyUpdate
+    rem ===================================================================================
+    rem If none if the flags are set, just do normal behaviour.
     powershell -nop -nol -c "$Current = [Version]$env:Version; $Newest = [Version]$env:Newest; if ($Newest -gt $Current) { Exit 0 } else { Exit 1 }" && set "RequiresUpdate=True"
     if "!Updated!"=="1" set "RequiresUpdate=False"
     if "!NoUpdate!"=="1" set "RequiresUpdate=False"
     if /i "!RequiresUpdate!"=="True" (
         cd /d "!Root!"
-        rem If AutoUpdate is set to 1, automatically update without prompt.
-        if "!AutoUpdate!"=="1" goto ApplyUpdate
-        rem Else if the "Product" argument is passed, automatically update without prompt.
-        if "!ProductDefinedWithArg!"=="True" goto ApplyUpdate
-        rem Else if the "ForceUpdate" argument is passed, automatically update without prompt.
-        if "!ForceUpdate!"=="1" goto ApplyUpdate
-        rem Else, prompt the user.
+        rem Prompt the user.
         for /f "delims= " %%# in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show(\"A new version of the installer has been found.!NewLine!!NewLine!Current version: ${env:Version}!NewLine!Newest version: ${env:Newest}!NewLine!!NewLine!Do you want to update now or not?\",'ALOSToy Installer','YesNoCancel','Question')"') do (
             if "%%#"=="Yes" (
                  rem If the user says yes, begin the update process.
@@ -4408,7 +4414,6 @@ if "!GPLNotice!"=="1" if "!EXISTS!"=="1" (
     type "!FILE!"
     set "GPLNotice_Footer=To see the full GNU GPL License, open the COPYING.TXT file."
     if "!Or-Any-Later-Version!"=="True" (echo !GPLNotice_Footer! GPLv3 or any later version.) else if "!Or-Any-Later-Version!"=="False" (echo !GPLNotice_Footer! GPLv3 ONLY.)
-    echo ========================================================================================================================
 ) else (
     rem cls
     echo The license file are non-existent. This means you may not have any
@@ -5695,5 +5700,5 @@ exit 0
 :Post_Ventoy-Choices
 rem End of installer, leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 5700 (5699 without extra newline).
+rem Total line count: 5705 (5704 without extra newline).
 rem Made by Aarav Katariya with love and care...
