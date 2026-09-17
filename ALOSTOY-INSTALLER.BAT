@@ -166,7 +166,7 @@ rem =========================================================================
 set "Or-Any-Later-Version=True"
 if "!Or-Any-Later-Version!"=="True" if exist "!Root!LICENSE.TXT" (set "EXISTS=1" & set "FILE=!Root!LICENSE.TXT") else (set "EXISTS=0")
 if "!Or-Any-Later-Version!"=="False" if exist "!Root!GPLV3_ONLY_INFO.TXT" (set "EXISTS=1" & set "FILE=!Root!GPLV3_ONLY_INFO.TXT") else (set "EXISTS=0")
-rem Show the "Starting ALOSToy Installer" title.
+rem Show the "Starting ALOSToy Installer" title. Only call it once.
 call :InstallerTitle
 rem Now enforce the CRLF line ending.
 >nul findstr /v "$" "!Script!" && (
