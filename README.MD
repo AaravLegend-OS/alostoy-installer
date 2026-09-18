@@ -51,6 +51,7 @@ ALOSToy Extended
 * You can select an edition.
 
   * Standard
+  * Standard With Extensions
   * Extended
 
 If you want, you can grab the OSimages extensions as well for the standard version. (Standard With Extensions)
@@ -69,7 +70,9 @@ And you can install **ALOSToy** on your USB drive, turning it into a bootable Ve
 * A tools.esd file.
 
 
-# **Download the installer from the releases and then follow instructions below.**
+
+**Download the installer from the releases and then follow instructions below.**
+
 
 
 ## **Installation**
@@ -142,12 +145,12 @@ Yes! It does. Check them here.
 
 ### **Custom logfile**
 
-By default, **ALOSTOY-INSTALLER.BAT** logs to ALOSToy-Installer.log in the root directory. You can actually change that if you desire to.
+By default, **ALOSTOY-INSTALLER.BAT** logs to ALOSTOY-INSTALLER_<CURRENTDATE>-<CURRENTTIME>.LOG in the root directory. You can actually change that if you desire to.
 
 
 
 ```
-ALOSTOY-INSTALLER.BAT /LogFile C:\Logs\ALOSToy-Installer.log
+ALOSTOY-INSTALLER.BAT /LogFile C:\Logs\ALOSTOY-INSTALLER.LOG
 ```
 
 
@@ -224,7 +227,7 @@ The following examples can be used to select a product automatically.
 
 
 
-**THE INSTALLER WILL EXIT ON ANY SUCCESS OR ERROR!!!!**
+**THE INSTALLER WILL EXIT ON ANY SUCCESS OR ERROR!**
 
 
 
@@ -320,7 +323,7 @@ You can also use:
 
 
 
-## **Argument rules (VERY IMPORTANT!!!)**
+## **Argument rules (VERY IMPORTANT!)**
 
 * Any and all arguments are case-insensitive by default. I know.
 * You are only able to pick from one prefix:
@@ -434,7 +437,9 @@ You should **disable** it while running and **re-enable** it after completion.
 
 
 
-## **License Terms**
+## **License Terms (GPLv3+ (The Default))**
+
+
 
 Copyright (C) 2023-2026 Aarav Katariya
 
@@ -444,9 +449,9 @@ This program is **free software**: you can **redistribute** it and/or **modify**
 
 it under the terms of the GNU General Public License as published by
 
-the Free Software Foundation, either version 3 of the License, or
+the Free Software Foundation, either version 3 of the License, **or**
 
-(at your option) **any later version**.
+**(at your option) any later version**.
 
 
 
@@ -466,7 +471,39 @@ along with this program. If not, see [**https://www.gnu.org/licenses/**](https:/
 
 
 
-To see the full GNU GPL v3.0 License, open the **COPYING** file on this repo.
+## **License Terms (GPLv3 ONLY)**
+
+
+
+Copyright (C) 2023-2026 Aarav Katariya
+
+
+
+This program is **free software**: you can **redistribute** it and/or **modify**
+
+it under the terms of the GNU General Public License as published by
+
+the Free Software Foundation, **under version 3 of the License only**.
+
+
+
+This program is distributed in the hope that it will be useful,
+
+but **WITHOUT ANY WARRANTY**; without even the implied warranty of
+
+**MERCHANTABILITY** or **FITNESS FOR A PARTICULAR PURPOSE**. See the
+
+GNU General Public License for more details.
+
+
+
+You **should have received** a copy of the GNU General Public License
+
+along with this program. If not, see [**https://www.gnu.org/licenses/**](https://www.gnu.org/licenses/)**.**
+
+
+
+To see the full GNU GPL v3.0 License, open the **COPYING.TXT** file.
 
 ## **Author**
 
@@ -474,5 +511,5 @@ Aarav Katariya
 
 
 
-# ***End Of The Guide + ARM64 support is out of beta!***
+# ***End Of The Guide***
 
