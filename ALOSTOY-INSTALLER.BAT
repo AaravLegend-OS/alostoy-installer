@@ -105,7 +105,7 @@ if "!Script!" neq "ALOSTOY-INSTALLER.BAT" exit 1
 rem Define the author.
 set "Author=Aarav Katariya"
 rem Define the version. (Will always remain in 1.X.X.X format.)
-set "Version=1.0.2.1"
+set "Version=1.0.2.2"
 for /f "skip=2 tokens=2*" %%A in ('reg query "HKEY_CURRENT_USER\Control Panel\International" /v "LocaleName"') do (
     set "OSLanguage=%%B"
     set "lang=!OSLanguage:~0,2!"
@@ -954,9 +954,21 @@ if /i "!ArgKind!"=="Auto_Update_Prg" (
     shift
     goto CLI_Arguments
 )
-rem Backup prevention argument during update. Do not document.
-rem Can be used though. Good to use with ForceUpdate.
+rem Backup prevention argument during update. Good to use with ForceUpdate.
 if /i "!ArgKind!"=="NoUpdateBackup" (
+    if "!ForceUpdate!"=="1" if "!Updated!"=="0" (
+        cls
+        echo This argument needs to be paired with ForceUpdate
+        echo to work. Although you can use it normally, I have
+        echo to stop you from doing that. This argument should
+        echo be used with ForceUpdate incase you must restore a
+        echo working version from the official Github repository.
+        echo.
+        echo Make sure you pass the required argument next time.
+        pause
+        endlocal
+        exit 6
+    )
     set "NoBackup=1"
     shift
     goto CLI_Arguments
@@ -3289,12 +3301,13 @@ echo         Tells the installer not to update.
 echo         It does not matter if there is a new update, it will not when specified.
 echo         Useful for keeping the same version for longer.
 echo.
-echo      /ForceUpdate
-echo      -ForceUpdate
-echo      --Force-Update
+echo      /ForceUpdate   (Optional argument: /NoBackup)
+echo      -ForceUpdate   (Optional argument: -NoBackup)
+echo      --Force-Update (Optional argument: --No-Backup)
 echo         Tells the installer to forcibly update even if no new version.
 echo         It does not matter if there is not a new update, it will update to the newest or current version.
-echo         No questions asked. Useful for reverting unwanted local changes.
+echo         No questions asked. Useful for reverting unwanted local changes. Can also pair with NoBackup to
+echo         force replace the local version with the latest, working, online version.
 echo.
 echo     /AutoUpdate
 echo     -AutoUpdate
@@ -3618,8 +3631,10 @@ if "!errorlevel!"=="1" (
 :HelpExit
 cls
 set "BrowsingHelp=False"
+set "StartPage="
+if "!HelpFromMain!"=="0" (set "WSH=Hidden") else if "!HelpFromMain!"=="1" (set "WSH=Normal")
 call :WindowTitle "GOOD LUCK WITH THE ARGUMENTS."
-if "!ArgPrefix!"=="--" (start /b powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.Messagebox]::Show(\"If you prefer to use ${env:ArgPrefix}, then all arguments are case-sensitive. Type it exactly as I show you.!NewLine!!NewLine!You must use the same prefix for all arguments.!NewLine!!NewLine!Choose a prefix and use that only. ^(Only per session.^)!NewLine!!NewLine!Like !ArgPrefix! for example.!NewLine!!NewLine!Using / or - makes them case-insensitive.\",'ALOSToy Installer','OK','Info') | Out-Null; [System.Windows.Messagebox]::Show(\"You probably came from GNU linux and programs. Most likely, --long-options are familiar with you. All arguments ARE case-sensitive for you. Every single one. I know your habits for case-sensitivity. Use Train-Case.!NewLine!!NewLine!Like --Ventoy-Version for example.\",'ALOSToy Installer','OK','Info') | Out-Null") else (start /b powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.Messagebox]::Show(\"If you prefer to use ${env:ArgPrefix}, then all arguments are case-insensitive. You do not have to worry about casing.!NewLine!!NewLine!You must use the same prefix for all arguments.!NewLine!!NewLine!Choose a prefix and use that only. ^(Only per session.^)!NewLine!!NewLine!Like !ArgPrefix! for example.!NewLine!!NewLine!Using -- makes them case-sensitive.\",'ALOSToy Installer','OK','Info') | Out-Null")
+if "!ArgPrefix!"=="--" (start /b powershell -nop -nol -WindowStyle !WSH! -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.Messagebox]::Show(\"If you prefer to use ${env:ArgPrefix}, then all arguments are case-sensitive. Type it exactly as I show you.!NewLine!!NewLine!You must use the same prefix for all arguments.!NewLine!!NewLine!Choose a prefix and use that only. ^(Only per session.^)!NewLine!!NewLine!Like !ArgPrefix! for example.!NewLine!!NewLine!Using / or - makes them case-insensitive.\",'ALOSToy Installer','OK','Info') | Out-Null; [System.Windows.Messagebox]::Show(\"You probably came from GNU linux and programs. Most likely, --long-options are familiar with you. All arguments ARE case-sensitive for you. Every single one. I know your habits for case-sensitivity. Use Train-Case.!NewLine!!NewLine!Like --Ventoy-Version for example.\",'ALOSToy Installer','OK','Info') | Out-Null") else (start /b powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.Messagebox]::Show(\"If you prefer to use ${env:ArgPrefix}, then all arguments are case-insensitive. You do not have to worry about casing.!NewLine!!NewLine!You must use the same prefix for all arguments.!NewLine!!NewLine!Choose a prefix and use that only. ^(Only per session.^)!NewLine!!NewLine!Like !ArgPrefix! for example.!NewLine!!NewLine!Using -- makes them case-sensitive.\",'ALOSToy Installer','OK','Info') | Out-Null")
 title 
 if "!HelpFromMain!"=="1" (
     set "HelpFromMain=0"
@@ -4065,8 +4080,9 @@ if "!errorlevel!"=="1" (
 cls
 set "BrowsingHelp=False"
 set "StartPage="
+if "!HelpFromMain!"=="0" (set "WSH=Hidden") else if "!HelpFromMain!"=="1" (set "WSH=Normal")
 call :WindowTitle "GOOD LUCK WITH YOUR INSTALLATION OF ALOSTOY"
-powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.Messagebox]::Show('Now that you have read the guide, you should be able to confidently install ALOSToy Standard or Extended. I hope this helped you learn something.','ALOSToy Installer','OK','Info') | Out-Null"
+start /b powershell -nop -nol -WindowStyle !WSH! -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.Messagebox]::Show('Now that you have read the guide, you should be able to confidently install ALOSToy Standard or Extended. I hope this helped you learn something.','ALOSToy Installer','OK','Info') | Out-Null"
 if "!HelpFromMain!"=="1" (
     set "HelpFromMain=0"
     goto Main
@@ -5700,5 +5716,5 @@ exit 0
 :Post_Ventoy-Choices
 rem End of installer, leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 5705 (5704 without extra newline).
+rem Total line count: 5721 (5720 without extra newline).
 rem Made by Aarav Katariya with love and care...
