@@ -145,7 +145,7 @@ Yes! It does. Check them here.
 
 ### **Custom logfile**
 
-By default, **ALOSTOY-INSTALLER.BAT** logs to ALOSTOY-INSTALLER_<CURRENTDATE>-<CURRENTTIME>.LOG in the root directory. You can actually change that if you desire to.
+By default, **ALOSTOY-INSTALLER.BAT** logs to ALOSTOY-INSTALLER_`<CURRENTDATE`>-`<CURRENTTIME`>.LOG in the root directory. You can actually change that if you desire to.
 
 
 
