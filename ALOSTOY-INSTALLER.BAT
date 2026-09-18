@@ -374,7 +374,7 @@ if defined HASH5 if /i "!HASH5!"=="5F7C42892C1E86C3A7123F8A5A933ED584A21A2DA89EF
 rem FORCE_UPDATE_AND_RUN.BAT
 if defined HASH6 if /i "!HASH6!"=="70FA2E58652EF26C7745CB807B18BB5567D42B593BBADDFD450FF466F9F34F23" (set /a "Valid_SubFiles+=1")
 rem README.MD
-if defined HASH7 if /i "!HASH7!"=="797DC75305E6A20CB6F6A499F5E584667DECDD2973B09587A77759E2C281D5A3" (set /a "Valid_SubFiles+=1")
+if defined HASH7 if /i "!HASH7!"=="56B73D88F97E5D08671F5B92A97C40FD16C805A1909C8286115A1499A44D4921" (set /a "Valid_SubFiles+=1")
 rem Enforce the subfile requirement immediately.
 rem If we get to the fail, exit immediately. Assume untrusted source.
 rem Remember. Zero-trust policy. I do not trust any entity personally.
