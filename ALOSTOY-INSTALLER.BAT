@@ -105,7 +105,7 @@ if "!Script!" neq "ALOSTOY-INSTALLER.BAT" exit 1
 rem Define the author.
 set "Author=Aarav Katariya"
 rem Define the version. (Will always remain in 1.X.X.X format.)
-set "Version=1.0.2.2"
+set "Version=1.0.2.3"
 for /f "skip=2 tokens=2*" %%A in ('reg query "HKEY_CURRENT_USER\Control Panel\International" /v "LocaleName"') do (
     set "OSLanguage=%%B"
     set "lang=!OSLanguage:~0,2!"
@@ -362,17 +362,17 @@ rem that you got this program, ALOSTOY-INSTALLER.BAT, is from the author
 rem            (Aarav Katariya) and not a hacker or scammer.
 rem =====================================================================
 rem COPY_SCRIPT_TO_CLIPBOARD.BAT
-if defined HASH1 if /i "!HASH1!"=="5CBAD9C202662DE56E042C79F45B95DA67293D55341369F841E9027E388C3F1B" (set /a "Valid_SubFiles+=1")
+if defined HASH1 if /i "!HASH1!"=="1A76512B23C2C95603B879318A5B24CB622FC2422F09620849E0C748F084525D" (set /a "Valid_SubFiles+=1")
 rem MAKE_TOOLS_ESD.BAT
-if defined HASH2 if /i "!HASH2!"=="EC6A2C047BA35ADFFD2D639C860B82B6F27B3C1E273141722D07A07FF130DA17" (set /a "Valid_SubFiles+=1")
+if defined HASH2 if /i "!HASH2!"=="F15ABD5FE8A130737FD8FF2BAB995E0B84565F2E76A5E2B434D86156D33BEF6E" (set /a "Valid_SubFiles+=1")
 rem NEW_ALOSTOY-INSTALLER.ZIP.BAT
-if defined HASH3 if /i "!HASH3!"=="782944F445BCFB294C4027D86E969DEF80884A439669BDB49C5F59D7A31BBF5E" (set /a "Valid_SubFiles+=1")
+if defined HASH3 if /i "!HASH3!"=="40A63BF46ADBFC8CD5DB25CC3605A137AF76534A6B170F4B64C9FF424B67CEE9" (set /a "Valid_SubFiles+=1")
 rem SHOW_COMMAND_LINE_HELP.BAT
 if defined HASH4 if /i "!HASH4!"=="89489AC860E420AC64856F2C2960769C56E87C028A79BB01562DC1373E819BA8" (set /a "Valid_SubFiles+=1")
 rem SHOW_INSTALLATION_HELP.BAT
 if defined HASH5 if /i "!HASH5!"=="5F7C42892C1E86C3A7123F8A5A933ED584A21A2DA89EF19C84D52B9985C08CBD" (set /a "Valid_SubFiles+=1")
 rem FORCE_UPDATE_AND_RUN.BAT
-if defined HASH6 if /i "!HASH6!"=="70FA2E58652EF26C7745CB807B18BB5567D42B593BBADDFD450FF466F9F34F23" (set /a "Valid_SubFiles+=1")
+if defined HASH6 if /i "!HASH6!"=="6379DDD712A6009B4993D9A76E20BF74C07F62C18033E850A23C98171713E0A5" (set /a "Valid_SubFiles+=1")
 rem README.MD
 if defined HASH7 if /i "!HASH7!"=="56B73D88F97E5D08671F5B92A97C40FD16C805A1909C8286115A1499A44D4921" (set /a "Valid_SubFiles+=1")
 rem Enforce the subfile requirement immediately.
@@ -1744,8 +1744,9 @@ if "!errorlevel!"=="1" (
     set "HelpFromMain=1"
     goto InstallGuide
 ) else if "!errorlevel!"=="85" (
-     powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('!Script! will now update to the newest version or restore a good version of V!Version!...','ALOSToy Installer','OK','Info') | Out-Null"
-     goto ApplyUpdate
+     rem [NEW] Check if the user executed ForceUpdate beforehand.
+     powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; if ($env:Updated -eq "0") { [System.Windows.MessageBox]::Show('!Script! will now update to the newest version or restore a good version of V!Version!...','ALOSToy Installer','OK','Info') | Out-Null } else { [System.Windows.MessageBox]::Show('It looks like you already updated. You need to restart !Script! to execute this again. Click on ''Quit Program'' and then double-click !Script! again.','ALOSToy Installer','OK','Error') | Out-Null }"
+     if "!Updated!"=="0" (goto ApplyUpdate) else (goto Main)
 ) else if "!errorlevel!"=="100" (
     cls
     call :WindowTitle "INITIATE REDOWNLOAD?"
@@ -1789,8 +1790,9 @@ if "!errorlevel!"=="1" (
         goto Main
     )
 ) else if "!errorlevel!"=="117" (
-     powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('!Script! will now update to the newest version or restore a good version of V!Version!...','ALOSToy Installer','OK','Info')"
-     goto ApplyUpdate
+     rem [NEW] Check if the user executed ForceUpdate beforehand.
+     powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; if ($env:Updated -eq "0") { [System.Windows.MessageBox]::Show('!Script! will now update to the newest version or restore a good version of V!Version!...','ALOSToy Installer','OK','Info') | Out-Null } else { [System.Windows.MessageBox]::Show('It looks like you already updated. You need to restart !Script! to execute this again. Click on ''Quit Program'' and then double-click !Script! again.','ALOSToy Installer','OK','Error') | Out-Null }"
+     if "!Updated!"=="0" (goto ApplyUpdate) else (goto Main)
 ) else if "!errorlevel!"=="194" (
     cls
     echo Opening the github repository...
@@ -5731,5 +5733,5 @@ exit 0
 :Post_Ventoy-Choices
 rem End of installer, leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 5736 (5735 without extra newline).
+rem Total line count: 5738 (5737 without extra newline).
 rem Made by Aarav Katariya with love and care...
