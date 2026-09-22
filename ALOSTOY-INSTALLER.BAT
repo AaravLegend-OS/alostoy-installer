@@ -190,6 +190,35 @@ set "Uri=!InstallerRepo!/raw/refs/heads/main/tools.esd"
 rem Write a new timestamped log.
 if not exist "!Root!logs" md "!Root!logs"
 set "logfile=!Root!logs\ALOSTOY-INSTALLER_!LOGSTAMP!.LOG"
+rem Instead of digging this later and failing on invalid argument, place it before any logic.
+set re1=
+set re2=
+for %%# in (!UserArgs!) do (
+    if /i "%%#"=="re1" set re1=1
+    if /i "%%#"=="re2" set re2=1
+    if /i "%%#"=="/qedit" (
+        set re1=1
+        set re2=1
+    ) else if /i "%%#"=="-qedit" (
+        set re1=1
+        set re2=1
+    ) else if "%%#"=="--qedit" (
+        set re1=1
+        set re2=1
+    )
+)
+rem You might want to restart in an x64 process if an x86 process started ALOSToy-Installer.bat on Windows 11 or Windows 10 x64.
+if exist !SystemRoot!\Sysnative\cmd.exe if not defined re1 (
+    start !SystemRoot!\Sysnative\cmd.exe /c ""!FullScript!" !UserArgs! re1"
+    cls
+    exit 16
+)
+rem You might want to restart in an ARM32 process if it was initiated by x64 process on ARM64 Windows 10 or Windows 11 on ARM.
+if exist !SystemRoot!\SysArm32\cmd.exe if "!PROCESSOR_ARCHITECTURE!"=="AMD64" if not defined re2 (
+    start !SystemRoot!\SysArm32\cmd.exe /c ""!FullScript!" !UserArgs! re2"
+    cls
+    exit 16
+)
 rem Define primary and fallback font.
 set "FirstFont=CaskaydiaCove NFM"
 set "SecondFont=Courier New"
@@ -437,35 +466,6 @@ powershell -nop -nol -ExecutionPolicy Bypass -c "if ($env:Version -match '^1\.[0
     exit 19
 )
 if /i "!CmdEchoing!"=="on" (echo on) else if /i "!CmdEchoing!"=="off" (echo off) else (endlocal & exit 1)
-rem Instead of digging this later and failing on invalid argument, place it before any logic.
-set re1=
-set re2=
-for %%# in (!UserArgs!) do (
-    if /i "%%#"=="re1" set re1=1
-    if /i "%%#"=="re2" set re2=1
-    if /i "%%#"=="/qedit" (
-        set re1=1
-        set re2=1
-    ) else if /i "%%#"=="-qedit" (
-        set re1=1
-        set re2=1
-    ) else if "%%#"=="--qedit" (
-        set re1=1
-        set re2=1
-    )
-)
-rem You might want to restart in an x64 process if an x86 process started ALOSToy-Installer.bat on Windows 11 or Windows 10 x64.
-if exist !SystemRoot!\Sysnative\cmd.exe if not defined re1 (
-    start !SystemRoot!\Sysnative\cmd.exe /c ""!FullScript!" !UserArgs! re1"
-    cls
-    exit 16
-)
-rem You might want to restart in an ARM32 process if it was initiated by x64 process on ARM64 Windows 10 or Windows 11 on ARM.
-if exist !SystemRoot!\SysArm32\cmd.exe if "!PROCESSOR_ARCHITECTURE!"=="AMD64" if not defined re2 (
-    start !SystemRoot!\SysArm32\cmd.exe /c ""!FullScript!" !UserArgs! re2"
-    cls
-    exit 16
-)
 rem Disable Quick Edit only if neccesary and that
 rem the argument supplied is not a help argument.
 rem Requires code duplication. (Batch limitation.)
@@ -2089,6 +2089,10 @@ if /i "!WinInstall!"=="FOUND" (
     )
 ) else if /i "!WinInstall!"=="NOTFOUND" (
     echo !CmdEchoing!
+) else if /i "!WinInstall!"=="SYSTEMDRIVE" (
+    call :WindowTitle "PICK SOMETHING NOT ON YOUR SYSTEM DISK."
+    powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show(\"It turns out you selected ${env:drivepath} but failed to realise that the ${env:drivepath} is a partition of the system drive.!NewLine!!NewLine!Thus, you cannot use this drive letter.!NewLine!Please select another drive that is not on the system disk.\",'ALOSToy Installer','OK','Error') | Out-Null"
+    goto ChooseDrive
 ) else if /i "!WinInstall!"=="ERROR" (
     set "errorcode=Unable to find a Windows Installation. Aborting for safety..."
     goto Error
@@ -4656,25 +4660,41 @@ public static class ConsoleFont
 if ([ConsoleFont]::SetPreferredFont(16)) { Exit 0 } else { Exit 1 }
 :Post_SetFont
 :Find_WinInstall
+# Ensure that drive path is not blank.
 if ([string]::IsNullOrWhiteSpace($env:drivepath)) {
     Write-Output 'NOTFOUND'
     return
 }
-$root = "${env:drivepath}:\"
-$kernel = Join-Path -Path $root -ChildPath 'Windows\System32\ntoskrnl.exe'
+# Import the storage and dism modules.
+Import-Module Storage -ErrorAction Stop
+Import-Module Dism -ErrorAction Stop
+# Derive root from drivepath.
+$Root = "${env:drivepath}:\"
+# And kernel path.
+$Kernel = Join-Path -Path $Root -ChildPath 'Windows\System32\ntoskrnl.exe'
+# Obtain the disk number.
+$DiskNumber = (Get-Disk).Number
+# Stop installation if disk number is 0.
+# Because disk 0 is the system disk.
+if ($DiskNumber -eq 0) {
+    Write-Output 'SYSTEMDRIVE'
+    return
+}
+# If all are valid, find a Windows installation.
 try {
-    if (-not (Test-Path -LiteralPath $kernel -PathType Leaf)) {
+    if (-not (Test-Path -LiteralPath $Kernel -PathType Leaf)) {
         Write-Output 'NOTFOUND'
         return
     }
-    Import-Module Dism -ErrorAction Stop
-    $Info = Get-WindowsEdition -Path $root -ErrorAction Stop
-    $Packages = @(Get-WindowsPackage -Path $root -ErrorAction Stop)
-    [PSCustomObject]@{
+    $Info = Get-WindowsEdition -Path $Root -ErrorAction Stop
+    $Packages = @(Get-WindowsPackage -Path $Root -ErrorAction Stop)
+    $Result = [PSCustomObject]@{
         STATUS = 'FOUND'
         Edition = $Info.Edition
         PackageCount = $Packages.Count
-    } | Select-Object -ExpandProperty STATUS
+        DiskNumber = $DiskNumber
+    }
+    Write-Output $Result.STATUS
 } catch {
     Write-Output 'ERROR'
 }
@@ -5733,5 +5753,5 @@ exit 0
 :Post_Ventoy-Choices
 rem End of installer, leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 5738 (5737 without extra newline).
+rem Total line count: 5758 (5757 without extra newline).
 rem Made by Aarav Katariya with love and care...
