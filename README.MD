@@ -30,11 +30,11 @@ ALOSToy Extended
 
 
 
-### ***Please note that the ALOSToy Installer is licensed under GPL v3 but aria2c is licensed under GPL v2. No code from either program is combined, nor is it statically or dynamically linked to avoid a derivative work. Instead, the installer just calls the exe to prevent license incompatibility between GPLv2.0 and GPLv3.0.***
+### ***Please note that the ALOSToy Installer is licensed under GPL v3 but aria2c is licensed under GPL v2. No code from either program is combined, nor is it statically or dynamically linked to avoid a derivative work. Instead, the installer just calls the exe to prevent licence incompatibility between GPLv2.0 and GPLv3.0.***
 
 
 
-### ***The licenses for ALOSToy Installer are named "LICENSE", "COPYING", "LICENSE.TXT" and "COPYING.TXT". The licenses for aria2c are "LICENSE.ARIA2C" and "COPYING.ARIA2C".***
+### ***The licences for ALOSToy Installer are named "LICENCE", "COPYING", "LICENCE.TXT" and "COPYING.TXT". The licenses for aria2c are "LICENCE.ARIA2C" and "COPYING.ARIA2C".***
 
 
 
@@ -92,7 +92,7 @@ And you can install **ALOSToy** on your USB drive, turning it into a bootable Ve
    7. Look Into The Installer (This one will look jarring because you get to see inside **ALOSTOY-INSTALLER.BAT**.)
 6. Accept license terms of the product.
 7. Wait for the installer to fetch the latest version.
-8. Choose a drive. (BE CAREFUL!!!)
+8. Choose a drive. (BE CAREFUL!)
 9. Confirm that drive.
 10. Say Yes or No to GPT and Secure Boot.
 11. Install Ventoy
@@ -437,7 +437,7 @@ You should **disable** it while running and **re-enable** it after completion.
 
 
 
-## **License Terms (GPLv3+ (The Default))**
+## **Licence Terms (GPLv3+ (The Default))**
 
 
 
@@ -471,7 +471,7 @@ along with this program. If not, see [**https://www.gnu.org/licenses/**](https:/
 
 
 
-## **License Terms (GPLv3 ONLY)**
+## **Licence Terms (GPLv3 ONLY)**
 
 
 
@@ -503,7 +503,7 @@ along with this program. If not, see [**https://www.gnu.org/licenses/**](https:/
 
 
 
-To see the full GNU GPL v3.0 License, open the **COPYING.TXT** file.
+To see the full GNU GPL v3.0 Licence, open the **COPYING** file on this repository.
 
 ## **Author**
 
