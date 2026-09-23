@@ -9,6 +9,8 @@ Vivaan Anand (My friend.)
 
 You need to **email aaravkatariya2012@gmail.com** and kindly request the author. Your contributor request must be **perfectly formal** and **not have any informalities**.
 
-**Within twenty-four hours**, I will reply to you with a LICENCE.TXT file to show what licence the ALOSToy Installer uses.
+**Within twenty-four hours**, I will reply to you with a LICENCE.TXT file to show what licence the program uses.
+
+Why? So that you are aware of what terms and conditions you are bound to.
 
 That is it!
