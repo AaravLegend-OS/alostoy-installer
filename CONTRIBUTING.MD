@@ -13,4 +13,6 @@ You need to **email aaravkatariya2012@gmail.com** and kindly request the author.
 
 Why? So that you are aware of what terms and conditions you are bound to.
 
+If you write an informal request like "Hey! i wanna colab with u. thx," you will only get a reply after 7 days.
+
 That is it!
