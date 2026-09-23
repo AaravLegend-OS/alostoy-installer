@@ -45,7 +45,7 @@
 @rem aria2c is licensed under GPL v2. No code from either program is
 @rem combined, nor is it statically or dynamically linked to avoid a
 @rem derivative work. Instead, the installer just calls the compiled exe
-@rem to prevent license incompatibility between GPLv2.0 and GPLv3.0.
+@rem to prevent licence incompatibility between GPLv2.0 and GPLv3.0.
 @rem This notice is only for aria2c.exe and only the exe is called AS A
 @rem SEPARATE PROCESS THAT IS NOT DISTRIBUTED TOGETHER. Aria2c can be
 @rem distributed under GPLv2 or any later version so this is more of
@@ -164,7 +164,7 @@ rem VARIABLE BELOW DOES NOT ALLOW AUTOMATIC GPLV3 "OR ANY LATER VERSION"
 rem DISTRIBUTION TO OCCUR. ONLY CHANGE IF YOU CHOOSE TO FORK THIS PROGRAM.
 rem =========================================================================
 set "Or-Any-Later-Version=True"
-if "!Or-Any-Later-Version!"=="True" if exist "!Root!LICENSE.TXT" (set "EXISTS=1" & set "FILE=!Root!LICENSE.TXT") else (set "EXISTS=0")
+if "!Or-Any-Later-Version!"=="True" if exist "!Root!LICENCE.TXT" (set "EXISTS=1" & set "FILE=!Root!LICENCE.TXT") else (set "EXISTS=0")
 if "!Or-Any-Later-Version!"=="False" if exist "!Root!GPLV3_ONLY_INFO.TXT" (set "EXISTS=1" & set "FILE=!Root!GPLV3_ONLY_INFO.TXT") else (set "EXISTS=0")
 rem Show the "Starting ALOSToy Installer" title. Only call it once.
 call :InstallerTitle
@@ -303,12 +303,12 @@ set "QuickEdit=On"
 rem Arguments starting with "I_" are supposed to be internal use only.
 if /i "%~1"=="I_QEOff" set "QuickEdit=Off"
 if "!Or-Any-Later-Version!"=="False" (
-    rem Allow user to still open help even with mismatched license files.
+    rem Allow user to still open help even with mismatched licence files.
     if !StartHelp! lss 1 (
         call :LicenseHasher
-        rem Properly enforce the license rules.
+        rem Properly enforce the licence rules.
         if "!Missing!"=="True" (
-            echo The license documents are missing. We can no longer prove if
+            echo The licence documents are missing. We can no longer prove if
             echo !Script! is legitimately licensed or not. Go and
             echo redownload them from !InstallerRepo!.
             timeout /t 3 /NOBREAK >nul
@@ -317,12 +317,12 @@ if "!Or-Any-Later-Version!"=="False" (
             endlocal
             exit 22
         )
-        if !Valid_LicenseDocuments! lss 2 (
-            echo The license documents are not valid. Either you saved a newer
-            echo version, or you modified one or more license documents. This
+        if !Valid_LicenceDocuments! lss 2 (
+            echo The licence documents are not valid. Either you saved a newer
+            echo version, or you modified one or more licence documents. This
             echo is not permitted under the GNU GPL v3 as stated by the Free
             echo Software Foundation. Please redownload the unmodified copies
-            echo of COPYING.TXT and LICENSE.TXT from:
+            echo of COPYING.TXT and LICENCE.TXT from:
             echo !InstallerRepo!
             echo.
             rem This statement is only valid if "Or-Any-Later-Version"
@@ -395,7 +395,7 @@ if defined HASH1 if /i "!HASH1!"=="1A76512B23C2C95603B879318A5B24CB622FC2422F096
 rem MAKE_TOOLS_ESD.BAT
 if defined HASH2 if /i "!HASH2!"=="F15ABD5FE8A130737FD8FF2BAB995E0B84565F2E76A5E2B434D86156D33BEF6E" (set /a "Valid_SubFiles+=1")
 rem NEW_ALOSTOY-INSTALLER.ZIP.BAT
-if defined HASH3 if /i "!HASH3!"=="0AD241B57EEA90131AB69C3095A385568E8D2B22571464EEFEE598B9423ACC6C" (set /a "Valid_SubFiles+=1")
+if defined HASH3 if /i "!HASH3!"=="9655BB09759213FC46EE924D6FB43FD381E798C10FDADB48AABD96C585D79CA0" (set /a "Valid_SubFiles+=1")
 rem SHOW_COMMAND_LINE_HELP.BAT
 if defined HASH4 if /i "!HASH4!"=="89489AC860E420AC64856F2C2960769C56E87C028A79BB01562DC1373E819BA8" (set /a "Valid_SubFiles+=1")
 rem SHOW_INSTALLATION_HELP.BAT
@@ -403,7 +403,7 @@ if defined HASH5 if /i "!HASH5!"=="5F7C42892C1E86C3A7123F8A5A933ED584A21A2DA89EF
 rem FORCE_UPDATE_AND_RUN.BAT
 if defined HASH6 if /i "!HASH6!"=="6379DDD712A6009B4993D9A76E20BF74C07F62C18033E850A23C98171713E0A5" (set /a "Valid_SubFiles+=1")
 rem README.MD
-if defined HASH7 if /i "!HASH7!"=="56B73D88F97E5D08671F5B92A97C40FD16C805A1909C8286115A1499A44D4921" (set /a "Valid_SubFiles+=1")
+if defined HASH7 if /i "!HASH7!"=="1958DDED078415528A2F9CD5C5EDDB679045ED4496662F4DDA7F376C749487DF" (set /a "Valid_SubFiles+=1")
 rem Enforce the subfile requirement immediately.
 rem If we get to the fail, exit immediately. Assume untrusted source.
 rem Remember. Zero-trust policy. I do not trust any entity personally.
@@ -671,7 +671,7 @@ if /i "!ArgKind!"=="LogFile" (
 rem Product argument. Lets you define which product to install.
 rem HOWEVER, IT DOES NOT PERFORM A FULLY AUTOMATED/SILENT SETUP.
 rem IT DOES SKIP SOME STEPS LIKE THE EULA, THE ANTIMALWARE WARNING,
-rem THE PRESS ANY KEY TO SHOW MENU, THE PRODUCT SELECTION, THE LICENSE
+rem THE PRESS ANY KEY TO SHOW MENU, THE PRODUCT SELECTION, THE LICENCE
 rem AGREEMENT, DRIVE CONFIRMATION (YOU MUST PICK DRIVE MANUALLY), VENTOY
 rem INSTALLATION (PASS < /- >VentoyInstallType / --Ventoy-Install-Type
 rem ARGUMENT), FORMAT CONFIRMATION AND END CHOICES, SO THE PROGRAM EXITS.
@@ -1310,17 +1310,17 @@ if !TOTAL_MIN! GEQ !START! if !TOTAL_MIN! LEQ !END! (
     exit 11
 )
 :EULA
-rem Show the End-User License Agreement.
+rem Show the End-User Licence Agreement.
 if "!AcceptEULA!"=="0" (
     set "agree="
-    call :WindowTitle "End-User License Agreement"
+    call :WindowTitle "End-User Licence Agreement"
     cls
     echo ====================================================
     echo              ALOSToy Installer v!Version!
     echo ====================================================
     echo Author: !Author!
     echo.
-    echo END USER LICENSE AGREEMENT
+    echo END USER LICENCE AGREEMENT
     echo.
     echo By using this software, you agree to the following:
     rem Optimise the code by printing the unique terms
@@ -1354,7 +1354,7 @@ if "!AcceptEULA!"=="0" (
     echo.
     echo You must agree to use this software by law. If you do not agree, you may not continue to use this software.
     echo.
-    set /p "agree=[CASE-SENSITIVE] Do you agree to the End User License Agreement? (Yes or No) >> "
+    set /p "agree=[CASE-SENSITIVE] Do you agree to the End User Licence Agreement? (Yes or No) >> "
     if "!agree!"=="Yes" (
         cls
         echo !DATE! !TIME! The End-User License Agreement has been agreed to.>> "!logfile!"
@@ -1814,7 +1814,7 @@ echo Chosen product: ALOSToy !product!.>> "!logfile!"
 if "!AcceptEULA!"=="0" (
     call :PowerShell_Helper "License-Terms_STD" /Maximised
     pause
-    call powershell.exe -nop -nol -ExecutionPolicy Bypass -WindowStyle Normal -c "Write-Output 'User agreed to license terms.' | Out-File $env:logfile -Encoding UTF8 -Append -NoClobber -Force"
+    call powershell.exe -nop -nol -ExecutionPolicy Bypass -WindowStyle Normal -c "Write-Output 'User agreed to licence terms.' | Out-File $env:logfile -Encoding UTF8 -Append -NoClobber -Force"
 )
 goto Collect_Ventoy
 :Extended_Briefing
@@ -1831,7 +1831,7 @@ echo Chosen product: ALOSToy !product!.>> "!logfile!"
 if "!AcceptEULA!"=="0" (
     call :PowerShell_Helper "License-Terms_EXT" /Maximised
     pause
-    call powershell.exe -nop -nol -ExecutionPolicy Bypass -WindowStyle Normal -c "Write-Output 'User agreed to license terms.' | Out-File $env:logfile -Encoding UTF8 -Append -NoClobber -Force"
+    call powershell.exe -nop -nol -ExecutionPolicy Bypass -WindowStyle Normal -c "Write-Output 'User agreed to licence terms.' | Out-File $env:logfile -Encoding UTF8 -Append -NoClobber -Force"
 )
 goto Collect_Ventoy
 :Collect_Ventoy
@@ -3532,7 +3532,7 @@ if "!errorlevel!"=="1" (
     echo ====================================================
     echo Author: !Author!
     echo.
-    echo END USER LICENSE AGREEMENT
+    echo END USER LICENCE AGREEMENT
     echo.
     echo By using this software, you agree to the following:
     echo - This tool is provided "as-is" with no warranty.
@@ -3558,7 +3558,7 @@ if "!errorlevel!"=="1" (
     echo ====================================================
     echo Author: !Author!
     echo.
-    echo END USER LICENSE AGREEMENT
+    echo END USER LICENCE AGREEMENT
     echo.
     echo By using this software, you agree to the following:
     echo - Ventoy and this tool are provided "as-is" with no warranty.
@@ -3750,7 +3750,7 @@ if "!errorlevel!"=="1" (
     echo ====================================================
     echo Author: !Author!
     echo.
-    echo END USER LICENSE AGREEMENT
+    echo END USER LICENCE AGREEMENT
     echo.
     echo By using this software, you agree to the following:
     echo - This tool is provided "as-is" with no warranty.
@@ -3775,7 +3775,7 @@ if "!errorlevel!"=="1" (
     echo ====================================================
     echo Author: !Author!
     echo.
-    echo END USER LICENSE AGREEMENT
+    echo END USER LICENCE AGREEMENT
     echo.
     echo By using this software, you agree to the following:
     echo - Ventoy and this tool are provided "as-is" with no warranty.
@@ -3859,7 +3859,7 @@ call :InstallHelpTitle 5
 echo VENTOY DOWNLOAD AND USB SELECTION:
 echo.
 echo Once you have clicked on a button, you will see the edition's
-echo license terms. Press any key to continue and we will download
+echo licence terms. Press any key to continue and we will download
 echo the latest Ventoy version or, a user-selected Ventoy version.
 echo.
 echo When Ventoy has downloaded to Ventoy2Disk in the program root,
@@ -4433,61 +4433,61 @@ echo ================================ Starting ALOSToy Installer... (!D! !T!) ==
 echo ========================================================================================================================
 if "!GPLNotice!"=="1" if "!EXISTS!"=="1" (
     type "!FILE!"
-    set "GPLNotice_Footer=To see the full GNU GPL License, open the COPYING.TXT file."
+    set "GPLNotice_Footer=To see the full GNU GPL Licence, open the COPYING.TXT file."
     if "!Or-Any-Later-Version!"=="True" (echo !GPLNotice_Footer! GPLv3 or any later version.) else if "!Or-Any-Later-Version!"=="False" (echo !GPLNotice_Footer! GPLv3 ONLY.)
     echo ========================================================================================================================
 ) else (
     rem cls
-    echo The license file are non-existent. This means you may not have any
-    echo GNU GPL v3 rights to use unless you redownload the license files to
+    echo The licence file are non-existent. This means you may not have any
+    echo GNU GPLv3 rights to use unless you redownload the licence files to
     echo !Root!.
     echo.
-    echo You are required to redownload the licenses from:
+    echo You are required to redownload the licences from:
     echo !InstallerRepo!
     echo.
-    echo Press any key to download the license files...
+    echo Press any key to download the licence files...
     pause >nul
     if "!Or-Any-Later-Version!"=="False" (
-        echo Note: !Script!'s code is GPL v3 ONLY. You may NOT redistribute
+        echo Note: !Script!'s code is GPLv3 ONLY. You may NOT redistribute
         echo under any later or previous version, only the GNU GPL v3 license is allowed.
     ) else if "!Or-Any-Later-Version!"=="True" (
-        echo Note: !Script!'s code is GPL v3 or any later version.
+        echo Note: !Script!'s code is GPLv3 or any later version.
         echo You may redistribute under GPLv3 or any future version of your choice.
     )
     if "!Or-Any-Later-Version!"=="False" (
-        for %%A in (COPYING.TXT LICENSE.TXT GPLV3_ONLY_INFO.TXT) do curl "!InstallerRepo!/raw/refs/heads/main/backup_license/%%A" -O -L >> "!logfile!" 2>&1
+        for %%A in (COPYING.TXT LICENCE.TXT GPLV3_ONLY_INFO.TXT) do curl "!InstallerRepo!/raw/refs/heads/main/backup_licence/%%A" -O -L >> "!logfile!" 2>&1
         call :LicenseHasher AfterRedownload || (
             endlocal
             exit 23
         )
     ) else if "!Or-Any-Later-Version!"=="True" (
         cls
-        echo You do not have to actually redownload the license files
+        echo You do not have to actually redownload the licence files
         echo because you chose to redistribute under any later version.
     )
 )
 goto :eof
 :LicenseHasher
-rem Maintain the integrity of the license files. The GNU GPL licenses forbid
+rem Maintain the integrity of the licence files. The GNU GPL licenses forbid
 rem editing the documents. "Everyone is permitted to copy and distribute
 rem verbatim copies of this license document, but changing it is not allowed."
 rem DO NOT ASK ME TO REMOVE THIS IN ISSUES OR COMMENTS! I WILL NOT RESPOND!
 set "ARE=0"
 if /i "%~1"=="AfterRedownload" set "ARE=1"
-set "Valid_LicenseDocuments=0"
+set "Valid_LicenceDocuments=0"
 for /f "tokens=1,2,3 usebackq" %%H in (`powershell -nop -nol -c "chcp 65001 > $null; $i18n = New-Object System.Text.UTF8Encoding; [Console]::InputEncoding = $i18n; [Console]::OutputEncoding = $i18n; $OutputEncoding = $i18n; $section = [io.file]::ReadAllText($env:FullScript) -split '(?ms)^:HashLicenses\r?\n(.*?)\r?\n:Post_HashLicenses'; & ([scriptblock]::Create($section[1]))"`) do (
     if /i "%%H"=="MISSING" (set "Missing=True") else if /i "%%H"=="Hashes:" (
-        rem LICENSE.TXT
-        if /i "%%I"=="7F545FE11D2817185E365A03E5DD7FAD1C9F858702FA09E361D5ABF5A8FFF4E6" (set /a "Valid_LicenseDocuments+=1") else if /i "%%I"=="F3F3786ADE093D4EA620147AB7CED3FEB1C49E5A6F04C186D4490F1D70C945D7" (set /a "Valid_LicenseDocuments+=1")
+        rem LICENCE.TXT or GPLV3_ONLY_INFO.TXT
+        if /i "%%I"=="7F545FE11D2817185E365A03E5DD7FAD1C9F858702FA09E361D5ABF5A8FFF4E6" (set /a "Valid_LicenceDocuments+=1") else if /i "%%I"=="F3F3786ADE093D4EA620147AB7CED3FEB1C49E5A6F04C186D4490F1D70C945D7" (set /a "Valid_LicenceDocuments+=1")
         rem COPYING.TXT
-        if /i "%%J"=="3972DC9744F6499F0F9B2DBF76696F2AE7AD8AF9B23DDE66D6AF86C9DFB36986" (set /a "Valid_LicenseDocuments+=1")
+        if /i "%%J"=="1B3782CCAD7B8614100CDA30D3FAF42FC39F2E97932908C543005053B654CA68" (set /a "Valid_LicenceDocuments+=1")
     )
 )
 if "!ARE!"=="0" (
     exit /b 0
     goto :eof
-) else if !Valid_LicenseDocuments! lss 2 (
-    echo The licenses are still bad. This program will quit.
+) else if !Valid_LicenceDocuments! lss 2 (
+    echo The licences are still bad. This program will quit.
     timeout /t 3 /NOBREAK >nul
     exit /b 1
 ) else (
@@ -4503,9 +4503,9 @@ rem batch logic and embedded PowerShell logic.
 rem =====================================================
 :HashLicenses
 if ((Test-Path -LiteralPath $env:FILE) -and (Test-Path -LiteralPath (Join-Path $env:Root 'COPYING.TXT'))) {
-    $LICENSE = (Get-FileHash -LiteralPath $env:FILE -Algorithm SHA256).Hash.ToUpper()
+    $LICENCE = (Get-FileHash -LiteralPath $env:FILE -Algorithm SHA256).Hash.ToUpper()
     $COPYING = (Get-FileHash -LiteralPath (Join-Path $env:Root 'COPYING.TXT') -Algorithm SHA256).Hash.ToUpper()
-    'Hashes: {0} {1}' -f $LICENSE,$COPYING
+    'Hashes: {0} {1}' -f $LICENCE,$COPYING
     Exit 0
 } else {
     'MISSING'
@@ -4514,7 +4514,12 @@ if ((Test-Path -LiteralPath $env:FILE) -and (Test-Path -LiteralPath (Join-Path $
 :Post_HashLicenses
 :CopyToClipboard
 Add-Type -AssemblyName PresentationFramework
-$CommandToCopy = [string]::Concat('powershell -nop -nol -c ',[char]34,'chcp 65001 > $null; $i18n = New-Object System.Text.UTF8Encoding; [Console]::InputEncoding = $i18n; [Console]::OutputEncoding = $i18n; $OutputEncoding = $i18n; $section = [io.file]::ReadAllText(''%%~f0'') -split ''(?ms)^:YourPSBlock\r?\n(.*?)\r?\n:Post_YourPSBlock''; & ([scriptblock]::Create($section[1])) <YourArguments>',[char]34)
+<#
+    %~f0 does not expand in this PowerShell instance because this
+    environment is completely independent of the Command Prompt session.
+    So %~f0 will not expand to the full batch script path.
+#>
+$CommandToCopy = [string]::Concat('powershell -nop -nol -c ',[char]34,'chcp 65001 > $null; $i18n = New-Object System.Text.UTF8Encoding; [Console]::InputEncoding = $i18n; [Console]::OutputEncoding = $i18n; $OutputEncoding = $i18n; $section = [io.file]::ReadAllText(''%~f0'') -split ''(?ms)^:YourPSBlock\r?\n(.*?)\r?\n:Post_YourPSBlock''; & ([scriptblock]::Create($section[1])) <YourArguments>',[char]34)
 Set-Clipboard -Value $CommandToCopy
 if ($?) {
     [System.Windows.MessageBox]::Show('Command has been copied to clipboard.','ALOSToy Installer','OK','Info') | Out-Null
@@ -5753,5 +5758,5 @@ exit 0
 :Post_Ventoy-Choices
 rem End of installer, leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 5758 (5757 without extra newline).
+rem Total line count: 5763 (5762 without extra newline).
 rem Made by Aarav Katariya with love and care...
