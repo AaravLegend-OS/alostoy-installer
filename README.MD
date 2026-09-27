@@ -1,3 +1,5 @@
+<img width="1024" height="1024" alt="Logo_Standard" src="https://github.com/user-attachments/assets/bb9a0e7b-ecd5-44e3-8a86-3703ecdea3b4" />
+
 # ***ALOSToy Installer***
 
 
