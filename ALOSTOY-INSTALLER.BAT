@@ -4544,7 +4544,7 @@ param(
 Write-Host "MyStringValue is set to ${MyStringValue}."
 Write-Host "MyIntegerValue is set to ${MyIntegerValue}."
 Write-Host "MyStringArrayOrValue is set to ${MyStringArrayOrValue}."
-foreach ($Value in $MyStringArrayOrValue) { Set-Content -LiteralPath "${env:USERPROFILE}\myfolder\myfile.txt" -Value "The user passed ${} in the array." -Encoding Unicode }
+foreach ($Value in $MyStringArrayOrValue) { Set-Content -LiteralPath "${env:USERPROFILE}\myfolder\myfile.txt" -Value "The user passed ${MyStringArrayOrValue} in the array." -Encoding Unicode }
 Pause
 Exit
 '@
