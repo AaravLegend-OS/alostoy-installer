@@ -105,7 +105,7 @@ if "!Script!" neq "ALOSTOY-INSTALLER.BAT" exit 1
 rem Define the author.
 set "Author=Aarav Katariya"
 rem Define the version. (Will always remain in 1.X.X.X format.)
-set "Version=1.0.2.3"
+set "Version=1.0.2.4"
 for /f "skip=2 tokens=2*" %%A in ('reg query "HKEY_CURRENT_USER\Control Panel\International" /v "LocaleName"') do (
     set "OSLanguage=%%B"
     set "lang=!OSLanguage:~0,2!"
@@ -4526,6 +4526,45 @@ if ($?) {
     [System.Windows.MessageBox]::Show("Using a scriptblock is FAR safer. ${env:Author} used to use Invoke-Expression but stopped using it for much better scriptblocks.",'ALOSToy Installer','OK','Info') | Out-Null
     [System.Windows.MessageBox]::Show("There is a placeholder for arguments called <YourArguments>. If you want to use arguments, remove the placeholder that you see and replace it with your own arguments defined in your embedding block.`r`n`r`nUse param() to define arguments in a custom embedding block.",'ALOSToy Installer','OK','Info') | Out-Null
     [System.Windows.MessageBox]::Show('Then add your arguments in your command to call the embedding block with your custom arguments. If you do not want to pass arguments to embedded script blocks, remove the <YourArguments> placeholder entirely.','ALOSToy Installer','OK','Info') | Out-Null
+    [System.Windows.MessageBox]::Show('The first example with param will be shown in the console window. Press OK. The example will show in magenta.','ALOSToy Installer','OK','Info') | Out-Null
+    # Show example one.
+    $ExampleScriptA = @'
+[CmdletBinding()] # <---- You should add this because it gives the scriptblock common parameters.
+# You can choose whether to include a param() block or not.
+param(
+    [Parameter(Mandatory, HelpMessage="This help message can be omitted if you want.")]
+    [string]$MyStringValue, # A comma must be inserted at the end of a parameter to start defining a new parameter.
+    [Parameter(Mandatory=$false, HelpMessage="Parameters do not need to be mandatory.")]
+    # You can assign default values if no value is specified.
+    [int]$MyIntegerValue = 100,
+    [Parameter(Mandatory)]
+    # Array versions are avaliable too! Append [] to the type. Eg: [string] ----> [string[]]
+    [string[]]$MyStringArrayOrValue
+)
+Write-Host "MyStringValue is set to ${MyStringValue}."
+Write-Host "MyIntegerValue is set to ${MyIntegerValue}."
+Write-Host "MyStringArrayOrValue is set to ${MyStringArrayOrValue}."
+foreach ($Value in $MyStringArrayOrValue) { Set-Content -LiteralPath "${env:USERPROFILE}\myfolder\myfile.txt" -Value "The user passed ${} in the array." -Encoding Unicode }
+Pause
+Exit
+'@
+    Write-Host $ExampleScriptA -ForegroundColor Magenta
+    Pause
+    Clear-Host
+    [System.Windows.MessageBox]::Show('But you can also use $env: variables from your batch or windows environment/session as arguments. Click OK to see the second example. The example will show in magenta.','ALOSToy Installer','OK','Info') | Out-Null
+    # Show example two.
+    $ExampleScriptB = @'
+[CmdletBinding()] # <---- You should add this because it gives the scriptblock common parameters.
+$VarOne = $env:GlobalOne # This would be %GlobalOne% or !GlobalOne! set in the batch script.
+$VarTwo = $env:GlobalTwo # This would be %GlobalTwo% or !GlobalTwo! set in the batch script.
+Write-Host "Your value that was passed by %GlobalOne% is ${VarOne}."
+Write-Host "Your value that was passed by %GlobalTwo% is ${VarTwo}."
+Pause
+Exit
+'@
+    Write-Host $ExampleScriptB -ForegroundColor Magenta
+    Pause
+    Clear-Host
     Exit 0
 } else {
     [System.Windows.MessageBox]::Show('Command could not be copied to clipboard','ALOSToy Installer','OK','Error') | Out-Null
@@ -5758,5 +5797,5 @@ exit 0
 :Post_Ventoy-Choices
 rem End of installer, leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 5763 (5762 without extra newline).
+rem Total line count: 5802 (5801 without extra newline).
 rem Made by Aarav Katariya with love and care...
