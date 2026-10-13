@@ -79,6 +79,20 @@
 @rem "@echo off" or "@echo on"
 @echo !CmdEchoing!
 rem =========================================================================
+rem Start by resetting path variables. Also, this fixes a WinPE problem where
+rem   powershell.exe is not in !PATH! variable by default, which is seen in
+rem                     Sergei Strelec's WinPE 10 and 11.
+rem =========================================================================
+set "PathExt=.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC"
+set "SysPath=!SystemRoot!\System32"
+set "Path=!SystemRoot!\System32;!SystemRoot!;!SystemRoot!\System32\Wbem;!SystemRoot!\System32\WindowsPowerShell\v1.0\"
+if exist "!SystemRoot!\Sysnative\reg.exe" (
+    set "SysPath=!SystemRoot!\Sysnative"
+    set "Path=!SystemRoot!\Sysnative;!SystemRoot!;!SystemRoot!\Sysnative\Wbem;!SystemRoot!\Sysnative\WindowsPowerShell\v1.0\;!Path!"
+)
+set "ComSpec=!SysPath!\cmd.exe"
+set "PSModulePath=!ProgramFiles!\WindowsPowerShell\Modules;!SysPath!\WindowsPowerShell\v1.0\Modules"
+set "Path=!Path!;!Root!;!Root!bin;!Root!Ventoy2Disk;!Root!Ventoy2Disk\altexe"
 rem Check for powershell existence and find it in path.
 rem Must happen before anything else occurs in the process.
 if exist "!SystemRoot!\System32\WindowsPowershell\v1.0\powershell.exe" (
@@ -242,6 +256,7 @@ set "EXHashG=0E417F999D42920282B9AD411E95372C692DC6FA21CDC15511F8F80EB04887CB"
 set "EXHashH=486265B9BA383F2ADB8B5C5F26B76148CDCEBAB7965ACE3B083F52080F6899D7"
 rem Store the tools hash and use it later. (Useful for hashing the tools.esd file and not trusting blindly.)
 set "ToolsHash=FB7815349521365C521F140B8BA63FC004418EA7FDA7FE2C909861BBD6EBB063"
+rem =====================================================================
 rem You can configure how new lines are represented in message boxes.
 rem Use `r`n for Windows style Carriage Return Line Feed newlines or
 rem use `n for Unix style Line Feed newlines. This program uses CRLF
@@ -250,6 +265,7 @@ rem change the variable "NewLine" to decide your line endings in
 rem message boxes. The ending will be validated after it is set.
 rem Please note that this variable is for PowerShell message boxes only.
 set "NewLine=`r`n"
+rem =====================================================================
 rem Initialise the rest.
 set "InstallExtensions=False"
 set "WarnAccepted=0"
@@ -288,7 +304,6 @@ set "FormatAccepted=0"
 set "RedoInstall=No"
 set "ArgumentsPassed=False"
 set "StartHelp=0"
-set "NoBackup=0"
 rem Validate the line ending choice.
 if "!NewLine!"=="`r`n" (echo >nul) else if "!NewLine!"=="`n" (echo >nul) else (
     echo Your line endings are not valid.
@@ -335,16 +350,6 @@ if "!Or-Any-Later-Version!"=="False" (
         )
     )
 )
-set "PathExt=.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC"
-set "SysPath=!SystemRoot!\System32"
-set "Path=!SystemRoot!\System32;!SystemRoot!;!SystemRoot!\System32\Wbem;!SystemRoot!\System32\WindowsPowerShell\v1.0\"
-if exist "!SystemRoot!\Sysnative\reg.exe" (
-    set "SysPath=!SystemRoot!\Sysnative"
-    set "Path=!SystemRoot!\Sysnative;!SystemRoot!;!SystemRoot!\Sysnative\Wbem;!SystemRoot!\Sysnative\WindowsPowerShell\v1.0\;!Path!"
-)
-set "ComSpec=!SysPath!\cmd.exe"
-set "PSModulePath=!ProgramFiles!\WindowsPowerShell\Modules;!SysPath!\WindowsPowerShell\v1.0\Modules"
-set "Path=!Path!;!Root!;!Root!bin;!Root!Ventoy2Disk;!Root!Ventoy2Disk\altexe"
 rem Right-click + Run As Administrator forcibly sets the working directory to !SystemRoot!\System32. Overcome that and handle it properly with the ability to run it from System32.
 if /i "!CD!"=="!SYSTEMROOT!\System32" if "!FullScript!" neq "!SYSTEMROOT!\System32\!Script!" (
     call :WindowTitle "NO RUNNING FROM SYSTEM32."
@@ -514,7 +519,7 @@ rem Parse arguments cleanly in PowerShell. It works for me and is more efficient
 rem It makes sense because batch cannot do or, and, is, like, in or match checks.
 rem Using variable case-sensitivity for arguments.
 rem A much better argparser. Love it.
-for /f "delims=" %%A in ('powershell -nop -nol -ExecutionPolicy Bypass -c "function Match([string]$Left, [string]$Right) { if ($env:CaseSensitive -match '^(1|true|yes|on)$') { return $Left -ceq $Right } else { return $Left -ieq $Right } }; if ((Match $env:ArgName '?') -or (Match $env:ArgName 'Help') -or (Match $env:ArgName 'H')) { Write-Output 'Help' } elseif ((Match $env:ArgName 'NoBanner') -or (Match $env:ArgName 'No-Banner')) { Write-Output 'NoBanner' } elseif ((Match $env:ArgName 'ForceBanner') -or (Match $env:ArgName 'Force-Banner')) { Write-Output 'ForceBanner' } elseif ((Match $env:ArgName 'LogFile') -or (Match $env:ArgName 'Log-File')) { Write-Output 'LogFile' } elseif (Match $env:ArgName 'Product') { Write-Output 'Product' } elseif ((Match $env:ArgName 'VentoyVersion') -or (Match $env:ArgName 'Ventoy-Version')) { Write-Output 'VentoyVersion' } elseif ((Match $env:ArgName 'DownloadVentoyVersion') -or (Match $env:ArgName 'Download-Ventoy-Version')) { Write-Output 'DownloadVentoyVersion' } elseif ((Match $env:ArgName 're1') -or (Match $env:ArgName 're2') -or (Match $env:ArgName 'qedit')) { Write-Output 'Arch_Relaunch' } elseif ((Match $env:ArgName 'NoUpdate') -or (Match $env:ArgName 'No-Update')) { Write-Output 'Do_Not_Update' } elseif ((Match $env:ArgName 'ForceUpdate') -or (Match $env:ArgName 'Force-Update')) { Write-Output 'Always_Update' } elseif (Match $env:ArgName 'Updated') { Write-Output 'Successful_Update' } elseif ((Match $env:ArgName 'AutoUpdate') -or (Match $env:ArgName 'Auto-Update')) { Write-Output 'Auto_Update_Prg' } elseif ((Match $env:ArgName 'NoBackup') -or (Match $env:ArgName 'No-Backup')) { Write-Output 'NoUpdateBackup' } elseif ((Match $env:ArgName 'HideGPLNotice') -or (Match $env:ArgName 'Hide-GPL-Notice')) { Write-Output 'Inhibit_GPL_Notice' } else { Write-Output 'Other' }"') do set "ArgKind=%%A"
+for /f "delims=" %%A in ('powershell -nop -nol -ExecutionPolicy Bypass -c "function Match([string]$Left, [string]$Right) { if ($env:CaseSensitive -match '^(1|true|yes|on)$') { return $Left -ceq $Right } else { return $Left -ieq $Right } }; if ((Match $env:ArgName '?') -or (Match $env:ArgName 'Help') -or (Match $env:ArgName 'H')) { Write-Output 'Help' } elseif ((Match $env:ArgName 'NoBanner') -or (Match $env:ArgName 'No-Banner')) { Write-Output 'NoBanner' } elseif ((Match $env:ArgName 'ForceBanner') -or (Match $env:ArgName 'Force-Banner')) { Write-Output 'ForceBanner' } elseif ((Match $env:ArgName 'LogFile') -or (Match $env:ArgName 'Log-File')) { Write-Output 'LogFile' } elseif (Match $env:ArgName 'Product') { Write-Output 'Product' } elseif ((Match $env:ArgName 'VentoyVersion') -or (Match $env:ArgName 'Ventoy-Version')) { Write-Output 'VentoyVersion' } elseif ((Match $env:ArgName 'DownloadVentoyVersion') -or (Match $env:ArgName 'Download-Ventoy-Version')) { Write-Output 'DownloadVentoyVersion' } elseif ((Match $env:ArgName 're1') -or (Match $env:ArgName 're2') -or (Match $env:ArgName 'qedit')) { Write-Output 'Arch_Relaunch' } elseif ((Match $env:ArgName 'NoUpdate') -or (Match $env:ArgName 'No-Update')) { Write-Output 'Do_Not_Update' } elseif ((Match $env:ArgName 'ForceUpdate') -or (Match $env:ArgName 'Force-Update')) { Write-Output 'Always_Update' } elseif (Match $env:ArgName 'Updated') { Write-Output 'Successful_Update' } elseif ((Match $env:ArgName 'AutoUpdate') -or (Match $env:ArgName 'Auto-Update')) { Write-Output 'Auto_Update_Prg' } elseif ((Match $env:ArgName 'HideGPLNotice') -or (Match $env:ArgName 'Hide-GPL-Notice')) { Write-Output 'Inhibit_GPL_Notice' } else { Write-Output 'Other' }"') do set "ArgKind=%%A"
 rem Help arguments. Open the Command-Line Help Guide...
 if /i "!ArgKind!"=="Help" (
     call :WindowTitle "Starting Help Guide..."
@@ -955,25 +960,6 @@ if /i "!ArgKind!"=="Auto_Update_Prg" (
     shift
     goto CLI_Arguments
 )
-rem Backup prevention argument during update. Good to use with ForceUpdate.
-if /i "!ArgKind!"=="NoUpdateBackup" (
-    if "!ForceUpdate!"=="1" if "!Updated!"=="0" (
-        cls
-        echo This argument needs to be paired with ForceUpdate
-        echo to work. Although you can use it normally, I have
-        echo to stop you from doing that. This argument should
-        echo be used with ForceUpdate incase you must restore a
-        echo working version from the official Github repository.
-        echo.
-        echo Make sure you pass the required argument next time.
-        pause
-        endlocal
-        exit 6
-    )
-    set "NoBackup=1"
-    shift
-    goto CLI_Arguments
-)
 rem Hide GPL Notice. Do not document. Can be used.
 if /i "!ArgKind!"=="Inhibit_GPL_Notice" (
     set "ArgumentsPassed=True"
@@ -1192,11 +1178,7 @@ if !errorlevel! equ 0 (
     rem Product arguments sometimes cannot auto or force update when passed by an external
     rem script packaged in the zipfile. Specifically FORCE_UPDATE_AND_RUN.BAT.
     rem ===================================================================================
-    rem If AutoUpdate is set to 1, automatically update without prompt.
-    if "!AutoUpdate!"=="1" goto ApplyUpdate
-    rem Else if the "Product" argument is passed, automatically update without prompt.
-    if "!ProductDefinedWithArg!"=="True" goto ApplyUpdate
-    rem Else if the "ForceUpdate" argument is passed, automatically update without prompt.
+    rem If the "ForceUpdate" argument is passed, automatically update without prompt.
     if "!ForceUpdate!"=="1" goto ApplyUpdate
     rem ===================================================================================
     rem If none if the flags are set, just do normal behaviour.
@@ -1205,7 +1187,9 @@ if !errorlevel! equ 0 (
     if "!NoUpdate!"=="1" set "RequiresUpdate=False"
     if /i "!RequiresUpdate!"=="True" (
         cd /d "!Root!"
-        rem Prompt the user.
+        rem Prompt the user or just auto-consent.
+        if "!AutoUpdate!"=="1" goto ApplyUpdate
+        if "!ForceUpdate!"=="1" goto ApplyUpdate
         for /f "delims= " %%# in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show(\"A new version of the installer has been found.!NewLine!!NewLine!Current version: ${env:Version}!NewLine!Newest version: ${env:Newest}!NewLine!!NewLine!Do you want to update now or not?\",'ALOSToy Installer','YesNoCancel','Question')"') do (
             if "%%#"=="Yes" (
                  rem If the user says yes, begin the update process.
@@ -3308,13 +3292,12 @@ echo         Tells the installer not to update.
 echo         It does not matter if there is a new update, it will not when specified.
 echo         Useful for keeping the same version for longer.
 echo.
-echo      /ForceUpdate   (Optional argument: /NoBackup)
-echo      -ForceUpdate   (Optional argument: -NoBackup)
-echo      --Force-Update (Optional argument: --No-Backup)
+echo      /ForceUpdate
+echo      -ForceUpdate
+echo      --Force-Update
 echo         Tells the installer to forcibly update even if no new version.
 echo         It does not matter if there is not a new update, it will update to the newest or current version.
-echo         No questions asked. Useful for reverting unwanted local changes. Can also pair with NoBackup to
-echo         force replace the local version with the latest, working, online version.
+echo         No questions asked. Useful for reverting unwanted local changes.
 echo.
 echo     /AutoUpdate
 echo     -AutoUpdate
@@ -4190,7 +4173,7 @@ set "Timestamp=!DATE!-!TIME!"
 set "Timestamp=!Timestamp:/=-!"
 set "Timestamp=!Timestamp::=-!"
 set "Timestamp=!Timestamp: =0!"
-if "!NoBackup!"=="1" (set "SuccessfulBackup=1") else (copy "!Script!" "!Script!_V!VERSION!_!Timestamp!.BAK" /y >nul && set "SuccessfulBackup=1")
+if "!ForceUpdate!"=="1" (set "SuccessfulBackup=1") else (copy "!Script!" "!Script!_V!VERSION!_!Timestamp!.BAK" /y >nul && set "SuccessfulBackup=1")
 if "!SuccessfulBackup!"=="1" (
     set "Timestamp="
     set "SuccessfulBackup="
@@ -5798,5 +5781,5 @@ exit 0
 :Post_Ventoy-Choices
 rem End of installer, leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 5803 (5802 without extra newline).
+rem Total line count: 5786 (5785 without extra newline).
 rem Made by Aarav Katariya with love and care...
