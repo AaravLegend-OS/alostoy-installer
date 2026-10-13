@@ -8,7 +8,7 @@
 @rem                     (User choice if they fork.)
 @rem             Supports upgrade from GPLv3 to future: True
 @rem                     (User choice if they fork.)
-@rem              SPDX-License-Identifier: GPL-v3.0-or-later
+@rem              SPDX-License-Identifier: GPL-3.0-or-later
 @rem                     (User choice if they fork.)
 @rem   Please read GPLV3_ONLY_INFO.TXT for GPLv3 only redistribution.
 @rem ===================================================================
@@ -96,6 +96,8 @@ rem %~nx0 could become the next argument.
 for /f "delims=" %%S in ('echo %~nx0') do set "Script=%%S"
 for /f "delims=" %%F in ('echo %~f0') do set "FullScript=%%F"
 for /f "delims=" %%P in ('echo %~n0') do set "PartialScript=%%P"
+rem Store user arguments.
+set "UserArgs=%*"
 rem Store the root directory for use (Contains trailing slash).
 set "Root=%~dp0"
 rem Define the SHA algorithm.
@@ -125,6 +127,35 @@ if !errorlevel! gtr 0 (
         exit 1
     )
 )
+rem Instead of digging this later and failing on invalid argument, place it before any logic.
+set re1=
+set re2=
+for %%# in (!UserArgs!) do (
+    if /i "%%#"=="re1" set re1=1
+    if /i "%%#"=="re2" set re2=1
+    if /i "%%#"=="/qedit" (
+        set re1=1
+        set re2=1
+    ) else if /i "%%#"=="-qedit" (
+        set re1=1
+        set re2=1
+    ) else if "%%#"=="--qedit" (
+        set re1=1
+        set re2=1
+    )
+)
+rem You might want to restart in an x64 process if an x86 process started ALOSToy-Installer.bat on Windows 11 or Windows 10 x64.
+if exist !SystemRoot!\Sysnative\cmd.exe if not defined re1 (
+    start !SystemRoot!\Sysnative\cmd.exe /c ""!FullScript!" !UserArgs! re1"
+    cls
+    exit 16
+)
+rem You might want to restart in an ARM32 process if it was initiated by x64 process on ARM64 Windows 10 or Windows 11 on ARM.
+if exist !SystemRoot!\SysArm32\cmd.exe if "!PROCESSOR_ARCHITECTURE!"=="AMD64" if not defined re2 (
+    start !SystemRoot!\SysArm32\cmd.exe /c ""!FullScript!" !UserArgs! re2"
+    cls
+    exit 16
+)
 set "GPLNotice=1"
 rem This special argument has to be parsed the manual and hard way
 rem because the installer title and gpl notice shows up before the
@@ -142,7 +173,6 @@ for %%A in (!UserArgs!) do (
     )
 )
 :Start
-set "UserArgs=%*"
 set "D=!DATE!"
 set "T=!TIME!"
 rem Define the number of columms and lines.
@@ -190,35 +220,6 @@ set "Uri=!InstallerRepo!/raw/refs/heads/main/tools.esd"
 rem Write a new timestamped log.
 if not exist "!Root!logs" md "!Root!logs"
 set "logfile=!Root!logs\ALOSTOY-INSTALLER_!LOGSTAMP!.LOG"
-rem Instead of digging this later and failing on invalid argument, place it before any logic.
-set re1=
-set re2=
-for %%# in (!UserArgs!) do (
-    if /i "%%#"=="re1" set re1=1
-    if /i "%%#"=="re2" set re2=1
-    if /i "%%#"=="/qedit" (
-        set re1=1
-        set re2=1
-    ) else if /i "%%#"=="-qedit" (
-        set re1=1
-        set re2=1
-    ) else if "%%#"=="--qedit" (
-        set re1=1
-        set re2=1
-    )
-)
-rem You might want to restart in an x64 process if an x86 process started ALOSToy-Installer.bat on Windows 11 or Windows 10 x64.
-if exist !SystemRoot!\Sysnative\cmd.exe if not defined re1 (
-    start !SystemRoot!\Sysnative\cmd.exe /c ""!FullScript!" !UserArgs! re1"
-    cls
-    exit 16
-)
-rem You might want to restart in an ARM32 process if it was initiated by x64 process on ARM64 Windows 10 or Windows 11 on ARM.
-if exist !SystemRoot!\SysArm32\cmd.exe if "!PROCESSOR_ARCHITECTURE!"=="AMD64" if not defined re2 (
-    start !SystemRoot!\SysArm32\cmd.exe /c ""!FullScript!" !UserArgs! re2"
-    cls
-    exit 16
-)
 rem Define primary and fallback font.
 set "FirstFont=CaskaydiaCove NFM"
 set "SecondFont=Courier New"
@@ -305,7 +306,7 @@ if /i "%~1"=="I_QEOff" set "QuickEdit=Off"
 if "!Or-Any-Later-Version!"=="False" (
     rem Allow user to still open help even with mismatched licence files.
     if !StartHelp! lss 1 (
-        call :LicenseHasher
+        call :LicenceHasher
         rem Properly enforce the licence rules.
         if "!Missing!"=="True" (
             echo The licence documents are missing. We can no longer prove if
@@ -4217,7 +4218,7 @@ if "!SuccessfulBackup!"=="1" (
             set "SZ="
             call :WindowTitle "UPDATE SUCCESSFUL"
             echo The update has succeeded. !Script! is restarting...
-            powershell -nop -nol -c "Start-Process conhost.exe -Verb RunAs -ArgumentList 'cmd.exe /c cd /d "!Root!\" & call "!Script!" !UserArgs! !ArgPrefix!Updated'" >nul 2>&1
+            powershell -nop -nol -c "Start-Process conhost.exe -Verb RunAs -ArgumentList 'cmd.exe /c cd /d "!Root!\" & call "!Script!" !ArgPrefix!Updated !UserArgs!'" >nul 2>&1
             endlocal
             exit 0
         ) else (
@@ -4456,7 +4457,7 @@ if "!GPLNotice!"=="1" if "!EXISTS!"=="1" (
     )
     if "!Or-Any-Later-Version!"=="False" (
         for %%A in (COPYING.TXT LICENCE.TXT GPLV3_ONLY_INFO.TXT) do curl "!InstallerRepo!/raw/refs/heads/main/backup_licence/%%A" -O -L >> "!logfile!" 2>&1
-        call :LicenseHasher AfterRedownload || (
+        call :LicenceHasher AfterRedownload || (
             endlocal
             exit 23
         )
@@ -4467,7 +4468,7 @@ if "!GPLNotice!"=="1" if "!EXISTS!"=="1" (
     )
 )
 goto :eof
-:LicenseHasher
+:LicenceHasher
 rem Maintain the integrity of the licence files. The GNU GPL licenses forbid
 rem editing the documents. "Everyone is permitted to copy and distribute
 rem verbatim copies of this license document, but changing it is not allowed."
@@ -5797,5 +5798,5 @@ exit 0
 :Post_Ventoy-Choices
 rem End of installer, leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 5802 (5801 without extra newline).
+rem Total line count: 5803 (5802 without extra newline).
 rem Made by Aarav Katariya with love and care...
