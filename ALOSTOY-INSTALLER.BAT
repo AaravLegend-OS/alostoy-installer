@@ -755,6 +755,9 @@ if /i "!ArgKind!"=="Product" (
         ) else if /i "%~4"=="Update" (
             set "Vtoy_Install_Type=Update"
             echo Successfully set the install type to "Update".
+        ) else if /i "%~4"=="Preinstalled" (
+            set "Vtoy_Install_Type=Preinstalled"
+            echo Successfully declared Ventoy as already installed.
         ) else (
             echo Not a valid value for Ventoy Install Type. ^(%~4^)
             pause
@@ -5781,5 +5784,5 @@ exit 0
 :Post_Ventoy-Choices
 rem End of installer, leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 5786 (5785 without extra newline).
+rem Total line count: 5789 (5788 without extra newline).
 rem Made by Aarav Katariya with love and care...
