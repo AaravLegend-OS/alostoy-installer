@@ -4,11 +4,11 @@
 @rem                      Program language: EN-GB
 @rem    Repo: https://www.github.com/AaravLegend-OS/alostoy-installer
 @rem                   Newline sequence: CRLF (Windows)
-@rem          Program license: GNU GPLv3 "or any later version"
+@rem          Program licence: GNU GPLv3 "or any later version"
 @rem                     (User choice if they fork.)
 @rem             Supports upgrade from GPLv3 to future: True
 @rem                     (User choice if they fork.)
-@rem              SPDX-License-Identifier: GPL-3.0-or-later
+@rem              SPDX-licence-Identifier: GPL-3.0-or-later
 @rem                     (User choice if they fork.)
 @rem   Please read GPLV3_ONLY_INFO.TXT for GPLv3 only redistribution.
 @rem ===================================================================
@@ -1327,15 +1327,15 @@ if "!AcceptEULA!"=="0" (
         exit 3
     )
     echo - Under GPLv3, you are required to provide source code if modified,
-    echo - license under the GPLv3 license and pass freedoms to others.
+    echo - licence under the GPLv3 licence and pass freedoms to others.
     if "!Or-Any-Later-Version!"=="False" (
-        echo - You are not permitted to distribute this under any other license
-        echo - other than the GNU General Public License v3.0. Combination with
+        echo - You are not permitted to distribute this under any other licence
+        echo - other than the GNU General Public licence v3.0. Combination with
     ) else if "!Or-Any-Later-Version!"=="True" (
         echo - You are permitted to distribute this under any later version of
-        echo - the GNU General Public License v3 or just GPLv3. Combination with
+        echo - the GNU General Public licence v3 or just GPLv3. Combination with
     )
-    echo - GNU General Public License v1 or v2 code is legally prohibited.
+    echo - GNU General Public licence v1 or v2 code is legally prohibited.
     echo - The author is not liable for any damage or data loss.
     echo - !Author! does not condone any damage whatsoever.
     echo - USE AT YOUR OWN RISK.
@@ -1345,12 +1345,12 @@ if "!AcceptEULA!"=="0" (
     set /p "agree=[CASE-SENSITIVE] Do you agree to the End User Licence Agreement? (Yes or No) >> "
     if "!agree!"=="Yes" (
         cls
-        echo !DATE! !TIME! The End-User License Agreement has been agreed to.>> "!logfile!"
+        echo !DATE! !TIME! The End-User licence Agreement has been agreed to.>> "!logfile!"
         if "!Vtoy_DL_Mode!"=="1" start /b powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('You can combine code with other GPLv3 programs but if you do with GPLv2 or any later version programs, you must upgrade the modified code to GPLv3.','ALOSToy Installer','OK','Info') | Out-Null"
         if "!Vtoy_DL_Mode!"=="0" (if "!AcceptAVWarn!"=="0" (goto AVWarn) else if "!AcceptAVWarn!"=="1" (goto DLBin) else (endlocal & exit 1)) else if "!Vtoy_DL_Mode!"=="1" (goto DLBin) else (endlocal & exit 1)
     ) else if "!agree!"=="No" (
         cls
-        echo !DATE! !TIME! The End-User License Agreement has been denied to.>> "!logfile!"
+        echo !DATE! !TIME! The End-User licence Agreement has been denied to.>> "!logfile!"
         powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Since you declined the EULA, this program will now exit.','ALOSToy Installer','OK','Error') | Out-Null"
         exit 3
     ) else (
@@ -1800,7 +1800,7 @@ set "label=ALOSToy_v1.0_STD_Rev_B"
 call :WindowTitle "INSTALL ALOSTOY STANDARD"
 echo Chosen product: ALOSToy !product!.>> "!logfile!"
 if "!AcceptEULA!"=="0" (
-    call :PowerShell_Helper "License-Terms_STD" /Maximised
+    call :PowerShell_Helper "licence-Terms_STD" /Maximised
     pause
     call powershell.exe -nop -nol -ExecutionPolicy Bypass -WindowStyle Normal -c "Write-Output 'User agreed to licence terms.' | Out-File $env:logfile -Encoding UTF8 -Append -NoClobber -Force"
 )
@@ -1817,7 +1817,7 @@ if "!InstallExtensions!"=="True" (
 )
 echo Chosen product: ALOSToy !product!.>> "!logfile!"
 if "!AcceptEULA!"=="0" (
-    call :PowerShell_Helper "License-Terms_EXT" /Maximised
+    call :PowerShell_Helper "licence-Terms_EXT" /Maximised
     pause
     call powershell.exe -nop -nol -ExecutionPolicy Bypass -WindowStyle Normal -c "Write-Output 'User agreed to licence terms.' | Out-File $env:logfile -Encoding UTF8 -Append -NoClobber -Force"
 )
@@ -3413,7 +3413,7 @@ echo         Standard+Extensions (Standard With Extensions)
 echo     With this, you can pre-select an edition and automate some installation steps.
 echo     There is also a VentoyInstallType argument. You can pass this argument with either:
 echo     "/VentoyInstallType" ^| "-VentoyInstallType" ^| or "--Ventoy-Install-Type".
-echo     Valid values for the VentoyInstallType argument are "Install" or "Update"^^!
+echo     Valid values for this argument are "Install", "Update" or "Preinstalled"^^!
 echo.
 echo VENTOY VERSION:
 echo.
@@ -3527,15 +3527,15 @@ if "!errorlevel!"=="1" (
     echo - Redistribution or modification is allowed only with credit.
     echo - The author is not liable for any damage or data loss.
     echo - Under GPLv3, you are required to provide source code if modified,
-    echo - license under the GPLv3 license and pass freedoms to others.
+    echo - licence under the GPLv3 licence and pass freedoms to others.
     if "!Or-Any-Later-Version!"=="False" (
-        echo - You are not permitted to distribute this under any other license
-        echo - other than the GNU General Public License v3.0. Combination with
+        echo - You are not permitted to distribute this under any other licence
+        echo - other than the GNU General Public licence v3.0. Combination with
     ) else if "!Or-Any-Later-Version!"=="True" (
         echo - You are permitted to distribute this under any later version of
-        echo - the GNU General Public License v3 or just GPLv3. Combination with
+        echo - the GNU General Public licence v3 or just GPLv3. Combination with
     )
-    echo - GNU General Public License v1 or v2 code is legally prohibited.
+    echo - GNU General Public licence v1 or v2 code is legally prohibited.
     echo - The author is not liable for any damage or data loss.
     echo - !Author! does not condone any damage whatsoever.
     echo - USE AT YOUR OWN RISK.
@@ -3553,15 +3553,15 @@ if "!errorlevel!"=="1" (
     echo - You must not misuse the software or it's owner to deploy malware.
     echo - You must use Ventoy properly.
     echo - Under GPLv3, you are required to provide source code if modified,
-    echo - license under the GPLv3 license and pass freedoms to others.
+    echo - licence under the GPLv3 licence and pass freedoms to others.
     if "!Or-Any-Later-Version!"=="False" (
-        echo - You are not permitted to distribute this under any other license
-        echo - other than the GNU General Public License v3.0. Combination with
+        echo - You are not permitted to distribute this under any other licence
+        echo - other than the GNU General Public licence v3.0. Combination with
     ) else if "!Or-Any-Later-Version!"=="True" (
         echo - You are permitted to distribute this under any later version of
-        echo - the GNU General Public License v3 or just GPLv3. Combination with
+        echo - the GNU General Public licence v3 or just GPLv3. Combination with
     )
-    echo - GNU General Public License v1 or v2 code is legally prohibited.
+    echo - GNU General Public licence v1 or v2 code is legally prohibited.
     echo - The author is not liable for any damage or data loss.
     echo - !Author! does not condone any damage whatsoever.
     echo - USE AT YOUR OWN RISK.
@@ -3704,7 +3704,7 @@ echo.
 echo !Script! will relaunch it self as administrator. Just click Yes to
 echo the User Account Control prompt to continue. Then the installer
 echo will run all it's checks like DNS, site connections, dependency
-echo checks, update checks, and show the End User License Agreement.
+echo checks, update checks, and show the End User licence Agreement.
 echo.
 echo Turn over to see the next part. (GO ON.)
 echo.
@@ -3728,7 +3728,7 @@ if "!errorlevel!"=="1" (
 )
 :InstallGuide3
 call :InstallHelpTitle 3
-echo The End User License Agreement will show and you must agree to it by law.
+echo The End User licence Agreement will show and you must agree to it by law.
 echo Disagreeing exits !Script!. Here is the full EULA text:
 choice /c SV /n /m "Press S to show the standard EULA or V to show the Ventoy Download Mode EULA. (You have 5 seconds.)" /t 5 /d S
 if "!errorlevel!"=="1" (
@@ -3744,15 +3744,15 @@ if "!errorlevel!"=="1" (
     echo - You are responsible for any changes made to your system.
     echo - Redistribution or modification is allowed only with credit.
     echo - Under GPLv3, you are required to provide source code if modified,
-    echo - license under the GPLv3 license and pass freedoms to others.
+    echo - licence under the GPLv3 licence and pass freedoms to others.
     if "!Or-Any-Later-Version!"=="False" (
-        echo - You are not permitted to distribute this under any other license
-        echo - other than the GNU General Public License v3.0. Combination with
+        echo - You are not permitted to distribute this under any other licence
+        echo - other than the GNU General Public licence v3.0. Combination with
     ) else if "!Or-Any-Later-Version!"=="True" (
         echo - You are permitted to distribute this under any later version of
-        echo - the GNU General Public License v3 or just GPLv3. Combination with
+        echo - the GNU General Public licence v3 or just GPLv3. Combination with
     )
-    echo - GNU General Public License v1 or v2 code is legally prohibited.
+    echo - GNU General Public licence v1 or v2 code is legally prohibited.
     echo - The author is not liable for any damage or data loss.
     echo - !Author! does not condone any damage whatsoever.
     echo - USE AT YOUR OWN RISK.
@@ -3770,15 +3770,15 @@ if "!errorlevel!"=="1" (
     echo - You must not misuse the software or it's owner to deploy malware.
     echo - You must use Ventoy properly.
     echo - Under GPLv3, you are required to provide source code if modified,
-    echo - license under the GPLv3 license and pass freedoms to others.
+    echo - licence under the GPLv3 licence and pass freedoms to others.
     if "!Or-Any-Later-Version!"=="False" (
-        echo - You are not permitted to distribute this under any other license
-        echo - other than the GNU General Public License v3.0. Combination with
+        echo - You are not permitted to distribute this under any other licence
+        echo - other than the GNU General Public licence v3.0. Combination with
     ) else if "!Or-Any-Later-Version!"=="True" (
         echo - You are permitted to distribute this under any later version of
-        echo - the GNU General Public License v3 or just GPLv3. Combination with
+        echo - the GNU General Public licence v3 or just GPLv3. Combination with
     )
-    echo - GNU General Public License v1 or v2 code is legally prohibited.
+    echo - GNU General Public licence v1 or v2 code is legally prohibited.
     echo - The author is not liable for any damage or data loss.
     echo - !Author! does not condone any damage whatsoever.
     echo - USE AT YOUR OWN RISK.
@@ -4436,7 +4436,7 @@ if "!GPLNotice!"=="1" if "!EXISTS!"=="1" (
     pause >nul
     if "!Or-Any-Later-Version!"=="False" (
         echo Note: !Script!'s code is GPLv3 ONLY. You may NOT redistribute
-        echo under any later or previous version, only the GNU GPL v3 license is allowed.
+        echo under any later or previous version, only the GNU GPL v3 licence is allowed.
     ) else if "!Or-Any-Later-Version!"=="True" (
         echo Note: !Script!'s code is GPLv3 or any later version.
         echo You may redistribute under GPLv3 or any future version of your choice.
@@ -4455,14 +4455,14 @@ if "!GPLNotice!"=="1" if "!EXISTS!"=="1" (
 )
 goto :eof
 :LicenceHasher
-rem Maintain the integrity of the licence files. The GNU GPL licenses forbid
+rem Maintain the integrity of the licence files. The GNU GPL licences forbid
 rem editing the documents. "Everyone is permitted to copy and distribute
-rem verbatim copies of this license document, but changing it is not allowed."
+rem verbatim copies of this licence document, but changing it is not allowed."
 rem DO NOT ASK ME TO REMOVE THIS IN ISSUES OR COMMENTS! I WILL NOT RESPOND!
 set "ARE=0"
 if /i "%~1"=="AfterRedownload" set "ARE=1"
 set "Valid_LicenceDocuments=0"
-for /f "tokens=1,2,3 usebackq" %%H in (`powershell -nop -nol -c "chcp 65001 > $null; $i18n = New-Object System.Text.UTF8Encoding; [Console]::InputEncoding = $i18n; [Console]::OutputEncoding = $i18n; $OutputEncoding = $i18n; $section = [io.file]::ReadAllText($env:FullScript) -split '(?ms)^:HashLicenses\r?\n(.*?)\r?\n:Post_HashLicenses'; & ([scriptblock]::Create($section[1]))"`) do (
+for /f "tokens=1,2,3 usebackq" %%H in (`powershell -nop -nol -c "chcp 65001 > $null; $i18n = New-Object System.Text.UTF8Encoding; [Console]::InputEncoding = $i18n; [Console]::OutputEncoding = $i18n; $OutputEncoding = $i18n; $section = [io.file]::ReadAllText($env:FullScript) -split '(?ms)^:HashLicences\r?\n(.*?)\r?\n:Post_HashLicences'; & ([scriptblock]::Create($section[1]))"`) do (
     if /i "%%H"=="MISSING" (set "Missing=True") else if /i "%%H"=="Hashes:" (
         rem LICENCE.TXT or GPLV3_ONLY_INFO.TXT
         if /i "%%I"=="7F545FE11D2817185E365A03E5DD7FAD1C9F858702FA09E361D5ABF5A8FFF4E6" (set /a "Valid_LicenceDocuments+=1") else if /i "%%I"=="F3F3786ADE093D4EA620147AB7CED3FEB1C49E5A6F04C186D4490F1D70C945D7" (set /a "Valid_LicenceDocuments+=1")
@@ -4488,7 +4488,7 @@ rem be called by the batch script. Aarav Katariya moved
 rem them down here for organisation and separation of
 rem batch logic and embedded PowerShell logic.
 rem =====================================================
-:HashLicenses
+:HashLicences
 if ((Test-Path -LiteralPath $env:FILE) -and (Test-Path -LiteralPath (Join-Path $env:Root 'COPYING.TXT'))) {
     $LICENCE = (Get-FileHash -LiteralPath $env:FILE -Algorithm SHA256).Hash.ToUpper()
     $COPYING = (Get-FileHash -LiteralPath (Join-Path $env:Root 'COPYING.TXT') -Algorithm SHA256).Hash.ToUpper()
@@ -4498,7 +4498,7 @@ if ((Test-Path -LiteralPath $env:FILE) -and (Test-Path -LiteralPath (Join-Path $
     'MISSING'
     Exit 1
 }
-:Post_HashLicenses
+:Post_HashLicences
 :CopyToClipboard
 Add-Type -AssemblyName PresentationFramework
 <#
@@ -4995,21 +4995,21 @@ else {
 Write-Output $text
 exit 0
 :Post_Installer-Choices
-:License-Terms_EXT
+:licence-Terms_EXT
 $Language = $env:lang
 if ($Language -eq "en") {
     # English body.
     $text = @"
-ALOSToy V1.0 Extended - License agreement Copyright (C) 2026 AaravLegend-Inc
+ALOSToy V1.0 Extended - licence agreement Copyright (C) 2026 AaravLegend-Inc
 
 Did you pay for this? If so, you were SCAMMED and may have malware instead!
 
-This toolkit is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This toolkit has been created in the hope that it will be useful, but WITHOUT ANY WARRANTY, not even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. For more information, see the GNU General Public License.
-You should have received a copy of the GNU General Public License along with this toolkit. If not, see https://www.gnu.org/licenses/.
+This toolkit is free software: you can redistribute it and/or modify it under the terms of the GNU General Public licence as published by the Free Software Foundation, either version 3 of the licence, or (at your option) any later version.
+This toolkit has been created in the hope that it will be useful, but WITHOUT ANY WARRANTY, not even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. For more information, see the GNU General Public licence.
+You should have received a copy of the GNU General Public licence along with this toolkit. If not, see https://ww.w.gnu.org/licenses/.
 
 SECTION 1 - DEFINITIONS
-"Toolkit" refers to ALOSToy v1.0 Extended, including its source files, isos, documentation and any related files. "You" refers to the licensee or user of the toolkit. "Modified version" refers to any derivative work based on the toolkit.
+"Toolkit" refers to ALOSToy v1.0 Extended, including its source files, isos, documentation and any related files. "You" refers to the licencee or user of the toolkit. "Modified version" refers to any derivative work based on the toolkit.
 
 SECTION 2 - AVAILABILITY OF SOURCE CODE
 The complete source code of ALOSToy v1.0 Extended must be made available to anyone to whom the object code is created. This ensures transparency, allows others to study, and modify the code. There are also freely available extensions that include installation media for reinstalling a popular OS. These can be found here.
@@ -5026,8 +5026,8 @@ If you want to find the source product for ALOSToy Extended, please visit https:
 SECTION 4 - REDISTRIBUTION
 You may copy and distribute verbatim copies of the Toolkit source files as you receive them, in any medium, if you:
 Conspicuously and appropriately publish on each copy an appropriate copyright notice.
-Keep intact all notices that this License applies to the code.
-Give all recipients a copy of this License along with the toolkit.
+Keep intact all notices that this licence applies to the code.
+Give all recipients a copy of this licence along with the toolkit.
 
 SECTION 5 - NO WARRANTY
 THE TOOLKIT GIVES NO WARRANTY, TO THE EXTENT PERMITTED BY APPLICABLE LAW. THE TOOLKIT IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
@@ -5035,7 +5035,7 @@ THE TOOLKIT GIVES NO WARRANTY, TO THE EXTENT PERMITTED BY APPLICABLE LAW. THE TO
 SECTION 6 - LIMITATION OF LIABILITY
 IN NO EVENT, UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING, SHALL ANY COPYRIGHT HOLDER BE LIABLE TO YOU FOR ANY DAMAGES, INCLUDING GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE THE TOOLKIT.
 
-This license is based on the GNU General Public License v3. See https://www.gnu.org/licenses/gpl-3.0.html for complete terms.
+This licence is based on the GNU General Public licence v3. See https://ww.w.gnu.org/licenses/gpl-3.0.html for complete terms.
 
 SECTION 7 – Extended Toolkit Info
 Because this is the extended version of ALOSToy v1.0, you get a ton of additional features including:
@@ -5044,7 +5044,7 @@ Full iso’s for reinstalling Windows or Linux
 Additional tools for extra diagnostics and other things.
 And additional drivers for more devices especially laptop trackpads that need it’s own drivers to work.
 
-This is the end of the license terms. Enjoy ALOSToy v1.0 Extended.
+This is the end of the licence terms. Enjoy ALOSToy v1.0 Extended.
 "@
 }
 elseif ($Language -eq "fr") {
@@ -5056,7 +5056,7 @@ Avez-vous payé pour cela ? Si oui, vous avez été victime d'une ARNAQUE et vou
 
 Ce kit d'outils est un logiciel libre : vous pouvez le redistribuer et/ou le modifier selon les termes de la licence publique générale GNU telle que publiée par la Free Software Foundation, soit la version 3 de la licence, soit (à votre choix) toute version ultérieure.
 Cette boîte à outils a été créée dans l'espoir qu'elle sera utile, mais SANS AUCUNE GARANTIE, pas même la garantie implicite de QUALITÉ MARCHANDE ou d'ADÉQUATION À UN USAGE PARTICULIER. Pour plus d'informations, consultez la licence publique générale GNU.
-Vous devriez avoir reçu une copie de la licence publique générale GNU avec cette boîte à outils. Si ce n'est pas le cas, consultez https://www.gnu.org/licenses/.
+Vous devriez avoir reçu une copie de la licence publique générale GNU avec cette boîte à outils. Si ce n'est pas le cas, consultez https://ww.w.gnu.org/licenses/.
 
 SECTION 1 - DÉFINITIONS
 Le terme « boîte à outils » désigne ALOSToy v1.0 Extended, y compris ses fichiers source, ses images ISO, sa documentation et tous les fichiers associés. Le terme « vous » désigne le titulaire de la licence ou l'utilisateur de la boîte à outils. Le terme « version modifiée » désigne toute œuvre dérivée basée sur la boîte à outils.
@@ -5085,7 +5085,7 @@ LA BOÎTE À OUTILS NE DONNE AUCUNE GARANTIE, DANS LA MESURE PERMISE PAR LA LOI 
 SECTION 6 - LIMITATION DE RESPONSABILITÉ
 EN AUCUN CAS, SAUF SI LA LOI APPLICABLE L'EXIGE OU SI CELA A ÉTÉ CONVENU PAR ÉCRIT, LES TITULAIRES DE DROITS D'AUTEUR NE POURRONT ÊTRE TENUS RESPONSABLES ENVERS VOUS DE TOUT DOMMAGE, Y COMPRIS LES DOMMAGES GÉNÉRAUX, SPÉCIAUX, ACCESSOIRES OU CONSÉCUTIFS À L' , RÉSULTANT DE L'UTILISATION OU DE L'INCAPACITÉ À UTILISER LA BOÎTE À OUTILS.
 
-Cette licence est basée sur la licence publique générale GNU v3. Voir https://www.gnu.org/licenses/gpl-3.0.html pour les conditions complètes.
+Cette licence est basée sur la licence publique générale GNU v3. Voir https://ww.w.gnu.org/licenses/gpl-3.0.html pour les conditions complètes.
 
 SECTION 7 – Informations sur la boîte à outils étendue
 Comme il s'agit de la version étendue d'ALOSToy v1.0, vous bénéficiez d'une multitude de fonctionnalités supplémentaires, notamment :
@@ -5104,9 +5104,9 @@ ALOSToy V1.0 Extended – Lizenzvereinbarung Copyright (C) 2026 AaravLegend-Inc
 
 Haben Sie dafür bezahlt? Wenn ja, wurden Sie BETROGEN und haben möglicherweise stattdessen Malware!
 
-Dieses Toolkit ist freie Software: Sie können es unter den Bedingungen der GNU General Public License, wie von der Free Software Foundation veröffentlicht, entweder in der Version 3 der Lizenz oder (nach Ihrer Wahl) in einer späteren Version weitergeben und/oder modifizieren.
-Dieses Toolkit wurde in der Hoffnung erstellt, dass es nützlich ist, jedoch OHNE JEGLICHE GARANTIE, auch ohne die implizite Garantie der MARKTGÄNGIGKEIT oder EIGNUNG FÜR EINEN BESTIMMTEN ZWECK. Weitere Informationen finden Sie in der GNU General Public License.
-Sie sollten zusammen mit diesem Toolkit eine Kopie der GNU General Public License erhalten haben. Falls nicht, finden Sie diese unter https://www.gnu.org/licenses/.
+Dieses Toolkit ist freie Software: Sie können es unter den Bedingungen der GNU General Public licence, wie von der Free Software Foundation veröffentlicht, entweder in der Version 3 der Lizenz oder (nach Ihrer Wahl) in einer späteren Version weitergeben und/oder modifizieren.
+Dieses Toolkit wurde in der Hoffnung erstellt, dass es nützlich ist, jedoch OHNE JEGLICHE GARANTIE, auch ohne die implizite Garantie der MARKTGÄNGIGKEIT oder EIGNUNG FÜR EINEN BESTIMMTEN ZWECK. Weitere Informationen finden Sie in der GNU General Public licence.
+Sie sollten zusammen mit diesem Toolkit eine Kopie der GNU General Public licence erhalten haben. Falls nicht, finden Sie diese unter https://ww.w.gnu.org/licenses/.
 
 ABSCHNITT 1 – DEFINITIONEN
 „Toolkit” bezieht sich auf ALOSToy v1.0 Extended, einschließlich seiner Quelldateien, ISOs, Dokumentation und aller zugehörigen Dateien. „Sie” bezieht sich auf den Lizenznehmer oder Nutzer des Toolkits. „Modifizierte Version” bezieht sich auf alle abgeleiteten Werke, die auf dem Toolkit basieren.
@@ -5135,7 +5135,7 @@ DAS TOOLKIT GIBT KEINE GEWÄHRLEISTUNG, SOWEIT DIES NACH GELTENDEM RECHT ZULÄSS
 ABSCHNITT 6 – HAFTUNGSBESCHRÄNKUNG
 IN KEINEM FALL, SOFERN NICHT GESETZLICH VORGESCHRIEBEN ODER SCHRIFTLICH VEREINBART, HAFTET EIN URHEBERRECHTSINHABER IHNEN GEGENÜBER FÜR SCHÄDEN, EINSCHLIESSLICH ALLGEMEINER, BESONDERER, ZUFÄLLIGER ODER FOLGESCHÄDEN , DIE SICH AUS DER NUTZUNG ODER DER UNMÖGLICHKEIT DER NUTZUNG DES TOOLKITS ERGEBEN.
 
-Diese Lizenz basiert auf der GNU General Public License v3. Die vollständigen Bedingungen finden Sie unter https://www.gnu.org/licenses/gpl-3.0.html.
+Diese Lizenz basiert auf der GNU General Public licence v3. Die vollständigen Bedingungen finden Sie unter https://ww.w.gnu.org/licenses/gpl-3.0.html.
 
 ABSCHNITT 7 – Informationen zum erweiterten Toolkit
 Da es sich um die erweiterte Version von ALOSToy v1.0 handelt, erhalten Sie eine Vielzahl zusätzlicher Funktionen, darunter:
@@ -5156,7 +5156,7 @@ ALOSToy V1.0 Extended - Acuerdo de licencia Copyright (C) 2026 AaravLegend-Inc
 
 Este kit de herramientas es software libre: puede redistribuirlo y/o modificarlo bajo los términos de la Licencia Pública General GNU publicada por la Free Software Foundation, ya sea la versión 3 de la Licencia o (a su elección) cualquier versión posterior.
 Este kit de herramientas se ha creado con la esperanza de que sea útil, pero SIN NINGUNA GARANTÍA, ni siquiera la garantía implícita de COMERCIABILIDAD o IDONEIDAD PARA UN FIN DETERMINADO. Para obtener más información, consulta la Licencia Pública General GNU.
-Debería haber recibido una copia de la Licencia Pública General GNU junto con este kit de herramientas. Si no es así, consulte https://www.gnu.org/licenses/.
+Debería haber recibido una copia de la Licencia Pública General GNU junto con este kit de herramientas. Si no es así, consulte https://ww.w.gnu.org/licenses/.
 
 SECCIÓN 1 - DEFINICIONES
 «Kit de herramientas» se refiere a ALOSToy v1.0 Extended, incluidos sus archivos fuente, isos, documentación y cualquier archivo relacionado. «Usted» se refiere al licenciatario o usuario del kit de herramientas. «Versión modificada» se refiere a cualquier trabajo derivado basado en el kit de herramientas.
@@ -5185,7 +5185,7 @@ EL KIT DE HERRAMIENTAS NO OFRECE NINGUNA GARANTÍA, EN LA MEDIDA EN QUE LO PERMI
 SECCIÓN 6: LIMITACIÓN DE RESPONSABILIDAD
 EN NINGÚN CASO, A MENOS QUE LO EXIJA LA LEY APLICABLE O SE ACUERDE POR ESCRITO, LOS TITULARES DE LOS DERECHOS DE AUTOR SERÁN RESPONSABLES ANTE USTED POR NINGÚN DAÑO, INCLUIDOS LOS DAÑOS GENERALES, ESPECIALES, INCIDENTALES O CONSECUENCIALES ES DERIVADOS DEL USO O DE LA IMPOSIBILIDAD DE USAR EL KIT DE HERRAMIENTAS.
 
-Esta licencia se basa en la Licencia Pública General GNU v3. Consulte https://www.gnu.org/licenses/gpl-3.0.html para conocer los términos completos.
+Esta licencia se basa en la Licencia Pública General GNU v3. Consulte https://ww.w.gnu.org/licenses/gpl-3.0.html para conocer los términos completos.
 
 SECCIÓN 7: Información sobre el kit de herramientas ampliado
 Dado que se trata de la versión ampliada de ALOSToy v1.0, obtendrá un montón de funciones adicionales, entre las que se incluyen:
@@ -5204,9 +5204,9 @@ ALOSToy V1.0 Extended - Contratto di licenza Copyright (C) 2026 AaravLegend-Inc
 
 Hai pagato per questo? Se sì, sei stato TRUFFATO e potresti avere un malware!
 
-Questo toolkit è un software gratuito: puoi ridistribuirlo e/o modificarlo secondo i termini della GNU General Public License pubblicata dalla Free Software Foundation, sia nella versione 3 della Licenza, sia (a tua discrezione) in qualsiasi versione successiva.
-Questo toolkit è stato creato nella speranza che possa essere utile, ma SENZA ALCUNA GARANZIA, nemmeno la garanzia implicita di COMMERCIABILITÀ o IDONEITÀ PER UN PARTICOLARE SCOPO. Per ulteriori informazioni, consulta la GNU General Public License.
-Dovresti aver ricevuto una copia della GNU General Public License insieme a questo toolkit. In caso contrario, consulta https://www.gnu.org/licenses/.
+Questo toolkit è un software gratuito: puoi ridistribuirlo e/o modificarlo secondo i termini della GNU General Public licence pubblicata dalla Free Software Foundation, sia nella versione 3 della Licenza, sia (a tua discrezione) in qualsiasi versione successiva.
+Questo toolkit è stato creato nella speranza che possa essere utile, ma SENZA ALCUNA GARANZIA, nemmeno la garanzia implicita di COMMERCIABILITÀ o IDONEITÀ PER UN PARTICOLARE SCOPO. Per ulteriori informazioni, consulta la GNU General Public licence.
+Dovresti aver ricevuto una copia della GNU General Public licence insieme a questo toolkit. In caso contrario, consulta https://ww.w.gnu.org/licenses/.
 
 SEZIONE 1 - DEFINIZIONI
 Per "Toolkit" si intende ALOSToy v1.0 Extended, inclusi i file sorgente, le immagini ISO, la documentazione e qualsiasi file correlato. Per "Utente" si intende il licenziatario o l'utente del toolkit. Per "Versione modificata" si intende qualsiasi opera derivata basata sul toolkit.
@@ -5235,7 +5235,7 @@ IL TOOLKIT NON FORNISCE ALCUNA GARANZIA, NEI LIMITI CONSENTITI DALLA LEGGE APPLI
 SEZIONE 6 - LIMITAZIONE DI RESPONSABILITÀ
 IN NESSUN CASO, SALVO QUANTO PREVISTO DALLA LEGGE APPLICABILE O CONCORDATO PER ISCRITTO, I TITOLARI DEL DIRITTO D'AUTORE SARANNO RESPONSABILI NEI CONFRONTI DELL'UTENTE PER EVENTUALI DANNI, INCLUSE LE PERDITE GENERALI, SPECIALI, INCIDENTALI O CONSEGUENTI I DERIVANTI DALL'UTILIZZO O DALL'IMPOSSIBILITÀ DI UTILIZZARE IL TOOLKIT.
 
-La presente licenza si basa sulla GNU General Public License v3. Per i termini completi, consultare https://www.gnu.org/licenses/gpl-3.0.html.
+La presente licenza si basa sulla GNU General Public licence v3. Per i termini completi, consultare https://ww.w.gnu.org/licenses/gpl-3.0.html.
 
 SEZIONE 7 - Informazioni sul toolkit esteso
 Poiché questa è la versione estesa di ALOSToy v1.0, avrai a disposizione tantissime funzionalità aggiuntive, tra cui:
@@ -5256,7 +5256,7 @@ ALOSToy V1.0 Extended - ライセンス契約著作権 (C) 2026 AaravLegend-Inc
 
 本ツールキットはフリーソフトウェアです：フリーソフトウェア財団が公開したGNU一般公衆利用許諾契約書（バージョン3または（任意で）それ以降のバージョン）の条件に基づき、再配布および／または改変が可能です。
 このツールキットは有用であることを願って作成されましたが、いかなる保証もありません。商品性や特定目的への適合性に関する黙示の保証すら含まれません。詳細はGNU一般公衆利用許諾契約書を参照してください。
-本ツールキットにはGNU一般公衆利用許諾契約書の写しが同封されているはずです。同封されていない場合は、https://www.gnu.org/licenses/ をご覧ください。
+本ツールキットにはGNU一般公衆利用許諾契約書の写しが同封されているはずです。同封されていない場合は、https://ww.w.gnu.org/licenses/ をご覧ください。
 
 第1条 - 定義
 「ツールキット」とは、ALOSToy v1.0 Extended（ソースファイル、ISOイメージ、ドキュメント、および関連ファイルを含む）を指します。「あなた」とは、ツールキットのライセンシーまたはユーザーを指します。「改変版」とは、ツールキットに基づくあらゆる派生作品を指し ます。
@@ -5285,7 +5285,7 @@ ALOSToy Extended のソース製品をお探しの方は、https://www.ventoy.ne
 第6条 - 責任の制限
 適用される法律で要求される場合、または書面で合意された場合を除き、いかなる著作権者も、ツールキットの使用または使用不能に起因する、一般的、特別、付随的、または 結果的損害を含む、いかなる損害についても、お客様に対して責任を負わないものとします。
 
-本ライセンスはGNU General Public License v3に基づいています。完全な条項についてはhttps://www.gnu.org/licenses/gpl-3.0.htmlを参照してください。
+本ライセンスはGNU General Public licence v3に基づいています。完全な条項についてはhttps://ww.w.gnu.org/licenses/gpl-3.0.htmlを参照してください。
 
 セクション7 – 拡張ツールキット情報
 これはALOSToy v1.0の拡張版であるため、以下のような多数の追加機能を利用できます:
@@ -5304,9 +5304,9 @@ ALOSToy V1.0 Extended - 라이선스 계약서 저작권 (C) 2026 AaravLegend-In
 
 이걸 구매하셨나요? 그렇다면 사기 당한 것이며 악성 코드를 설치했을 수 있습니다!
 
-이 툴킷은 자유 소프트웨어입니다: 귀하는 자유 소프트웨어 재단이 발표한 GNU 일반 공중 사용 허가서(GNU General Public License)의 조건에 따라, 라이선스 버전 3 또는 (선택에 따라) 그 이후 버전을 사용하여 이를 재배포 및/또는 수정할 수 있습니다.
+이 툴킷은 자유 소프트웨어입니다: 귀하는 자유 소프트웨어 재단이 발표한 GNU 일반 공중 사용 허가서(GNU General Public licence)의 조건에 따라, 라이선스 버전 3 또는 (선택에 따라) 그 이후 버전을 사용하여 이를 재배포 및/또는 수정할 수 있습니다.
 이 툴킷은 유용할 것이라는 희망으로 제작되었으나, 상품성 또는 특정 목적에 대한 적합성에 대한 묵시적 보증을 포함하여 어떠한 보증도 제공하지 않습니다. 자세한 내용은 GNU 일반 공중 사용 허가서를 참조하십시오.
-본 툴킷과 함께 GNU 일반 공중 사용 허가서 사본을 받으셨을 것입니다. 그렇지 않은 경우 https://www.gnu.org/licenses/를 참조하십시오.
+본 툴킷과 함께 GNU 일반 공중 사용 허가서 사본을 받으셨을 것입니다. 그렇지 않은 경우 https://ww.w.gnu.org/licenses/를 참조하십시오.
 
 제1조 - 정의
 "툴킷"은 소스 파일, ISO, 문서 및 관련 파일을 포함한 ALOSToy v1.0 Extended를 의미합니다. "귀하"는 툴킷의 라이선스 보유자 또는 사용자를 의미합니다. "수정 버전"은 툴킷을 기반으로 한 모든 파생 작업을 의미합니다.
@@ -5335,7 +5335,7 @@ ALOSToy Extended의 원본 제품을 찾으려면 https://www.ventoy.net을 방�
 제6조 - 책임의 제한
 적용 가능한 법률에 의해 요구되거나 서면으로 합의된 경우를 제외하고, 어떠한 저작권자도 본 툴킷의 사용 또는 사용 불능으로 인해 발생하는 일반적, 특별, 부수적 또는 결과적 손해 배상 등 어떠한 손해에 대해서도 귀하에게 책임을 지지 않습니다.
 
-본 라이선스는 GNU 일반 공중 사용 허가서 v3을 기반으로 합니다. 전체 약관은 https://www.gnu.org/licenses/gpl-3.0.html에서 확인하실 수 있습니다.
+본 라이선스는 GNU 일반 공중 사용 허가서 v3을 기반으로 합니다. 전체 약관은 https://ww.w.gnu.org/licenses/gpl-3.0.html에서 확인하실 수 있습니다.
 
 섹션 7 – 확장 툴킷 정보
 본 버전은 ALOSToy v1.0의 확장판이므로 다음과 같은 다양한 추가 기능을 제공합니다:
@@ -5349,27 +5349,27 @@ Windows 또는 Linux 재설치를 위한 전체 ISO 이미지
 }
 else {
     # If the user's language is not supported.
-    Write-Error "No license text available for '$Language'"
+    Write-Error "No licence text available for '$Language'"
     exit 1
 }
 Write-Output $text
 exit 0
-:Post_License-Terms_EXT
-:License-Terms_STD
+:Post_licence-Terms_EXT
+:licence-Terms_STD
 $Language = $env:lang
 if ($Language -eq "en") {
     # English body.
     $text = @"
-ALOSToy V1.0 Standard - License agreement Copyright (C) 2026 AaravLegend-Inc
+ALOSToy V1.0 Standard - licence agreement Copyright (C) 2026 AaravLegend-Inc
 
 Did you pay for this? If so, you were SCAMMED and may have malware instead!
 
-This toolkit is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This toolkit has been created in the hope that it will be useful, but WITHOUT ANY WARRANTY, not even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. For more information, see the GNU General Public License.
-You should have received a copy of the GNU General Public License along with this toolkit. If not, see https://www.gnu.org/licenses/.
+This toolkit is free software: you can redistribute it and/or modify it under the terms of the GNU General Public licence as published by the Free Software Foundation, either version 3 of the licence, or (at your option) any later version.
+This toolkit has been created in the hope that it will be useful, but WITHOUT ANY WARRANTY, not even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. For more information, see the GNU General Public licence.
+You should have received a copy of the GNU General Public licence along with this toolkit. If not, see https://ww.w.gnu.org/licenses/.
 
 SECTION 1 - DEFINITIONS
-"Toolkit" refers to ALOSToy v1.0 Standard, including its source files, isos, documentation and any related files. "You" refers to the licensee or user of the toolkit. "Modified version" refers to any derivative work based on the toolkit.
+"Toolkit" refers to ALOSToy v1.0 Standard, including its source files, isos, documentation and any related files. "You" refers to the licencee or user of the toolkit. "Modified version" refers to any derivative work based on the toolkit.
 
 SECTION 2 - AVAILABILITY OF SOURCE CODE
 The complete source code of ALOSToy v1.0 Standard must be made available to anyone to whom the object code is created. This ensures transparency, allows others to study, and modify the code. There are also freely available extensions that include installation media for reinstalling a popular OS. These can be found here.
@@ -5386,8 +5386,8 @@ If you want to find the source product for ALOSToy Standard, please visit https:
 SECTION 4 - REDISTRIBUTION
 You may copy and distribute verbatim copies of the Toolkit source files as you receive them, in any medium, if you:
 Conspicuously and appropriately publish on each copy an appropriate copyright notice.
-Keep intact all notices that this License applies to the code.
-Give all recipients a copy of this License along with the toolkit.
+Keep intact all notices that this licence applies to the code.
+Give all recipients a copy of this licence along with the toolkit.
 
 SECTION 5 - NO WARRANTY
 THE TOOLKIT GIVES NO WARRANTY, TO THE EXTENT PERMITTED BY APPLICABLE LAW. THE TOOLKIT IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
@@ -5395,8 +5395,8 @@ THE TOOLKIT GIVES NO WARRANTY, TO THE EXTENT PERMITTED BY APPLICABLE LAW. THE TO
 SECTION 6 - LIMITATION OF LIABILITY
 IN NO EVENT, UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING, SHALL ANY COPYRIGHT HOLDER BE LIABLE TO YOU FOR ANY DAMAGES, INCLUDING GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE THE TOOLKIT.
 
-This license is based on the GNU General Public License v3. See https://www.gnu.org/licenses/gpl-3.0.html for complete terms.
-This is the end of the license terms. Enjoy ALOSToy v1.0 Standard.
+This licence is based on the GNU General Public licence v3. See https://ww.w.gnu.org/licenses/gpl-3.0.html for complete terms.
+This is the end of the licence terms. Enjoy ALOSToy v1.0 Standard.
 "@
 }
 elseif ($Language -eq "fr") {
@@ -5408,7 +5408,7 @@ Avez-vous payé pour cela ? Si oui, vous avez été victime d'une ARNAQUE et vou
 
 Ce kit d'outils est un logiciel libre : vous pouvez le redistribuer et/ou le modifier selon les termes de la licence publique générale GNU telle que publiée par la Free Software Foundation, soit la version 3 de la licence, soit (à votre choix) toute version ultérieure.
 Cette boîte à outils a été créée dans l'espoir qu'elle sera utile, mais SANS AUCUNE GARANTIE, pas même la garantie implicite de QUALITÉ MARCHANDE ou d'ADÉQUATION À UN USAGE PARTICULIER. Pour plus d'informations, consultez la licence publique générale GNU.
-Vous devriez avoir reçu une copie de la licence publique générale GNU avec cette boîte à outils. Si ce n'est pas le cas, consultez https://www.gnu.org/licenses/.
+Vous devriez avoir reçu une copie de la licence publique générale GNU avec cette boîte à outils. Si ce n'est pas le cas, consultez https://ww.w.gnu.org/licenses/.
 
 SECTION 1 - DÉFINITIONS
 Le terme « boîte à outils » désigne ALOSToy v1.0 Standard, y compris ses fichiers source, ses images ISO, sa documentation et tous les fichiers associés. Le terme « vous » désigne le titulaire de la licence ou l'utilisateur de la boîte à outils. Le terme « version modifiée » désigne toute œuvre dérivée basée sur la boîte à outils.
@@ -5437,7 +5437,7 @@ LA BOÎTE À OUTILS NE DONNE AUCUNE GARANTIE, DANS LA MESURE PERMISE PAR LA LOI 
 SECTION 6 - LIMITATION DE RESPONSABILITÉ
 EN AUCUN CAS, SAUF SI LA LOI APPLICABLE L'EXIGE OU SI CELA A ÉTÉ CONVENU PAR ÉCRIT, LES TITULAIRES DE DROITS D'AUTEUR NE POURRONT ÊTRE TENUS RESPONSABLES ENVERS VOUS DE TOUT DOMMAGE, Y COMPRIS LES DOMMAGES GÉNÉRAUX, SPÉCIAUX, ACCESSOIRES OU CONSÉCUTIFS À L' , RÉSULTANT DE L'UTILISATION OU DE L'INCAPACITÉ À UTILISER LA BOÎTE À OUTILS.
 
-Cette licence est basée sur la licence publique générale GNU v3. Voir https://www.gnu.org/licenses/gpl-3.0.html pour les conditions complètes.
+Cette licence est basée sur la licence publique générale GNU v3. Voir https://ww.w.gnu.org/licenses/gpl-3.0.html pour les conditions complètes.
 Ceci est la fin des conditions de licence. Profitez bien d'ALOSToy v1.0 Standard.
 "@
 }
@@ -5447,9 +5447,9 @@ elseif ($Language -eq "de") {
 ALOSToy V1.0 Standard – Lizenzvereinbarung Copyright (C) 2026 AaravLegend-Inc
 
 Haben Sie dafür bezahlt? Wenn ja, wurden Sie BETROGEN und haben möglicherweise stattdessen Malware erhalten!
-Dieses Toolkit ist freie Software: Sie können es unter den Bedingungen der GNU General Public License, wie von der Free Software Foundation veröffentlicht, entweder in der Version 3 der Lizenz oder (nach Ihrer Wahl) in einer späteren Version weitergeben und/oder modifizieren.
-Dieses Toolkit wurde in der Hoffnung erstellt, dass es nützlich ist, jedoch OHNE JEGLICHE GARANTIE, auch ohne die implizite Garantie der MARKTGÄNGIGKEIT oder EIGNUNG FÜR EINEN BESTIMMTEN ZWECK. Weitere Informationen finden Sie in der GNU General Public License.
-Sie sollten zusammen mit diesem Toolkit eine Kopie der GNU General Public License erhalten haben. Falls nicht, finden Sie diese unter https://www.gnu.org/licenses/.
+Dieses Toolkit ist freie Software: Sie können es unter den Bedingungen der GNU General Public licence, wie von der Free Software Foundation veröffentlicht, entweder in der Version 3 der Lizenz oder (nach Ihrer Wahl) in einer späteren Version weitergeben und/oder modifizieren.
+Dieses Toolkit wurde in der Hoffnung erstellt, dass es nützlich ist, jedoch OHNE JEGLICHE GARANTIE, auch ohne die implizite Garantie der MARKTGÄNGIGKEIT oder EIGNUNG FÜR EINEN BESTIMMTEN ZWECK. Weitere Informationen finden Sie in der GNU General Public licence.
+Sie sollten zusammen mit diesem Toolkit eine Kopie der GNU General Public licence erhalten haben. Falls nicht, finden Sie diese unter https://ww.w.gnu.org/licenses/.
 
 ABSCHNITT 1 – DEFINITIONEN
 „Toolkit” bezieht sich auf ALOSToy v1.0 Standard, einschließlich seiner Quelldateien, ISOs, Dokumentation und aller zugehörigen Dateien. „Sie” bezieht sich auf den Lizenznehmer oder Nutzer des Toolkits. „Modifizierte Version” bezieht sich auf alle abgeleiteten Werke, die auf dem Toolkit basieren.
@@ -5478,7 +5478,7 @@ DAS TOOLKIT GIBT KEINE GEWÄHRLEISTUNG, SOWEIT DIES NACH GELTENDEM RECHT ZULÄSS
 ABSCHNITT 6 – HAFTUNGSBESCHRÄNKUNG
 IN KEINEM FALL, SOFERN NICHT GESETZLICH VORGESCHRIEBEN ODER SCHRIFTLICH VEREINBART, HAFTET EIN URHEBERRECHTSINHABER IHNEN GEGENÜBER FÜR SCHÄDEN, EINSCHLIESSLICH ALLGEMEINER, BESONDERER, ZUFÄLLIGER ODER FOLGESCHÄDEN , DIE SICH AUS DER NUTZUNG ODER DER UNMÖGLICHKEIT DER NUTZUNG DES TOOLKITS ERGEBEN.
 
-Diese Lizenz basiert auf der GNU General Public License v3. Die vollständigen Bedingungen finden Sie unter https://www.gnu.org/licenses/gpl-3.0.html.
+Diese Lizenz basiert auf der GNU General Public licence v3. Die vollständigen Bedingungen finden Sie unter https://ww.w.gnu.org/licenses/gpl-3.0.html.
 Dies ist das Ende der Lizenzbedingungen. Viel Spaß mit ALOSToy v1.0 Standard.
 "@
 }
@@ -5490,7 +5490,7 @@ ALOSToy V1.0 Estándar - Acuerdo de licencia Copyright (C) 2026 AaravLegend-Inc
 ¿Ha pagado por esto? Si es así, ¡le han ESTAFADO y es posible que tenga malware en su lugar!
 Este kit de herramientas es software libre: puede redistribuirlo y/o modificarlo bajo los términos de la Licencia Pública General GNU publicada por la Free Software Foundation, ya sea la versión 3 de la Licencia o (a su elección) cualquier versión posterior.
 Este kit de herramientas se ha creado con la esperanza de que sea útil, pero SIN NINGUNA GARANTÍA, ni siquiera la garantía implícita de COMERCIABILIDAD o IDONEIDAD PARA UN FIN DETERMINADO. Para obtener más información, consulte la Licencia Pública General GNU.
-Debería haber recibido una copia de la Licencia Pública General GNU junto con este kit de herramientas. Si no es así, consulte https://www.gnu.org/licenses/.
+Debería haber recibido una copia de la Licencia Pública General GNU junto con este kit de herramientas. Si no es así, consulte https://ww.w.gnu.org/licenses/.
 
 SECCIÓN 1 - DEFINICIONES
 «Kit de herramientas» se refiere a ALOSToy v1.0 Standard, incluidos sus archivos fuente, isos, documentación y cualquier archivo relacionado. «Usted» se refiere al licenciatario o usuario del kit de herramientas. «Versión modificada» se refiere a cualquier trabajo derivado basado en el kit de herramientas.
@@ -5519,7 +5519,7 @@ EL KIT DE HERRAMIENTAS NO OFRECE NINGUNA GARANTÍA, EN LA MEDIDA EN QUE LO PERMI
 SECCIÓN 6: LIMITACIÓN DE RESPONSABILIDAD
 EN NINGÚN CASO, A MENOS QUE LO EXIJA LA LEY APLICABLE O SE ACUERDE POR ESCRITO, LOS TITULARES DE LOS DERECHOS DE AUTOR SERÁN RESPONSABLES ANTE USTED POR NINGÚN DAÑO, INCLUIDOS LOS DAÑOS GENERALES, ESPECIALES, INCIDENTALES O CONSECUENCIALES ES QUE SURJAN DEL USO O LA IMPOSIBILIDAD DE USAR EL KIT DE HERRAMIENTAS.
 
-Esta licencia se basa en la Licencia Pública General GNU v3. Consulte https://www.gnu.org/licenses/gpl-3.0.html para conocer los términos completos.
+Esta licencia se basa en la Licencia Pública General GNU v3. Consulte https://ww.w.gnu.org/licenses/gpl-3.0.html para conocer los términos completos.
 Aquí finalizan los términos de la licencia. Disfrute de ALOSToy v1.0 Standard.
 "@
 }
@@ -5530,9 +5530,9 @@ ALOSToy V1.0 Standard - Contratto di licenza Copyright (C) 2026 AaravLegend-Inc
 
 Hai pagato per questo? Se sì, sei stato TRUFFATO e potresti avere un malware!
 
-Questo toolkit è un software gratuito: puoi ridistribuirlo e/o modificarlo secondo i termini della GNU General Public License pubblicata dalla Free Software Foundation, sia nella versione 3 della Licenza, sia (a tua discrezione) in qualsiasi versione successiva.
-Questo toolkit è stato creato nella speranza che possa essere utile, ma SENZA ALCUNA GARANZIA, nemmeno la garanzia implicita di COMMERCIABILITÀ o IDONEITÀ PER UN PARTICOLARE SCOPO. Per ulteriori informazioni, consulta la GNU General Public License.
-Dovresti aver ricevuto una copia della GNU General Public License insieme a questo toolkit. In caso contrario, consulta https://www.gnu.org/licenses/.
+Questo toolkit è un software gratuito: puoi ridistribuirlo e/o modificarlo secondo i termini della GNU General Public licence pubblicata dalla Free Software Foundation, sia nella versione 3 della Licenza, sia (a tua discrezione) in qualsiasi versione successiva.
+Questo toolkit è stato creato nella speranza che possa essere utile, ma SENZA ALCUNA GARANZIA, nemmeno la garanzia implicita di COMMERCIABILITÀ o IDONEITÀ PER UN PARTICOLARE SCOPO. Per ulteriori informazioni, consulta la GNU General Public licence.
+Dovresti aver ricevuto una copia della GNU General Public licence insieme a questo toolkit. In caso contrario, consulta https://ww.w.gnu.org/licenses/.
 
 SEZIONE 1 - DEFINIZIONI
 Per "Toolkit" si intende ALOSToy v1.0 Standard, inclusi i file sorgente, le immagini ISO, la documentazione e qualsiasi file correlato. Per "Utente" si intende il licenziatario o l'utente del toolkit. Per "Versione modificata" si intende qualsiasi opera derivata basata sul toolkit.
@@ -5561,7 +5561,7 @@ IL TOOLKIT NON FORNISCE ALCUNA GARANZIA, NEI LIMITI CONSENTITI DALLA LEGGE APPLI
 SEZIONE 6 - LIMITAZIONE DI RESPONSABILITÀ
 IN NESSUN CASO, SALVO QUANTO PREVISTO DALLA LEGGE APPLICABILE O CONCORDATO PER ISCRITTO, I TITOLARI DEL DIRITTO D'AUTORE SARANNO RESPONSABILI NEI CONFRONTI DELL'UTENTE PER EVENTUALI DANNI, INCLUSE LE PERDITE GENERALI, SPECIALI, INCIDENTALI O CONSEGUENTI I DERIVANTI DALL'UTILIZZO O DALL'IMPOSSIBILITÀ DI UTILIZZARE IL TOOLKIT.
 
-La presente licenza è basata sulla GNU General Public License v3. Per i termini completi, consultare https://www.gnu.org/licenses/gpl-3.0.html.
+La presente licenza è basata sulla GNU General Public licence v3. Per i termini completi, consultare https://ww.w.gnu.org/licenses/gpl-3.0.html.
 Questo è il termine dei termini di licenza. Buon divertimento con ALOSToy v1.0 Standard.
 "@
 }
@@ -5574,7 +5574,7 @@ ALOSToy V1.0 Standard - ライセンス契約著作権 (C) 2026 AaravLegend-Inc
 
 このツールキットはフリーソフトウェアです：フリーソフトウェア財団が公開したGNU一般公衆利用許諾契約書（バージョン3または（任意で）それ以降のバージョン）の条件に基づき、再配布および／または改変が可能です。
 このツールキットは有用であることを願って作成されましたが、いかなる保証もありません。商品性や特定目的への適合性に関する黙示の保証すら含まれません。詳細はGNU一般公衆利用許諾契約書を参照してください。
-本ツールキットにはGNU一般公衆利用許諾契約書の写しが同封されているはずです。同封されていない場合は、https://www.gnu.org/licenses/ をご覧ください。
+本ツールキットにはGNU一般公衆利用許諾契約書の写しが同封されているはずです。同封されていない場合は、https://ww.w.gnu.org/licenses/ をご覧ください。
 
 第1条 - 定義
 「ツールキット」とは、ALOSToy v1.0 Standard（ソースファイル、ISOイメージ、ドキュメント、および関連ファイルを含む）を指します。「あなた」とは、ツールキットのライセンシーまたはユーザーを指します。「改変版」とは、ツールキットに基づくあらゆる派生作品を指します。
@@ -5603,7 +5603,7 @@ ALOSToy Standard のソース製品をお探しの方は、https://www.ventoy.ne
 第6条 - 責任の制限
 適用される法律で要求される場合、または書面で合意された場合を除き、いかなる著作権者も、ツールキットの使用または使用不能に起因する、一般的、特別、付随的、または 結果的損害を含む、いかなる損害についても、お客様に対して責任を負わないものとしま す。
 
-本ライセンスはGNU General Public License v3に基づいています。完全な条項についてはhttps://www.gnu.org/licenses/gpl-3.0.htmlを参照してください。
+本ライセンスはGNU General Public licence v3に基づいています。完全な条項についてはhttps://ww.w.gnu.org/licenses/gpl-3.0.htmlを参照してください。
 以上がライセンス条項の終わりです。ALOSToy v1.0 Standardをお楽しみください。
 "@
 }
@@ -5614,9 +5614,9 @@ ALOSToy V1.0 Standard - 라이선스 계약서 저작권 (C) 2026 AaravLegend-In
 
 이걸 구매하셨나요? 그렇다면 사기 당한 것이며 악성 코드를 설치했을 수 있습니다!
 
-이 툴킷은 자유 소프트웨어입니다: 귀하는 자유 소프트웨어 재단이 발표한 GNU 일반 공중 사용 허가서(GNU General Public License)의 조건에 따라, 라이선스 버전 3 또는 (귀하의 선택에 따라) 그 이후 버전을 사용하여 이를 재배포 및/또는 수정할 수 있습 니다.
+이 툴킷은 자유 소프트웨어입니다: 귀하는 자유 소프트웨어 재단이 발표한 GNU 일반 공중 사용 허가서(GNU General Public licence)의 조건에 따라, 라이선스 버전 3 또는 (귀하의 선택에 따라) 그 이후 버전을 사용하여 이를 재배포 및/또는 수정할 수 있습 니다.
 이 툴킷은 유용할 것이라는 희망으로 제작되었으나, 상품성 또는 특정 목적에 대한 적합성에 대한 묵시적 보증을 포함하여 어떠 한 보증도 제공하지 않습니다. 자세한 내용은 GNU 일반 공중 사용 허가서를 참조하십시오.
-본 툴킷과 함께 GNU 일반 공중 사용 허가서 사본을 받으셨을 것입니다. 그렇지 않은 경우 https://www.gnu.org/licenses/를 참조하십시오.
+본 툴킷과 함께 GNU 일반 공중 사용 허가서 사본을 받으셨을 것입니다. 그렇지 않은 경우 https://ww.w.gnu.org/licenses/를 참조하십시오.
 
 제1조 - 정의
 "툴킷"은 소스 파일, ISO, 문서 및 관련 파일을 포함한 ALOSToy v1.0 Standard를 의미합니다. "귀하"는 툴킷의 라이선스 보유자 또는 사용자를 의미합니다. "수정 버전"은 툴킷을 기반으로 한 모든 파생 작업을 의미합니다.
@@ -5645,18 +5645,18 @@ ALOSToy Standard의 소스 제품을 찾으려면 https://www.ventoy.net을 방�
 제6조 - 책임의 제한
 적용 가능한 법률에 의해 요구되거나 서면으로 합의된 경우를 제외하고, 어떠한 저작권자도 본 툴킷의 사용 또는 사용 불능으로 인해 발생하는 일반적, 특별, 부수적 또는 결과적 손해 배상 등 어떠한 손해에 대해서도 귀하에게 책임을 지지 않습니다.
 
-본 라이선스는 GNU 일반 공중 사용 허가서 v3을 기반으로 합니다. 전체 약관은 https://www.gnu.org/licenses/gpl-3.0.html에서 확인하실 수 있습니다.
+본 라이선스는 GNU 일반 공중 사용 허가서 v3을 기반으로 합니다. 전체 약관은 https://ww.w.gnu.org/licenses/gpl-3.0.html에서 확인하실 수 있습니다.
 라이선스 조항은 여기까지입니다. ALOSToy v1.0 Standard를 즐기십시오.
 "@
 }
 else {
     # If the user's language is not supported.
-    Write-Error "No license text available for '$Language'"
+    Write-Error "No licence text available for '$Language'"
     exit 1
 }
 Write-Output $text
 exit 0
-:Post_License-Terms_STD
+:Post_licence-Terms_STD
 :Size-Requirements
 $Language = $env:lang
 if ($Language -eq "en") {
