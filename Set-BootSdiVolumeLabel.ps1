@@ -2,7 +2,7 @@
 .SYNOPSIS
     Changes the NTFS volume label stored in a standard Windows boot.sdi file.
 .DESCRIPTION
-    This program edits boot.sdi to whatever label you want. For use with WinPE ONLY!
+    This program edits a boot.sdi to whatever label you want. For use with WinPE ONLY!
     By default, when a WinPE boots up, it's label is set to "Boot" when the efi loader
     extracts the Windows PE into RAM. With this, you can customise that initial volume
     label that is assigned before boot and in WinPE (X drive)! Example: You can change
