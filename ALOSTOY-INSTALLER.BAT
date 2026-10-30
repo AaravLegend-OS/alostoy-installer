@@ -21,6 +21,7 @@
 @rem bit-for-bit clones. ALOSToy comes in 3 editions: Standard,
 @rem Standard+Extensions and Extended versions. Higher versions give
 @rem you OS installers pre-loaded for you. (Authorised by vendors.)
+@rem Now with uninstall functionality!
 @rem ===================================================================
 @rem                     Pro delayed expansion tip:
 @rem If you want to escape ! in delayed expansion, without disabling it,
@@ -110,6 +111,10 @@ rem %~nx0 could become the next argument.
 for /f "delims=" %%S in ('echo %~nx0') do set "Script=%%S"
 for /f "delims=" %%F in ('echo %~f0') do set "FullScript=%%F"
 for /f "delims=" %%P in ('echo %~n0') do set "PartialScript=%%P"
+rem Declare program name.
+set "Program=ALOSToy Installer"
+rem Initalise uninstall status to false.
+set "StartUninstall=False"
 rem Store user arguments.
 set "UserArgs=%*"
 rem Store the root directory for use (Contains trailing slash).
@@ -121,7 +126,7 @@ if "!Script!" neq "ALOSTOY-INSTALLER.BAT" exit 1
 rem Define the author.
 set "Author=Aarav Katariya"
 rem Define the version. (Will always remain in 1.X.X.X format.)
-set "Version=1.0.2.4"
+set "Version=1.0.3.0"
 for /f "skip=2 tokens=2*" %%A in ('reg query "HKEY_CURRENT_USER\Control Panel\International" /v "LocaleName"') do (
     set "OSLanguage=%%B"
     set "lang=!OSLanguage:~0,2!"
@@ -134,9 +139,9 @@ net session >nul 2>&1
 if !errorlevel! gtr 0 (
     call :WindowTitle "RELAUNCHING"
     rem Use conhost instead of cmd to force a relaunch in the Windows Console Host instead of Windows Terminal.
-    powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Relaunching as an administrator.','ALOSToy Installer','OK','Warning') | Out-Null; Start-Process conhost.exe -Verb RunAs -ArgumentList 'cmd.exe /c cd /d "!Root!\" & call "!Script!" !UserArgs!'" >nul 2>&1 && (endlocal & exit 0) || (
+    powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Relaunching as an administrator.',$env:Program,'OK','Warning') | Out-Null; Start-Process conhost.exe -Verb RunAs -ArgumentList 'cmd.exe /c cd /d "!Root!\" & call "!Script!" !UserArgs!'" >nul 2>&1 && (endlocal & exit 0) || (
         call :WindowTitle "CANCELLED"
-        start /b powershell -nop -nol -ExecutionPolicy Bypass -WindowStyle Hidden -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Necessary administrator permissions was denied or rejected. Exiting...','ALOSToy Installer','OK','Error') | Out-Null"
+        start /b powershell -nop -nol -ExecutionPolicy Bypass -WindowStyle Hidden -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Necessary administrator permissions was denied or rejected. Exiting...',$env:Program,'OK','Error') | Out-Null"
         endlocal
         exit 1
     )
@@ -305,6 +310,8 @@ set "RedoInstall=No"
 set "ArgumentsPassed=False"
 set "StartHelp=0"
 set "RedoInstall=No"
+set "Firmware="
+set "PartitionScheme="
 rem Validate the line ending choice.
 if "!NewLine!"=="`r`n" (echo >nul) else if "!NewLine!"=="`n" (echo >nul) else (
     echo Your line endings are not valid.
@@ -448,12 +455,12 @@ for /f "tokens=3" %%A in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Sess
         timeout /t 3 /NOBREAK >nul
         set "Arch=ARM64"
     ) else if /i "%%A"=="X86" (
-        powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('X86 is not supported.','ALOSToy Installer','OK','Info') | Out-Null"
+        powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('X86 is not supported.',$env:Program,'OK','Info') | Out-Null"
         endlocal
         rem 86 is a good exit code because it represents x86.
         exit 86
     ) else if /i "%%A"=="ARM32" (
-        powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('ARM32 is not supported.','ALOSToy Installer','OK','Info') | Out-Null"
+        powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('ARM32 is not supported.',$env:Program,'OK','Info') | Out-Null"
         endlocal
         rem 32 is a good exit code because it represents ARM32.
         exit 32
@@ -477,6 +484,44 @@ rem Disable Quick Edit only if neccesary and that
 rem the argument supplied is not a help argument.
 rem Requires code duplication. (Batch limitation.)
 if "!StartHelp!"=="0" if "!QuickEdit!"=="On" goto DisableQuickEdit
+rem Define UAC key.
+set "Target=HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
+echo !DATE! !TIME! Checking UAC status...>> "!logfile!"
+for /f "tokens=3" %%A in ('reg query "!Target!" /v EnableLUA 2^>nul') do set "UACStatus=%%A"
+rem Enforce global UAC requirement.
+if /i "!UACStatus!" neq "0x1" (
+    cls
+    echo !DATE! !TIME! UAC is off. !Script! cannot continue for safety.
+    rem Turn UAC back on for the user if off in interest of safety.
+    reg add "!Target!" /v EnableLUA /t REG_DWORD /d 1 /f >nul 2>&1
+    start /b powershell -nop -nol -WindowStyle Hidden -c "Add-Type -AssemblyName PresentationFramework; if ([System.Windows.MessageBox]::Show('User Account Control appears to be off for the whole system. We have turned it back on. A restart is required. Want to restart?',$env:Program,'YesNo','Error') -eq ([System.Windows.MessageBoxResult]::Yes)) { Restart-Computer -Force }"
+    endlocal
+    exit 25
+)
+rem If we pass, check for the use of the built-in Administrator account.
+powershell -nop -nol -c "if ([System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value -match '-500$') { Exit 0 } else { Exit 1 }"
+rem If yes, run the extra check for Admin Approval Mode for the built in admin.
+if !errorlevel! equ 0 (
+    set "Administrator_UACStatus="
+    rem Check if the built-in Administrator account has
+    rem it's token limited to standard administrators.
+    for /f "tokens=3" %%A in ('reg query "!Target!" /v FilterAdministratorToken 2^>nul') do set "Administrator_UACStatus=%%A"
+    rem Enforce Administrator account UAC requirement.
+    if /i "!Administrator_UACStatus!" neq "0x1" (
+        cls
+        echo !DATE! !TIME! Administrator token not filtered. !Script! cannot continue for safety.>> "!logfile!"
+        rem Turn UAC on for the administrator account in interest of safety.
+        reg add "!Target!" /v FilterAdministratorToken /t REG_DWORD /d 1 /f >nul 2>&1
+        start /b powershell -nop -nol -WindowStyle Hidden -c "Add-Type -AssemblyName PresentationFramework; if ([System.Windows.MessageBox]::Show('The Administrator account appears to have its UAC off. This is the default setting. We have filtered the administrator token. A restart is required. Want to restart?',$env:Program,'YesNo','Error') -eq ([System.Windows.MessageBoxResult]::Yes)) { Restart-Computer -Force }"
+        endlocal
+        exit 24
+    )
+)
+rem All good. We can continue starting up.
+set "Administrator_UACStatus="
+set "CurrentSID="
+set "UACStatus="
+set "Target="
 goto CLI_Arguments
 :CLI_Arguments
 rem ALL ARGUMENTS ARE CASE-INSENSITIVE.
@@ -680,7 +725,7 @@ rem HOWEVER, IT DOES NOT PERFORM A FULLY AUTOMATED/SILENT SETUP.
 rem IT DOES SKIP SOME STEPS LIKE THE EULA, THE ANTIMALWARE WARNING,
 rem THE PRESS ANY KEY TO SHOW MENU, THE PRODUCT SELECTION, THE LICENCE
 rem AGREEMENT, DRIVE CONFIRMATION (YOU MUST PICK DRIVE MANUALLY), VENTOY
-rem INSTALLATION (PASS < /- >VentoyInstallType / --Ventoy-Install-Type
+rem INSTALLATION (PASS < /- >VentoyInstallType XOR --Ventoy-Install-Type
 rem ARGUMENT), FORMAT CONFIRMATION AND END CHOICES, SO THE PROGRAM EXITS.
 rem ANY ERROR OR CANCELLATION MAKES THE INSTALLER EXIT.
 if /i "!ArgKind!"=="Product" (
@@ -1042,7 +1087,7 @@ call :WindowTitle "STARTING [Part 2]"
 if /i "%~1"=="I_QEOff" (
     rem Definitive start. Write the starting header to the logfile to begin new install.
     echo ========================================================================================================================>> "!logfile!"
-    echo ================================ Starting ALOSToy Installer... ^(!D! !T!^) ================================>> "!logfile!"
+    echo ================================ Starting !Program!... ^(!D! !T!^) ================================>> "!logfile!"
     echo ========================================================================================================================>> "!logfile!"
 )
 if "!ArgumentsPassed!"=="True" (
@@ -1083,44 +1128,6 @@ if "!Vtoy_DL_Mode!"=="0" (
         exit 1
     )
 )
-rem Define UAC key.
-set "Target=HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
-echo !DATE! !TIME! Checking UAC status...>> "!logfile!"
-for /f "tokens=3" %%A in ('reg query "!Target!" /v EnableLUA 2^>nul') do set "UACStatus=%%A"
-rem Enforce global UAC requirement.
-if /i "!UACStatus!" neq "0x1" (
-    cls
-    echo !DATE! !TIME! UAC is off. !Script! cannot continue for safety.
-    start /b powershell -nop -nol -WindowStyle Hidden -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('User Account Control appears to be off for the whole system. Please turn it back on.','ALOSToy Installer','OK','Error') | Out-Null"
-    rem Turn UAC back on for the user if off in interest of safety.
-    reg add "!Target!" /v EnableLUA /t REG_DWORD /d 1 /f >nul 2>&1
-    endlocal
-    exit 25
-)
-rem If we pass, check for the use of the built-in Administrator account.
-powershell -nop -nol -c "if ([System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value -match '-500$') { Exit 0 } else { Exit 1 }"
-rem If yes, run the extra check for Admin Approval Mode for the built in admin.
-if !errorlevel! equ 0 (
-    set "Administrator_UACStatus="
-    rem Check if the built-in Administrator account has
-    rem it's token limited to standard administrators.
-    for /f "tokens=3" %%A in ('reg query "!Target!" /v FilterAdministratorToken 2^>nul') do set "Administrator_UACStatus=%%A"
-    rem Enforce Administrator account UAC requirement.
-    if /i "!Administrator_UACStatus!" neq "0x1" (
-        cls
-        echo !DATE! !TIME! Administrator token not filtered. !Script! cannot continue for safety.>> "!logfile!"
-        start /b powershell -nop -nol -WindowStyle Hidden -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('The Administrator account appears to have its UAC off. This is the default setting. Please filter the administrator token.','ALOSToy Installer','OK','Error') | Out-Null"
-        rem Turn UAC on for the administrator account in interest of safety.
-        reg add "!Target!" /v FilterAdministratorToken /t REG_DWORD /d 1 /f >nul 2>&1
-        endlocal
-        exit 24
-    )
-)
-rem All good. We can continue starting up.
-set "Administrator_UACStatus="
-set "CurrentSID="
-set "UACStatus="
-set "Target="
 if "!ForceUpdate!"=="1" if "!NoUpdate!"=="1" (
     echo I did mean to say you cannot put both update flags together.
     echo Quit now and relaunch with either one, not both.
@@ -1194,7 +1201,7 @@ if !errorlevel! equ 0 (
         rem Prompt the user or just auto-consent.
         if "!AutoUpdate!"=="1" goto ApplyUpdate
         if "!ForceUpdate!"=="1" goto ApplyUpdate
-        for /f "delims= " %%# in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show(\"A new version of the installer has been found.!NewLine!!NewLine!Current version: ${env:Version}!NewLine!Newest version: ${env:Newest}!NewLine!!NewLine!Do you want to update now or not?\",'ALOSToy Installer','YesNoCancel','Question')"') do (
+        for /f "delims= " %%# in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show(\"A new version of the installer has been found.!NewLine!!NewLine!Current version: ${env:Version}!NewLine!Newest version: ${env:Newest}!NewLine!!NewLine!Do you want to update now or not?\",$env:Program,'YesNoCancel','Question')"') do (
             if "%%#"=="Yes" (
                  rem If the user says yes, begin the update process.
                  goto ApplyUpdate
@@ -1224,6 +1231,9 @@ if !errorlevel! equ 0 (
 rem Set the optimal font. Users will be happy.
 call :PowerShell_Helper "SetFont"
 if "!errorlevel!"=="1" echo Unable to set optimal font, experience may not be great.
+rem Firmware information can influence recommendations.
+for /f "delims=" %%F in ('powershell -nop -nol -c "(Get-ComputerInfo -Property BiosFirmwareType).BiosFirmwareType"') do set "Firmware=%%F"
+if "!Firmware!"=="UEFI" (set "PartitionScheme=gpt") else if "!Firmware!"=="BIOS" (set "PartitionScheme=mbr")
 set "D="
 set "T="
 where curl >nul 2>&1
@@ -1294,7 +1304,7 @@ if !TOTAL_MIN! GEQ !START! if !TOTAL_MIN! LEQ !END! (
     echo Their name liveth for everyone.
     echo ------------------------------------------------------------
     echo.
-    powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('You should be observing silence for all the people that died in World War One. Remember this: 22 million people died and 40 million were wounded. Read the message in the console and try again at 11:02am.','ALOSToy Installer','OK','Error') | Out-Null"
+    powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('You should be observing silence for all the people that died in World War One. Remember this: 22 million people died and 40 million were wounded. Read the message in the console and try again at 11:02am.',$env:Program,'OK','Error') | Out-Null"
     endlocal
     exit 11
 )
@@ -1305,7 +1315,7 @@ if "!AcceptEULA!"=="0" (
     call :WindowTitle "End-User Licence Agreement"
     cls
     echo ====================================================
-    echo              ALOSToy Installer v!Version!
+    echo              !Program! v!Version!
     echo ====================================================
     echo Author: !Author!
     echo.
@@ -1331,12 +1341,12 @@ if "!AcceptEULA!"=="0" (
     echo - license under the GPLv3 licence and pass freedoms to others.
     if "!Or-Any-Later-Version!"=="False" (
         echo - You are not permitted to distribute this under any other licence
-        echo - other than the GNU General Public License v3.0. Combination with
+        echo - other than the GNU General Public Licence v3.0. Combination with
     ) else if "!Or-Any-Later-Version!"=="True" (
         echo - You are permitted to distribute this under any later version of
-        echo - the GNU General Public License v3 or just GPLv3. Combination with
+        echo - the GNU General Public Licence v3 or just GPLv3. Combination with
     )
-    echo - GNU General Public License v1 or v2 code is legally prohibited.
+    echo - GNU General Public Licence v1 or v2 code is legally prohibited.
     echo - The author is not liable for any damage or data loss.
     echo - !Author! does not condone any damage whatsoever.
     echo - USE AT YOUR OWN RISK.
@@ -1347,12 +1357,12 @@ if "!AcceptEULA!"=="0" (
     if "!agree!"=="Yes" (
         cls
         echo !DATE! !TIME! The End-User licence Agreement has been agreed to.>> "!logfile!"
-        if "!Vtoy_DL_Mode!"=="1" start /b powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('You can combine code with other GPLv3 programs but if you do with GPLv2 or any later version programs, you must upgrade the modified code to GPLv3.','ALOSToy Installer','OK','Info') | Out-Null"
+        if "!Vtoy_DL_Mode!"=="1" start /b powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('You can combine code with other GPLv3 programs but if you do with GPLv2 or any later version programs, you must upgrade the modified code to GPLv3.',$env:Program,'OK','Info') | Out-Null"
         if "!Vtoy_DL_Mode!"=="0" (if "!AcceptAVWarn!"=="0" (goto AVWarn) else if "!AcceptAVWarn!"=="1" (goto DLBin) else (endlocal & exit 1)) else if "!Vtoy_DL_Mode!"=="1" (goto DLBin) else (endlocal & exit 1)
     ) else if "!agree!"=="No" (
         cls
         echo !DATE! !TIME! The End-User licence Agreement has been denied to.>> "!logfile!"
-        powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Since you declined the EULA, this program will now exit.','ALOSToy Installer','OK','Error') | Out-Null"
+        powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Since you declined the EULA, this program will now exit.',$env:Program,'OK','Error') | Out-Null"
         exit 3
     ) else (
         goto EULA
@@ -1362,13 +1372,13 @@ echo !DATE! !TIME! Pre-accepted EULA.>> "!logfile!"
 if "!Vtoy_DL_Mode!"=="0" (if "!AcceptAVWarn!"=="0" (goto AVWarn) else if "!AcceptAVWarn!"=="1" (goto DLBin) else (endlocal & exit 1)) else if "!Vtoy_DL_Mode!"=="1" (goto DLBin) else (endlocal & exit 1)
 :AVWarn
 call :WindowTitle "Will you trust this installer?"
-for /f "delims= " %%A in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('If your antivirus flags the installation files, disable it temporarily and re-enable it after installation. ALOSToy is free of malware and has been proven to stay clean. Do you trust this notice and installer?','ALOSToy Installer','YesNo','Warning')"') do (
+for /f "delims= " %%A in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('If your antivirus flags the installation files, disable it temporarily and re-enable it after installation. ALOSToy is free of malware and has been proven to stay clean. Do you trust this notice and installer?',$env:Program,'YesNo','Warning')"') do (
     if "%%A"=="Yes" (
         echo !DATE! !TIME! Antimalware warning has been accepted.>> "!logfile!"
         goto DLBin
     ) else if "%%A"=="No" (
         call :WindowTitle "GO FIND SOMETHING ELSE OR COME BACK LATER IF YOU TRUST LATER"
-        powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Then quit this program and go find something else. Eg: Easy2Boot (modern alternative) or Medicat USB (2021 alternative). However, if you trust this program later on, come back and run it.','ALOSToy Installer','OK','Error') | Out-Null"
+        powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Then quit this program and go find something else. Eg: Easy2Boot (modern alternative) or Medicat USB (2021 alternative). However, if you trust this program later on, come back and run it.',$env:Program,'OK','Error') | Out-Null"
         exit 14
     ) else (
         goto AVWarn
@@ -1496,6 +1506,8 @@ call :PowerShell_Helper "Hash_BinFiles" && (if "!Vtoy_DL_Mode!"=="0" (goto Main)
 cls
 echo !CmdEchoing!
 mode con: cols=!Columns! lines=!Lines!
+set "StartUninstall=False"
+set "Disk="
 set "label="
 set "drivepath="
 set "Selected=False"
@@ -1632,12 +1644,12 @@ if "!errorlevel!"=="1" (
 ) else if "!errorlevel!"=="68" (
     cls
     call :WindowTitle "INITIATE REDOWNLOAD?"
-    for /f "delims=" %%# in ('powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show(\"Do you want to redownload the files in:!NewLine!!NewLine!!Root!bin?\",'ALOSToy Installer','YesNo','Question')"') do (
+    for /f "delims=" %%# in ('powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show(\"Do you want to redownload the files in:!NewLine!!NewLine!!Root!bin?\",$env:Program,'YesNo','Question')"') do (
         if "%%#"=="Yes" (
             echo Removing bin files...
             rd "!Root!bin" /s /q
             echo Done.
-            for /f "delims=" %%Z in ('powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Do you want to restart the ALOSToy welcome banner as well?','ALOSToy Installer','YesNo','Question')"') do (if "%%Z"=="Yes" set "BannerShown=False")
+            for /f "delims=" %%Z in ('powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Do you want to restart the ALOSToy welcome banner as well?',$env:Program,'YesNo','Question')"') do (if "%%Z"=="Yes" set "BannerShown=False")
             goto DLBin
         ) else if "%%#"=="No" (
             goto Main
@@ -1645,7 +1657,7 @@ if "!errorlevel!"=="1" (
     )
 ) else if "!errorlevel!"=="70" (
     cls
-    start /b powershell -nop -nol -WindowStyle Hidden -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('You are going to reboot directly into the firmware. Take caution while in there. Do not mess up the firmware settings or else your pc may not work the way you want...','ALOSToy Installer','OK','Warning') | Out-Null; & ${env:SystemRoot}\System32\shutdown.exe /r /fw /t 0"
+    start /b powershell -nop -nol -WindowStyle Hidden -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('You are going to reboot directly into the firmware. Take caution while in there. Do not mess up the firmware settings or else your pc may not work the way you want...',$env:Program,'OK','Warning') | Out-Null; & ${env:SystemRoot}\System32\shutdown.exe /r /fw /t 0"
     endlocal
     exit 0
 ) else if "!errorlevel!"=="71" (
@@ -1661,17 +1673,23 @@ if "!errorlevel!"=="1" (
     goto InstallGuide
 ) else if "!errorlevel!"=="85" (
      rem [NEW] Check if the user executed ForceUpdate beforehand.
-     powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; if ($env:Updated -eq "0") { [System.Windows.MessageBox]::Show('!Script! will now update to the newest version or restore a good version of V!Version!...','ALOSToy Installer','OK','Info') | Out-Null } else { [System.Windows.MessageBox]::Show('It looks like you already updated. You need to restart !Script! to execute this again. Click on ''Quit Program'' and then double-click !Script! again.','ALOSToy Installer','OK','Error') | Out-Null }"
+     powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; if ($env:Updated -eq "0") { [System.Windows.MessageBox]::Show('!Script! will now update to the newest version or restore a good version of V!Version!...',$env:Program,'OK','Info') | Out-Null } else { [System.Windows.MessageBox]::Show('It looks like you already updated. You need to restart !Script! to execute this again. Click on ''Quit Program'' and then double-click !Script! again.',$env:Program,'OK','Error') | Out-Null }"
      if "!Updated!"=="0" (goto ApplyUpdate) else (goto Main)
+) else if "!errorlevel!"=="88" (
+    cls
+    set "StartUninstall=True"
+    set "EraseType=Secure"
+    set "DiskPart_WipeCmd=clean all"
+    goto UninstallMenu
 ) else if "!errorlevel!"=="100" (
     cls
     call :WindowTitle "INITIATE REDOWNLOAD?"
-    for /f "delims=" %%# in ('powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show(\"Do you want to redownload the files in:!NewLine!!NewLine!!Root!bin?\",'ALOSToy Installer','YesNo','Question')"') do (
+    for /f "delims=" %%# in ('powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show(\"Do you want to redownload the files in:!NewLine!!NewLine!!Root!bin?\",$env:Program,'YesNo','Question')"') do (
         if "%%#"=="Yes" (
             echo Removing bin files...
             rd "!Root!bin" /s /q
             echo Done.
-            for /f "delims=" %%Z in ('powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Do you want to restart the ALOSToy welcome banner as well?','ALOSToy Installer','YesNo','Question')"') do (if "%%Z"=="Yes" set "BannerShown=False")
+            for /f "delims=" %%Z in ('powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Do you want to restart the ALOSToy welcome banner as well?',$env:Program,'YesNo','Question')"') do (if "%%Z"=="Yes" set "BannerShown=False")
             goto DLBin
         ) else if "%%#"=="No" (
             goto Main
@@ -1679,7 +1697,7 @@ if "!errorlevel!"=="1" (
     )
 ) else if "!errorlevel!"=="102" (
     cls
-    start /b powershell -nop -nol -WindowStyle Hidden -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('You are going to reboot directly into the Windows Recovery Environment. Be careful in there and do not mess up any settings.','ALOSToy Installer','OK','Warning') | Out-Null; & ${env:SystemRoot}\System32\shutdown.exe /r /o /t 0"
+    start /b powershell -nop -nol -WindowStyle Hidden -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('You are going to reboot directly into the Windows Recovery Environment. Be careful in there and do not mess up any settings.',$env:Program,'OK','Warning') | Out-Null; & ${env:SystemRoot}\System32\shutdown.exe /r /o /t 0"
     endlocal
     exit 0
 ) else if "!errorlevel!"=="103" (
@@ -1707,13 +1725,19 @@ if "!errorlevel!"=="1" (
     )
 ) else if "!errorlevel!"=="117" (
      rem [NEW] Check if the user executed ForceUpdate beforehand.
-     powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; if ($env:Updated -eq "0") { [System.Windows.MessageBox]::Show('!Script! will now update to the newest version or restore a good version of V!Version!...','ALOSToy Installer','OK','Info') | Out-Null } else { [System.Windows.MessageBox]::Show('It looks like you already updated. You need to restart !Script! to execute this again. Click on ''Quit Program'' and then double-click !Script! again.','ALOSToy Installer','OK','Error') | Out-Null }"
+     powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; if ($env:Updated -eq "0") { [System.Windows.MessageBox]::Show('!Script! will now update to the newest version or restore a good version of V!Version!...',$env:Program,'OK','Info') | Out-Null } else { [System.Windows.MessageBox]::Show('It looks like you already updated. You need to restart !Script! to execute this again. Click on ''Quit Program'' and then double-click !Script! again.',$env:Program,'OK','Error') | Out-Null }"
      if "!Updated!"=="0" (goto ApplyUpdate) else (goto Main)
 ) else if "!errorlevel!"=="194" (
     cls
     echo Opening the github repository...
     start !InstallerRepo!
     goto Main
+) else if "!errorlevel!"=="120" (
+    cls
+    set "DiskPart_WipeCmd=clean"
+    set "EraseType=Quick"
+    set "StartUninstall=True"
+    goto UninstallMenu
 ) else (
     echo This is not a valid choice.
     echo Return Code: !errorlevel!
@@ -1728,7 +1752,7 @@ set "label=ALOSToy_v1.0_STD_Rev_B"
 call :WindowTitle "INSTALL ALOSTOY STANDARD"
 echo Chosen product: ALOSToy !product!.>> "!logfile!"
 if "!AcceptEULA!"=="0" (
-    call :PowerShell_Helper "licence-Terms_STD" /Maximised
+    call :PowerShell_Helper "Licence-Terms_STD" /Maximised
     pause
     call powershell.exe -nop -nol -ExecutionPolicy Bypass -WindowStyle Normal -c "Write-Output 'User agreed to licence terms.' | Out-File $env:logfile -Encoding UTF8 -Append -NoClobber -Force"
 )
@@ -1745,7 +1769,7 @@ if "!InstallExtensions!"=="True" (
 )
 echo Chosen product: ALOSToy !product!.>> "!logfile!"
 if "!AcceptEULA!"=="0" (
-    call :PowerShell_Helper "licence-Terms_EXT" /Maximised
+    call :PowerShell_Helper "Licence-Terms_EXT" /Maximised
     pause
     call powershell.exe -nop -nol -ExecutionPolicy Bypass -WindowStyle Normal -c "Write-Output 'User agreed to licence terms.' | Out-File $env:logfile -Encoding UTF8 -Append -NoClobber -Force"
 )
@@ -1919,7 +1943,7 @@ goto WindowsDriveCheck
 set "ScriptDrive=%~d0"
 if /i "!drivepath!"=="!WindowsDrive!" (
     call :WindowTitle "PICK SOMETHING ELSE OTHER THAN YOUR SYSTEMDRIVE."
-    for /f "delims= " %%A in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('It turns out you tried to select the !WindowsDrive! drive. We cannot let you do this because otherwise you would end up wrecking your operating system. We will ask you again.','ALOSToy Installer','OKCancel','Error')"') do (
+    for /f "delims= " %%A in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('It turns out you tried to select the !WindowsDrive! drive. We cannot let you do this because otherwise you would end up wrecking your operating system. We will ask you again.',$env:Program,'OKCancel','Error')"') do (
         if /i "%%A"=="OK" (
             goto ChooseDrive
         ) else if /i "%%A"=="Cancel" (
@@ -1931,7 +1955,7 @@ if /i "!drivepath!"=="!WindowsDrive!" (
     )
 ) else if /i "!drivepath!:"=="!ScriptDrive!" (
     call :WindowTitle "PICK SOMETHING ELSE OTHER THAN THE SCRIPT DRIVE."
-    for /f "delims= " %%A in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show(\"It turns out you tried to select the !ScriptDrive! drive. We cannot let you do this because otherwise you would end up destroying the script and files.!NewLine!!NewLine!This can impair your ability to continue installing.!NewLine!!NewLine!We will ask you again.\",'ALOSToy Installer','OKCancel','Error')"') do (
+    for /f "delims= " %%A in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show(\"It turns out you tried to select the !ScriptDrive! drive. We cannot let you do this because otherwise you would end up destroying the script and files.!NewLine!!NewLine!This can impair your ability to continue installing.!NewLine!!NewLine!We will ask you again.\",$env:Program,'OKCancel','Error')"') do (
         if /i "%%A"=="OK" (
             goto ChooseDrive
         ) else if /i "%%A"=="Cancel" (
@@ -1962,7 +1986,7 @@ if "!ProductDefinedWithArg!"=="False" (
     )
 )
 if /i "!drivepath!"=="!WindowsDrive!" (
-    for /f "delims= " %%A in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('It turns out you tried to select the !WindowsDrive! drive. We cannot let you do this because otherwise you would end up wrecking your operating system. We will ask you again.','ALOSToy Installer','OKCancel','Error')"') do (
+    for /f "delims= " %%A in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('It turns out you tried to select the !WindowsDrive! drive. We cannot let you do this because otherwise you would end up wrecking your operating system. We will ask you again.',$env:Program,'OKCancel','Error')"') do (
         if /i "%%A"=="OK" (
             set "drivepath="
             goto ConfirmDrive
@@ -1974,7 +1998,7 @@ if /i "!drivepath!"=="!WindowsDrive!" (
         )
     )
 ) else if /i "!drivepath!:"=="!ScriptDrive!" (
-    for /f "delims= " %%A in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show(\"It turns out you tried to select the !ScriptDrive! drive. We cannot let you do this because otherwise you would end up destroying the script and files.!NewLine!!NewLine!This can impair your ability to continue installing.!NewLine!!NewLine!We will ask you again.\",'ALOSToy Installer','OKCancel','Error')"') do (
+    for /f "delims= " %%A in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show(\"It turns out you tried to select the !ScriptDrive! drive. We cannot let you do this because otherwise you would end up destroying the script and files.!NewLine!!NewLine!This can impair your ability to continue installing.!NewLine!!NewLine!We will ask you again.\",$env:Program,'OKCancel','Error')"') do (
         if /i "%%A"=="OK" (
             goto ConfirmDrive
         ) else if /i "%%A"=="Cancel" (
@@ -1988,9 +2012,9 @@ if /i "!drivepath!"=="!WindowsDrive!" (
 if not defined drivepath goto ConfirmDrive
 echo Drive validation in progress...
 rem Using call :PowerShell_Helper <PS_Label> will not work in a for /f loop.
-for /f "delims=" %%W in ('powershell -nop -nol -c "chcp 65001 > $null; $i18n = New-Object System.Text.UTF8Encoding; [Console]::InputEncoding = $i18n; [Console]::OutputEncoding = $i18n; $OutputEncoding = $i18n; $section = [io.file]::ReadAllText($env:FullScript) -split '(?ms)^:Find_WinInstall\r?\n(.*?)\r?\n:Post_Find_WinInstall'; & ([scriptblock]::Create($section[1]))"') do set "WinInstall=%%W"
+for /f "delims=" %%W in ('powershell -nop -nol -c "chcp 65001 > $null; $i18n = New-Object System.Text.UTF8Encoding; [Console]::InputEncoding = $i18n; [Console]::OutputEncoding = $i18n; $OutputEncoding = $i18n; $section = [IO.File]::ReadAllText($env:FullScript) -split '(?ms)^:Find_WinInstall\r?\n(.*?)\r?\n:Post_Find_WinInstall'; & ([scriptblock]::Create($section[1]))"') do set "WinInstall=%%W"
 if /i "!WinInstall!"=="FOUND" (
-    for /f "delims= " %%Q in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('I detected a Windows installation on Drive !drivepath!. Do you want to continue? If you do, you can lose that installation and all its files.','ALOSToy Installer','YesNoCancel','Warning')"') do (
+    for /f "delims= " %%Q in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('I detected a Windows installation on Drive !drivepath!. Do you want to continue? If you do, you can lose that installation and all its files.',$env:Program,'YesNoCancel','Warning')"') do (
         if /i "%%Q"=="Yes" (
             echo !CmdEchoing!
         ) else if /i "%%Q"=="No" (
@@ -2007,7 +2031,7 @@ if /i "!WinInstall!"=="FOUND" (
     echo !CmdEchoing!
 ) else if /i "!WinInstall!"=="SYSTEMDRIVE" (
     call :WindowTitle "PICK SOMETHING NOT ON YOUR SYSTEM DISK."
-    powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show(\"It turns out you selected ${env:drivepath} but failed to realise that the ${env:drivepath} is a partition of the system drive.!NewLine!!NewLine!Thus, you cannot use this drive letter.!NewLine!Please select another drive that is not on the system disk.\",'ALOSToy Installer','OK','Error') | Out-Null"
+    powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show(\"It turns out you selected ${env:drivepath} but failed to realise that the ${env:drivepath} is a partition of the system drive.!NewLine!!NewLine!Thus, you cannot use this drive letter.!NewLine!Please select another drive that is not on the system disk.\",$env:Program,'OK','Error') | Out-Null"
     goto ChooseDrive
 ) else if /i "!WinInstall!"=="ERROR" (
     set "errorcode=Unable to find a Windows Installation. Aborting for safety..."
@@ -2042,7 +2066,7 @@ GetInput /M !_Var_Box! /H !_Var_Hover!
 if "!errorlevel!"=="1" (
     set "firstarg=/GPT"
 ) else if "!errorlevel!"=="2" (
-    for /f "delims= " %%A in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('MBR only supports disks up to 2TB. Do you want to continue?','ALOSToy Installer','YesNoCancel','Question')"') do (
+    for /f "delims= " %%A in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('MBR only supports disks up to 2TB. Do you want to continue?',$env:Program,'YesNoCancel','Question')"') do (
         if "%%A"=="Yes" (
             set "firstarg="
         ) else if "%%A"=="No" (
@@ -2080,7 +2104,7 @@ GetInput /M !_Var_Box! /H !_Var_Hover!
 if "!errorlevel!"=="1" (
     set "secondarg="
 ) else if "!errorlevel!"=="2" (
-    for /f "delims= " %%A in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Secure Boot Support is good for your computer. Do you want to continue without it? Pro tip: You do not explicitly need GPT for Secure Boot.','ALOSToy Installer','YesNoCancel','Question')"') do (
+    for /f "delims= " %%A in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Secure Boot Support is good for your computer. Do you want to continue without it? Pro tip: You do not explicitly need GPT for Secure Boot.',$env:Program,'YesNoCancel','Question')"') do (
         if "%%A"=="Yes" (
             set "secondarg=/NOSB"
         ) else if "%%A"=="No" (
@@ -2105,7 +2129,7 @@ echo !CmdEchoing!
 if "!ProductDefinedWithArg!"=="True" (if /i "!Vtoy_Install_Type!"=="Install" (goto InstallVtoy) else if /i "!Vtoy_Install_Type!"=="Update" (goto UpdateVtoy) else (goto Main))
 cd /d "!Root!"
 if /i "!NoticeAgreed!"=="False" if /i "!ConfigChanged!"=="False" (
-    for /f "delims=" %%Q in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('You are now entering the install screen. 4 buttons are going to appear. Pay attention to the buttons that will appear.','ALOSToy Installer','OKCancel','Info')"') do if /i "%%Q"=="OK" (cls) else (if /i "%%Q"=="Cancel" (if /i "!ProductDefinedWithArg!"=="True" (endlocal & exit 1) else (set "ResetVars=1" & goto Main)) else (goto VentoyMenu)
+    for /f "delims=" %%Q in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('You are now entering the install screen. 4 buttons are going to appear. Pay attention to the buttons that will appear.',$env:Program,'OKCancel','Info')"') do if /i "%%Q"=="OK" (cls) else (if /i "%%Q"=="Cancel" (if /i "!ProductDefinedWithArg!"=="True" (endlocal & exit 1) else (set "ResetVars=1" & goto Main)) else (goto VentoyMenu)
     )
 )
 if /i "!ConfigChanged!"=="True" (
@@ -2130,7 +2154,7 @@ if "!errorlevel!"=="1" (
 ) else if "!errorlevel!"=="4" (
     cls
     rem You still have to get consent from the user. Cannot be force formatting their drive without their consent. (To comply with Computer Misuse Laws like the Computer Misuse Act 1990:S3 in the UK for example.)
-    for /f "delims= " %%Q in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show(\"You said ventoy is installed on !drivepath!. do you want to format that drive to make room? It is your choice. If it is fresh and not NTFS, go ahead if you want or else no need if you are not OK?!NewLine!!NewLine!Keep in mind, your GPT and Secure Boot settings cannot be applied so ensure your settings are applied beforehand in Ventoy.\",'ALOSToy Installer','YesNoCancel','Question')"') do (
+    for /f "delims= " %%Q in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show(\"You said ventoy is installed on !drivepath!. do you want to format that drive to make room? It is your choice. If it is fresh and not NTFS, go ahead if you want or else no need if you are not OK?!NewLine!!NewLine!Keep in mind, your GPT and Secure Boot settings cannot be applied so ensure your settings are applied beforehand in Ventoy.\",$env:Program,'YesNoCancel','Question')"') do (
         if /i "%%Q"=="Yes" (
             set "NoFormat=0"
             goto CheckVentoyB
@@ -2160,7 +2184,7 @@ set "MessageFailure=Ventoy Install Failed."
 call :WindowTitle "Installing Ventoy Onto !drivepath!..."
 set "NoFormat=0"
 if "!ProductDefinedWithArg!"=="False" (
-    for /f "delims=" %%A in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('FINAL CHANCE. Do you want to install Ventoy to !drivepath!? All data will be lost. If you click Yes, you will be asked to confirm.','ALOSToy Installer','YesNoCancel','Warn')"') do (
+    for /f "delims=" %%A in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('FINAL CHANCE. Do you want to install Ventoy to !drivepath!? All data will be lost. If you click Yes, you will be asked to confirm.',$env:Program,'YesNoCancel','Warn')"') do (
         if "%%A"=="Yes" (
             set /p "confirm=Confirm that you want to format by typing exactly "Yes. I hereby agree to format this drive which will erase ALL data on !drivepath!. I have understood that the contents of !drivepath! will be lost forever. I also acknowledge that data on other partitions of the disk associated with the !drivepath! drive will be lost." >> "
             if "!confirm!" neq "Yes. I hereby agree to format this drive which will erase ALL data on !drivepath!. I have understood that the contents of !drivepath! will be lost forever. I also acknowledge that data on other partitions of the disk associated with the !drivepath! drive will be lost." (
@@ -2231,12 +2255,12 @@ for /f "delims= " %%A in ('type "!Root!Ventoy2Disk\cli_done.txt"') do (
     echo !DATE! !TIME! Ventoy Operation Succeeded: %%A>> "!logfile!"
     if "%%A"=="0" (
         call :WindowTitle "!MessageSuccess!"
-        powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('!MessageSuccess! We can continue.','ALOSToy Installer','OK','Info') | Out-Null"
+        powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('!MessageSuccess! We can continue.',$env:Program,'OK','Info') | Out-Null"
         goto CheckVentoyB
     ) else if "%%A"=="1" (
         call :WindowTitle "!MessageFailure!"
         if "!ProductDefinedWithArg!"=="False" (
-            for /f "delims= " %%Q in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('!MessageFailure! You can always try again. Do you want to try manually?','ALOSToy Installer','YesNoCancel','Error')"') do (
+            for /f "delims= " %%Q in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('!MessageFailure! You can always try again. Do you want to try manually?',$env:Program,'YesNoCancel','Error')"') do (
                 if "%%Q"=="Yes" (
                     call :WindowTitle "INSTALL VENTOY MANUALLY THEN."
                     echo INSTALL VENTOY MANUALLY THEN.
@@ -2247,7 +2271,7 @@ for /f "delims= " %%A in ('type "!Root!Ventoy2Disk\cli_done.txt"') do (
                     echo When it is complete, close Ventoy2Disk and then we will continue.
                     echo Also, try unplugging the device with !drivepath! and plugging it back in.
                     start /wait "" "!Root!Ventoy2Disk\altexe\Ventoy2Disk_!Arch!.exe"
-                    for /f "delims= " %%Q in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Did it work? Please tell the truth.','ALOSToy Installer','YesNoCancel','Question')"') do (
+                    for /f "delims= " %%Q in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Did it work? Please tell the truth.',$env:Program,'YesNoCancel','Question')"') do (
                         if "%%Q"=="Yes" (
                             goto CheckVentoyB
                         ) else if "%%Q"=="No" (
@@ -2265,7 +2289,7 @@ for /f "delims= " %%A in ('type "!Root!Ventoy2Disk\cli_done.txt"') do (
                 )
             )
         ) else (
-            powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('!MessageFailure! You must restart the installation with a different drive. Command line operation failed.','ALOSToy Installer','OK','Error') | Out-Null"
+            powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('!MessageFailure! You must restart the installation with a different drive. Command line operation failed.',$env:Program,'OK','Error') | Out-Null"
             set "errorcode=The installation of Ventoy failed due to a bad USB drive or configuration."
             goto Error
         )
@@ -2297,7 +2321,7 @@ if "!ProductDefinedWithArg!"=="True" (
     )
 )
 if "!NoFormat!"=="0" if "!WarnAccepted!"=="0" (
-    for /f "delims=" %%Q in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('I want to make sure that your drive letter has not changed. If it changed, type the new drive letter now.','ALOSToy Installer','OKCancel','Warning')"') do (
+    for /f "delims=" %%Q in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('I want to make sure that your drive letter has not changed. If it changed, type the new drive letter now.',$env:Program,'OKCancel','Warning')"') do (
         if /i "%%Q"=="OK" (
             cls
             echo !CmdEchoing!
@@ -2310,15 +2334,13 @@ if "!NoFormat!"=="0" if "!WarnAccepted!"=="0" (
                 endlocal
                 exit 1
             )
-        ) else (
-            goto CheckVentoyB
-        )
+        ) else (goto CheckVentoyB)
     )
 )
 if "!NoFormat!"=="0" (
     set "Msg=Insert the drive letter here ^(Currently !drivepath!^), then if you skipped Ventoy install, confirm that this is the drive to reformat by pressing ENTER or else, press ENTER to format."
 ) else (
-    set "Msg=Insert the drive letter here ^(Currently !drivepath!^).
+    set "Msg=Insert the drive letter here ^(Currently !drivepath!^)."
 )
 set /p "drivepath=!Msg! >> " && (
     rem Double validate when changing and confirming. Requires UPPERCASE drive letter to pass. Not
@@ -2532,7 +2554,7 @@ if "!errorlevel!"=="1" (goto Files_DL) else if "!errorlevel!"=="2" (goto Files_L
 :Files_DL
 cls
 echo !CmdEchoing!
-start /b powershell -nop -nologo -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('The logfile: !Root!aria2c_download.log will take up several gigabytes of your %~d0 drive space.','ALOSToy Installer','OK','Warn') | Out-Null"
+start /b powershell -nop -nologo -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('The logfile: !Root!aria2c_download.log will take up several gigabytes of your %~d0 drive space.',$env:Program,'OK','Warn') | Out-Null"
 if /i "!product!"=="Standard" (
     echo Downloading standard version... This will take a long time...
     for /l %%X in (1,1,4) do (
@@ -2626,7 +2648,7 @@ if /i "!product!"=="Standard" (
         set "Located=1"
         goto Extract
     ) else (
-        for /f "delims=" %%E in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Either one or more hashes do not match or some files are missing. Do you want to download missing assets?','ALOSToy Installer','YesNoCancel','Error')"') do (
+        for /f "delims=" %%E in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Either one or more hashes do not match or some files are missing. Do you want to download missing assets?',$env:Program,'YesNoCancel','Error')"') do (
             if "%%E"=="Yes" (
                 goto Files_DL
             ) else if "%%E"=="No" (
@@ -2652,7 +2674,7 @@ if /i "!product!"=="Standard" (
         set "Located=1"
         goto Extract
     ) else (
-        for /f "delims=" %%E in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Either one or more hashes do not match or some files are missing. Do you want to download missing assets?','ALOSToy Installer','YesNoCancel','Error')"') do (
+        for /f "delims=" %%E in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Either one or more hashes do not match or some files are missing. Do you want to download missing assets?',$env:Program,'YesNoCancel','Error')"') do (
             if "%%E"=="Yes" (
                 goto Files_DL
             ) else if "%%E"=="No" (
@@ -2851,7 +2873,7 @@ if /i "!product!"=="Standard" (
 )
 echo !CmdEchoing!
 if exist "!Root!Ventoy2Disk" rd "!Root!Ventoy2Disk" /s /q
-if "!Located!"=="0" (for /f "delims=" %%D in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Do you want to remove the ALOSToy archives? The choice is yours.','ALOSToy Installer','YesNo','Question')"') do (if "%%D"=="Yes" (if exist "!Root!files" rd "!Root!files" /s /q) else if "%%D"=="No" (echo !CmdEchoing!)))
+if "!Located!"=="0" (for /f "delims=" %%D in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Do you want to remove the ALOSToy archives? The choice is yours.',$env:Program,'YesNo','Question')"') do (if "%%D"=="Yes" (if exist "!Root!files" rd "!Root!files" /s /q) else if "%%D"=="No" (echo !CmdEchoing!)))
 goto EndChoices
 :EndChoices
 if "!ShowBanner!"=="Yes" if "!BannerReShown!"=="False" (
@@ -3006,7 +3028,7 @@ if "!errorlevel!"=="1" (
         cd /d "!drivepath!"
         start QuickSFV.exe ALOSToy_v1.0_Extended.md5
     ) else (
-        start /b powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('No ALOSToy edition detected.','ALOSToy Installer','OK','Error') | Out-Null"
+        start /b powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('No ALOSToy edition detected.',$env:Program,'OK','Error') | Out-Null"
         goto Verify_Files
     )
     cd "!Root!"
@@ -3076,7 +3098,7 @@ if "!errorlevel!"=="1" (
             del "!drivepath!ALOSToy_v1.0_Extended.md5" /f /q >nul
         )
     ) else (
-        start /b powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('No ALOSToy edition detected.','ALOSToy Installer','OK','Error') | Out-Null"
+        start /b powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('No ALOSToy edition detected.',$env:Program,'OK','Error') | Out-Null"
         goto Del_Verification_DBs
     )
 ) else (
@@ -3105,7 +3127,7 @@ echo Error code: !errorcode!
 echo Logfile (send to !Author! for help or look at it yourself): !logfile!
 timeout /t 3 /NOBREAK >nul
 if /i "!ProductDefinedWithArg!"=="False" if /i "!RequiresExit!"=="False" (
-    for /f "delims= " %%E in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('You can always retry the installation though. Do you want to retry?','ALOSToy Installer','YesNo','Question')"') do (
+    for /f "delims= " %%E in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('You can always retry the installation though. Do you want to retry?',$env:Program,'YesNo','Question')"') do (
         if /i "%%E"=="Yes" (
             echo We will restart the installation from the beginning.
             timeout /t 1 /NOBREAK >nul
@@ -3194,21 +3216,21 @@ choice /c FBE /n /m "Turn back a page, turn forward a page or exit? [F, B or E]"
 if "!errorlevel!"=="1" (
     rem This is important to know!
     if "!ArgPrefix!"=="--" (set "ExtraProductArg=--Ventoy-Install-Type") else (set "ExtraProductArg=!ArgPrefix!VentoyInstallType")
-    start /b powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show(\"Clarification Update:!NewLine!!NewLine!The !ArgPrefix!Product argument only has to be used last if you do not specifiy !ExtraProductArg!.!NewLine!If you do specify !ExtraProductArg!, then you do not have to place !ArgPrefix!Product as the last argument.\",'ALOSToy Installer','OK','Info') | Out-Null"
+    start /b powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show(\"Clarification Update:!NewLine!!NewLine!The !ArgPrefix!Product argument only has to be used last if you do not specifiy !ExtraProductArg!.!NewLine!If you do specify !ExtraProductArg!, then you do not have to place !ArgPrefix!Product as the last argument.\",$env:Program,'OK','Info') | Out-Null"
     set "ExtraProductArg="
     call :PageFlip
     goto Help3
 ) else if "!errorlevel!"=="2" (
     rem This is important to know!
     if "!ArgPrefix!"=="--" (set "ExtraProductArg=--Ventoy-Install-Type") else (set "ExtraProductArg=!ArgPrefix!VentoyInstallType")
-    start /b powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show(\"Clarification Update:!NewLine!!NewLine!The !ArgPrefix!Product argument only has to be used last if you do not specifiy !ExtraProductArg!.!NewLine!If you do specify !ExtraProductArg!, then you do not have to place !ArgPrefix!Product as the last argument.\",'ALOSToy Installer','OK','Info') | Out-Null"
+    start /b powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show(\"Clarification Update:!NewLine!!NewLine!The !ArgPrefix!Product argument only has to be used last if you do not specifiy !ExtraProductArg!.!NewLine!If you do specify !ExtraProductArg!, then you do not have to place !ArgPrefix!Product as the last argument.\",$env:Program,'OK','Info') | Out-Null"
     set "ExtraProductArg="
     call :PageFlipBack
     goto Help1
 ) else if "!errorlevel!"=="3" (
     rem This is important to know!
     if "!ArgPrefix!"=="--" (set "ExtraProductArg=--Ventoy-Install-Type") else (set "ExtraProductArg=!ArgPrefix!VentoyInstallType")
-    start /b powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show(\"Clarification Update:!NewLine!!NewLine!The !ArgPrefix!Product argument only has to be used last if you do not specifiy !ExtraProductArg!.!NewLine!If you do specify !ExtraProductArg!, then you do not have to place !ArgPrefix!Product as the last argument.\",'ALOSToy Installer','OK','Info') | Out-Null"
+    start /b powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show(\"Clarification Update:!NewLine!!NewLine!The !ArgPrefix!Product argument only has to be used last if you do not specifiy !ExtraProductArg!.!NewLine!If you do specify !ExtraProductArg!, then you do not have to place !ArgPrefix!Product as the last argument.\",$env:Program,'OK','Info') | Out-Null"
     set "ExtraProductArg="
     goto HelpExit
 ) else (
@@ -3443,7 +3465,7 @@ choice /c SV /n /m "Press S to show the standard EULA or V to show the Ventoy Do
 if "!errorlevel!"=="1" (
     echo.
     echo ====================================================
-    echo              ALOSToy Installer v!Version!
+    echo              !Program! v!Version!
     echo ====================================================
     echo Author: !Author!
     echo.
@@ -3458,18 +3480,18 @@ if "!errorlevel!"=="1" (
     echo - license under the GPLv3 licence and pass freedoms to others.
     if "!Or-Any-Later-Version!"=="False" (
         echo - You are not permitted to distribute this under any other licence
-        echo - other than the GNU General Public License v3.0. Combination with
+        echo - other than the GNU General Public Licence v3.0. Combination with
     ) else if "!Or-Any-Later-Version!"=="True" (
         echo - You are permitted to distribute this under any later version of
-        echo - the GNU General Public License v3 or just GPLv3. Combination with
+        echo - the GNU General Public Licence v3 or just GPLv3. Combination with
     )
-    echo - GNU General Public License v1 or v2 code is legally prohibited.
+    echo - GNU General Public Licence v1 or v2 code is legally prohibited.
     echo - The author is not liable for any damage or data loss.
     echo - !Author! does not condone any damage whatsoever.
     echo - USE AT YOUR OWN RISK.
 ) else if "!errorlevel!"=="2" (
     echo ====================================================
-    echo            ALOSToy Installer v!Version!
+    echo            !Program! v!Version!
     echo ====================================================
     echo Author: !Author!
     echo.
@@ -3484,12 +3506,12 @@ if "!errorlevel!"=="1" (
     echo - license under the GPLv3 licence and pass freedoms to others.
     if "!Or-Any-Later-Version!"=="False" (
         echo - You are not permitted to distribute this under any other licence
-        echo - other than the GNU General Public License v3.0. Combination with
+        echo - other than the GNU General Public Licence v3.0. Combination with
     ) else if "!Or-Any-Later-Version!"=="True" (
         echo - You are permitted to distribute this under any later version of
-        echo - the GNU General Public License v3 or just GPLv3. Combination with
+        echo - the GNU General Public Licence v3 or just GPLv3. Combination with
     )
-    echo - GNU General Public License v1 or v2 code is legally prohibited.
+    echo - GNU General Public Licence v1 or v2 code is legally prohibited.
     echo - The author is not liable for any damage or data loss.
     echo - !Author! does not condone any damage whatsoever.
     echo - USE AT YOUR OWN RISK.
@@ -3555,7 +3577,7 @@ set "BrowsingHelp=False"
 set "StartPage="
 if "!HelpFromMain!"=="0" (set "WSH=Hidden") else if "!HelpFromMain!"=="1" (set "WSH=Normal")
 call :WindowTitle "GOOD LUCK WITH THE ARGUMENTS."
-if "!ArgPrefix!"=="--" (start /b powershell -nop -nol -WindowStyle !WSH! -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.Messagebox]::Show(\"If you prefer to use ${env:ArgPrefix}, then all arguments are case-sensitive. Type it exactly as I show you.!NewLine!!NewLine!You must use the same prefix for all arguments.!NewLine!!NewLine!Choose a prefix and use that only. ^(Only per session.^)!NewLine!!NewLine!Like !ArgPrefix! for example.!NewLine!!NewLine!Using / or - makes them case-insensitive.\",'ALOSToy Installer','OK','Info') | Out-Null; [System.Windows.Messagebox]::Show(\"You probably came from GNU linux and programs. Most likely, --long-options are familiar with you. All arguments ARE case-sensitive for you. Every single one. I know your habits for case-sensitivity. Use Train-Case.!NewLine!!NewLine!Like --Ventoy-Version for example.\",'ALOSToy Installer','OK','Info') | Out-Null") else (start /b powershell -nop -nol -WindowStyle !WSH! -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.Messagebox]::Show(\"If you prefer to use ${env:ArgPrefix}, then all arguments are case-insensitive. You do not have to worry about casing.!NewLine!!NewLine!You must use the same prefix for all arguments.!NewLine!!NewLine!Choose a prefix and use that only. ^(Only per session.^)!NewLine!!NewLine!Like !ArgPrefix! for example.!NewLine!!NewLine!Using -- makes them case-sensitive.\",'ALOSToy Installer','OK','Info') | Out-Null")
+if "!ArgPrefix!"=="--" (start /b powershell -nop -nol -WindowStyle !WSH! -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.Messagebox]::Show(\"If you prefer to use ${env:ArgPrefix}, then all arguments are case-sensitive. Type it exactly as I show you.!NewLine!!NewLine!You must use the same prefix for all arguments.!NewLine!!NewLine!Choose a prefix and use that only. ^(Only per session.^)!NewLine!!NewLine!Like !ArgPrefix! for example.!NewLine!!NewLine!Using / or - makes them case-insensitive.\",$env:Program,'OK','Info') | Out-Null; [System.Windows.Messagebox]::Show(\"You probably came from GNU linux and programs. Most likely, --long-options are familiar with you. All arguments ARE case-sensitive for you. Every single one. I know your habits for case-sensitivity. Use Train-Case.!NewLine!!NewLine!Like --Ventoy-Version for example.\",$env:Program,'OK','Info') | Out-Null") else (start /b powershell -nop -nol -WindowStyle !WSH! -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.Messagebox]::Show(\"If you prefer to use ${env:ArgPrefix}, then all arguments are case-insensitive. You do not have to worry about casing.!NewLine!!NewLine!You must use the same prefix for all arguments.!NewLine!!NewLine!Choose a prefix and use that only. ^(Only per session.^)!NewLine!!NewLine!Like !ArgPrefix! for example.!NewLine!!NewLine!Using -- makes them case-sensitive.\",$env:Program,'OK','Info') | Out-Null")
 title 
 if "!HelpFromMain!"=="1" (
     set "HelpFromMain=0"
@@ -3580,7 +3602,7 @@ set "BrowsingHelp=True"
 if "!StartPage!"=="1" (goto InstallGuide1) else if "!StartPage!"=="2" (goto InstallGuide2) else if "!StartPage!"=="3" (goto InstallGuide3) else if "!StartPage!"=="4" (goto InstallGuide4) else if "!StartPage!"=="5" (goto InstallGuide5) else if "!StartPage!"=="6" (goto InstallGuide6) else if "!StartPage!"=="7" (goto InstallGuide7) else if "!StartPage!"=="8" (goto InstallGuide8) else if "!StartPage!"=="9" (goto InstallGuide9) else if "!StartPage!"=="10" (goto InstallGuide10) else if "!StartPage!"=="" (set "StartPage=1" & goto InstallGuide1) else (endlocal & exit 8)
 :InstallGuide1
 call :InstallHelpTitle 1
-echo Welcome to the ALOSToy Installer^^!
+echo Welcome to the !Program!^^!
 echo.
 echo This is the correct utility to install ALOSToy, a powerful
 echo bootable USB drive that can save a computer and is more
@@ -3594,6 +3616,7 @@ echo and Linux and even forensic tools for deep investigation and
 echo bit-for-bit clones. ALOSToy comes in 3 editions: Standard,
 echo Standard+Extensions and Extended versions. Higher versions give
 echo you OS installers pre-loaded for you. (Authorised by vendors.)
+echo Now with uninstall functionality!
 echo.
 echo In theory, you can create the ultimate, bootable USB drive that will
 echo grant your access to the massive variety of diagnostic and disaster
@@ -3642,7 +3665,7 @@ if "!errorlevel!"=="1" (
     goto InstallGuide3
 ) else if "!errorlevel!"=="2" (
     cls
-    powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('My USB drive is the Samsung PSSD T9 1TB model. You do not have to get exactly that.','ALOSToy Installer','OK','Info') | Out-Null; [System.Windows.MessageBox]::Show('BE CAREFUL OF FAKE DRIVES. MANY NO-NAME BRANDS SELL LIKE \"1TB SSD\" FOR ABNORMALLY CHEAP. THESE DRIVES ACTUALLY USE GLORIFIED MICROSD CARDS WITH A FIRMWARE PROGRAMMED TO LIE TO ALL OPERATING SYSTEMS. MANY MICROSD CARDS THAT TECHNICIANS POPPED OUT OF FAKE DRIVES ARE INDEED JUST 64GIB OR LESS SO DATA CAN BE QUIETLY OVERWRITTEN ONCE ENOUGH FILES ARE WRITTEN.','ALOSToy Installer','OK','Warning') | Out-Null; [System.Windows.MessageBox]::Show('WE STRONGLY RECOMMEND VALIDATING THE USB DRIVE WITH VALIDRIVE, A POWERFUL FAKE DRIVE DETECTOR.','ALOSToy Installer','OK','Warning') | Out-Null"
+    powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('My USB drive is the Samsung PSSD T9 1TB model. You do not have to get exactly that.',$env:Program,'OK','Info') | Out-Null; [System.Windows.MessageBox]::Show('BE CAREFUL OF FAKE DRIVES. MANY NO-NAME BRANDS SELL LIKE \"1TB SSD\" FOR ABNORMALLY CHEAP. THESE DRIVES ACTUALLY USE GLORIFIED MICROSD CARDS WITH A FIRMWARE PROGRAMMED TO LIE TO ALL OPERATING SYSTEMS. MANY MICROSD CARDS THAT TECHNICIANS POPPED OUT OF FAKE DRIVES ARE INDEED JUST 64GIB OR LESS SO DATA CAN BE QUIETLY OVERWRITTEN ONCE ENOUGH FILES ARE WRITTEN.',$env:Program,'OK','Warning') | Out-Null; [System.Windows.MessageBox]::Show('WE STRONGLY RECOMMEND VALIDATING THE USB DRIVE WITH VALIDRIVE, A POWERFUL FAKE DRIVE DETECTOR.',$env:Program,'OK','Warning') | Out-Null"
     start https://bit.ly/3R9w9ZD
     start https://www.grc.com/validrive.htm
     goto InstallGuide2
@@ -3661,7 +3684,7 @@ echo Disagreeing exits !Script!. Here is the full EULA text:
 choice /c SV /n /m "Press S to show the standard EULA or V to show the Ventoy Download Mode EULA. (You have 5 seconds.)" /t 5 /d S
 if "!errorlevel!"=="1" (
     echo ====================================================
-    echo              ALOSToy Installer v!Version!
+    echo              !Program! v!Version!
     echo ====================================================
     echo Author: !Author!
     echo.
@@ -3675,18 +3698,18 @@ if "!errorlevel!"=="1" (
     echo - license under the GPLv3 licence and pass freedoms to others.
     if "!Or-Any-Later-Version!"=="False" (
         echo - You are not permitted to distribute this under any other licence
-        echo - other than the GNU General Public License v3.0. Combination with
+        echo - other than the GNU General Public Licence v3.0. Combination with
     ) else if "!Or-Any-Later-Version!"=="True" (
         echo - You are permitted to distribute this under any later version of
-        echo - the GNU General Public License v3 or just GPLv3. Combination with
+        echo - the GNU General Public Licence v3 or just GPLv3. Combination with
     )
-    echo - GNU General Public License v1 or v2 code is legally prohibited.
+    echo - GNU General Public Licence v1 or v2 code is legally prohibited.
     echo - The author is not liable for any damage or data loss.
     echo - !Author! does not condone any damage whatsoever.
     echo - USE AT YOUR OWN RISK.
 ) else if "!errorlevel!"=="2" (
     echo ====================================================
-    echo            ALOSToy Installer v!Version!
+    echo            !Program! v!Version!
     echo ====================================================
     echo Author: !Author!
     echo.
@@ -3701,12 +3724,12 @@ if "!errorlevel!"=="1" (
     echo - license under the GPLv3 licence and pass freedoms to others.
     if "!Or-Any-Later-Version!"=="False" (
         echo - You are not permitted to distribute this under any other licence
-        echo - other than the GNU General Public License v3.0. Combination with
+        echo - other than the GNU General Public Licence v3.0. Combination with
     ) else if "!Or-Any-Later-Version!"=="True" (
         echo - You are permitted to distribute this under any later version of
-        echo - the GNU General Public License v3 or just GPLv3. Combination with
+        echo - the GNU General Public Licence v3 or just GPLv3. Combination with
     )
-    echo - GNU General Public License v1 or v2 code is legally prohibited.
+    echo - GNU General Public Licence v1 or v2 code is legally prohibited.
     echo - The author is not liable for any damage or data loss.
     echo - !Author! does not condone any damage whatsoever.
     echo - USE AT YOUR OWN RISK.
@@ -3755,7 +3778,7 @@ if "!errorlevel!"=="1" (
     goto InstallGuide5
 ) else if "!errorlevel!"=="2" (
     cls
-    for /f "delims= " %%I in ('powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('The image is hosted on Google Drive.','ALOSToy Installer','OKCancel','Info')"') do (if /i "%%I"=="OK" start https://bit.ly/4bPND4x)
+    for /f "delims= " %%I in ('powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('The image is hosted on Google Drive.',$env:Program,'OKCancel','Info')"') do (if /i "%%I"=="OK" start https://bit.ly/4bPND4x)
     goto InstallGuide4
 ) else if "!errorlevel!"=="3" (
     call :PageFlipBack
@@ -3764,7 +3787,7 @@ if "!errorlevel!"=="1" (
     goto InstallGuideExit
 ) else if "!errorlevel!"=="5" (
     cls
-    powershell -nop -nologo -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show(\"Extra main menu keyboard shortcuts:!NewLine!!NewLine!D: Redownload bin files.!NewLine!Lowercase F: Reboot to Windows Recovery Environment.!NewLine!Uppercase F: Reboot to firmware setup.!NewLine!G: Open the Github repository.!NewLine!H: Show command line help.!NewLine!I: Show installation help.!NewLine!R: Restart the program.!NewLine!U: Force update the program to new or current version.\",'ALOSToy Installer','OK','Info') | Out-Null; [System.Windows.MessageBox]::Show('All keyboard shortcuts work whether you input UPPERCASE or lowercase. Except F which has a different shortcut depending on casing.','ALOSToy Installer','OK','Info') | Out-Null"
+    powershell -nop -nologo -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show(\"Extra main menu keyboard shortcuts:!NewLine!!NewLine!D: Redownload bin files.!NewLine!Lowercase F: Reboot to Windows Recovery Environment.!NewLine!Uppercase F: Reboot to firmware setup.!NewLine!G: Open the Github repository.!NewLine!H: Show command line help.!NewLine!I: Show installation help.!NewLine!R: Restart the program.!NewLine!U: Force update the program to new or current version.!NewLine!Lowercase X: Uninstall ALOSToy (quick erase).!NewLine!Uppercase X: Uninstall ALOSToy (secure erase).\",$env:Program,'OK','Info') | Out-Null; [System.Windows.MessageBox]::Show('All keyboard shortcuts work whether you input UPPERCASE or lowercase. Except F and X which has a different shortcut or behaviour depending on casing.',$env:Program,'OK','Info') | Out-Null"
     goto InstallGuide4
 ) else (
     goto InstallGuide4
@@ -3876,17 +3899,17 @@ choice /c FBE /n /m "Turn forward a page, turn back a page or exit? [F, B or E]"
 set "PartMsg=The data partition labelled \"Ventoy\" is the partition where all the ALOSToy or your own bootable files will be stored on."
 if "!errorlevel!"=="1" (
     cls
-    start /b powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('!PartMsg!','ALOSToy Installer','OK','Info') | Out-Null"
+    start /b powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('!PartMsg!',$env:Program,'OK','Info') | Out-Null"
     call :PageFlip
     goto InstallGuide8
 ) else if "!errorlevel!"=="2" (
     cls
-    start /b powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('!PartMsg!','ALOSToy Installer','OK','Info') | Out-Null"
+    start /b powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('!PartMsg!',$env:Program,'OK','Info') | Out-Null"
     call :PageFlipBack
     goto :InstallGuide6
 ) else if "!errorlevel!"=="3" (
     cls
-    start /b powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('!PartMsg!','ALOSToy Installer','OK','Info') | Out-Null"
+    start /b powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('!PartMsg!',$env:Program,'OK','Info') | Out-Null"
     goto InstallGuideExit
 ) else (
     goto InstallGuide7
@@ -4003,7 +4026,7 @@ set "BrowsingHelp=False"
 set "StartPage="
 if "!HelpFromMain!"=="0" (set "WSH=Hidden") else if "!HelpFromMain!"=="1" (set "WSH=Normal")
 call :WindowTitle "GOOD LUCK WITH YOUR INSTALLATION OF ALOSTOY"
-start /b powershell -nop -nol -WindowStyle !WSH! -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.Messagebox]::Show('Now that you have read the guide, you should be able to confidently install ALOSToy Standard or Extended. I hope this helped you learn something.','ALOSToy Installer','OK','Info') | Out-Null"
+start /b powershell -nop -nol -WindowStyle !WSH! -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.Messagebox]::Show('Now that you have read the guide, you should be able to confidently install ALOSToy Standard or Extended. I hope this helped you learn something.',$env:Program,'OK','Info') | Out-Null"
 if "!HelpFromMain!"=="1" (
     set "HelpFromMain=0"
     goto Main
@@ -4028,38 +4051,41 @@ rem Ventoy Download Mode, Drive with a general Window Title that stays consisten
 rem about activity. Can now also track the help page as well. ArgumentsPassed is back but does not show.
 rem Now includes Archive_Part because of the need to see the archive progress.
 set "Input=%~1"
+if "!StartUninstall!"=="True" (set "HEADER=[ALOSTOY UNINSTALLER V1.0.0.0]") else if "!StartUninstall!"=="False" (set "HEADER=[ALOSTOY INSTALLER V!VERSION!]")
 if "!BrowsingHelp!"=="True" (
-    if defined Page (set "BaseHeader=[ALOSTOY INSTALLER V!VERSION!] [!LANG!-!LOCALE!] [START PAGE: !STARTPAGE!] [PAGE !PAGE!]")
-    if defined InstallGuidePage (set "BaseHeader=[ALOSTOY INSTALLER V!VERSION!] [!LANG!-!LOCALE!] [START PAGE: !STARTPAGE!] [PAGE !INSTALLGUIDEPAGE!]")
+    if defined Page (set "BaseHeader=!HEADER! [!LANG!-!LOCALE!] [START PAGE: !STARTPAGE!] [PAGE !PAGE!]")
+    if defined InstallGuidePage (set "BaseHeader=!HEADER! [!LANG!-!LOCALE!] [START PAGE: !STARTPAGE!] [PAGE !INSTALLGUIDEPAGE!]")
 ) else if defined drivepath (
     if defined product (
         if "!InstallExtensions!"=="False" (
-            set "BaseHeader=[ALOSTOY INSTALLER V!VERSION!] [!LANG!-!LOCALE!] [PRODUCT: !PRODUCT!] [DRIVE: !DRIVEPATH!]"
+            set "BaseHeader=!HEADER! [!LANG!-!LOCALE!] [PRODUCT: !PRODUCT!] [DRIVE: !DRIVEPATH!]"
         ) else if "!InstallExtensions!"=="True" (
-            set "BaseHeader=[ALOSTOY INSTALLER V!VERSION!] [!LANG!-!LOCALE!] [PRODUCT: !PRODUCT!+Extensions] [DRIVE: !DRIVEPATH!]"
+            set "BaseHeader=!HEADER! [!LANG!-!LOCALE!] [PRODUCT: !PRODUCT!+Extensions] [DRIVE: !DRIVEPATH!]"
         )
     ) else if "!Vtoy_DL_Mode!"=="1" (
-        set "BaseHeader=[ALOSTOY INSTALLER V!VERSION!] [!LANG!-!LOCALE!] [VTOY DL MODE]"
+        set "BaseHeader=!HEADER! [!LANG!-!LOCALE!] [VTOY DL MODE]"
     ) else (
-        set "BaseHeader=[ALOSTOY INSTALLER V!VERSION!] [!LANG!-!LOCALE!] [DRIVE: !DRIVEPATH!]"
+        set "BaseHeader=!HEADER! [!LANG!-!LOCALE!] [DRIVE: !DRIVEPATH!]"
     )
 ) else (
     if defined product (
         if "!InstallExtensions!"=="False" (
-            set "BaseHeader=[ALOSTOY INSTALLER V!VERSION!] [!LANG!-!LOCALE!] [PRODUCT: !PRODUCT!]"
+            set "BaseHeader=!HEADER! [!LANG!-!LOCALE!] [PRODUCT: !PRODUCT!]"
         ) else if "!InstallExtensions!"=="True" (
-            set "BaseHeader=[ALOSTOY INSTALLER V!VERSION!] [!LANG!-!LOCALE!] [PRODUCT: !PRODUCT!+Extensions]"
+            set "BaseHeader=!HEADER! [!LANG!-!LOCALE!] [PRODUCT: !PRODUCT!+Extensions]"
         )
     ) else if "!Vtoy_DL_Mode!"=="1" (
-        set "BaseHeader=[ALOSTOY INSTALLER V!VERSION!] [!LANG!-!LOCALE!] [VTOY DL MODE]"
+        set "BaseHeader=!HEADER! [!LANG!-!LOCALE!] [VTOY DL MODE]"
     ) else (
-        set "BaseHeader=[ALOSTOY INSTALLER V!VERSION!] [!LANG!-!LOCALE!]"
+        set "BaseHeader=!HEADER! [!LANG!-!LOCALE!]"
     )
 )
-rem This might not be necessary.
-if "!BrowsingHelp!"=="False" if defined ArgPrefix (set "BaseHeader=!BaseHeader! [PREFIX: !ARGPREFIX!]")
-rem But this WILL be necessary.
-if defined Archive_Part if defined Parts (set "BaseHeader=!BaseHeader! [ARCHIVE PART: !ARCHIVE_PART! OF !PARTS!]")
+if "!StartUninstall!"=="False" (
+    rem This might not be necessary.
+    if "!BrowsingHelp!"=="False" if defined ArgPrefix (set "BaseHeader=!BaseHeader! [PREFIX: !ARGPREFIX!]")
+    rem But this WILL be necessary.
+    if defined Archive_Part if defined Parts (set "BaseHeader=!BaseHeader! [ARCHIVE PART: !ARCHIVE_PART! OF !PARTS!]")
+) else if "!StartUninstall!"=="True" if defined EraseType (set "BaseHeader=!BaseHeader! [ERASE TYPE: !ERASETYPE!]")
 title !BaseHeader! ^<-----^> !Input!
 set "Input="
 goto :eof
@@ -4067,7 +4093,7 @@ goto :eof
 set "Page=%~1"
 cls
 echo         ^˄^˄^˄^˄^˄^˄ ^|=======================================================================================^| ^˄^˄^˄^˄^˄^˄
-echo         ^<^<^<^<^<^< ^| ALOSToy Installer Command-Line Help Guide (100%% Guaranteed To Make Your Life Better)  ^| ^>^>^>^>^>^>
+echo         ^<^<^<^<^<^< ^| !Program! Command-Line Help Guide (100%% Guaranteed To Make Your Life Better)  ^| ^>^>^>^>^>^>
 echo         ^˅^˅^˅^˅^˅^˅ ^|=======================================================================================^| ^˅^˅^˅^˅^˅^˅
 echo [Page !Page! of !Pages!]
 if !Page! lss 4 (call :WindowTitle "BASIC COMMAND-LINE HELP GUIDE") else if !Page! equ 4 (call :WindowTitle "COMMAND-LINE EXAMPLES") else if !Page! gtr 4 (if !Page! lss 9 (call :WindowTitle "ADVANCED COMMAND-LINE HELP GUIDE") else if !Page! equ 9 (call :WindowTitle "AUTHOR INFO AND EULA") else if !Page! equ 10 (call :WindowTitle "ABOUT THE EMBEDDED POWERSHELL"))
@@ -4088,7 +4114,7 @@ rem :Post_RunPS
 rem echo PowerShell ends and returns to batch.
 set "block=%~1"
 if /i "%~2"=="/Maximised" (set "ViewMode=Maximized") else if /i "%~2"=="/Hidden" (set "ViewMode=Hidden") else if "%~2"=="/Minimised" (set "ViewMode=Minimized") else (set "ViewMode=Normal")
-powershell -nop -nol -WindowStyle !ViewMode! -c "chcp 65001 > $null; $i18n = New-Object System.Text.UTF8Encoding; [Console]::InputEncoding = $i18n; [Console]::OutputEncoding = $i18n; $OutputEncoding = $i18n; $section = [io.file]::ReadAllText($env:FullScript) -split '(?ms)^:!block!\r?\n(.*?)\r?\n:Post_!block!'; & ([scriptblock]::Create($section[1]))"
+powershell -nop -nol -WindowStyle !ViewMode! -c "chcp 65001 > $null; $i18n = New-Object System.Text.UTF8Encoding; [Console]::InputEncoding = $i18n; [Console]::OutputEncoding = $i18n; $OutputEncoding = $i18n; $section = [IO.File]::ReadAllText($env:FullScript) -split '(?ms)^:!block!\r?\n(.*?)\r?\n:Post_!block!'; & ([scriptblock]::Create($section[1]))"
 exit /b !errorlevel!
 :ExitMessages
 if "%~1"=="" (set "WS=Hidden") else (set "WS=%~1")
@@ -4100,7 +4126,7 @@ goto :eof
 cls
 call :WindowTitle "UPDATING FROM V!VERSION! TO V!NEWEST!..."
 echo ========================================================================================================================
-echo ================================ Updating ALOSToy Installer... (!DATE! !TIME!) ================================
+echo ================================ Updating !Program!... (!DATE! !TIME!) ================================
 echo ========================================================================================================================
 set "Timestamp=!DATE!-!TIME!"
 set "Timestamp=!Timestamp:/=-!"
@@ -4110,7 +4136,7 @@ if "!ForceUpdate!"=="1" (set "SuccessfulBackup=1") else (copy "!Script!" "!Scrip
 if "!SuccessfulBackup!"=="1" (
     set "Timestamp="
     set "SuccessfulBackup="
-    echo !DATE! !TIME! Found ALOSToy Installer Version !Newest!. Downloading right now to "!Root!"...>> "!logfile!"
+    echo !DATE! !TIME! Found !Program! Version !Newest!. Downloading right now to "!Root!"...>> "!logfile!"
     curl !InstallerRepo!/releases/download/!Newest!/ALOSTOY-INSTALLER.ZIP -O -L >> "!logfile!" 2>&1
     curl !InstallerRepo!/raw/refs/heads/main/HASH.TXT -O -L >> "!logfile!" 2>&1
     rem VERY IMPORTANT TO HASH THE DOWNLOADED ZIP FILE BEFORE IT IS EXTRACTED.
@@ -4346,7 +4372,7 @@ if /i "!Actual_Ventoy_Hash!"=="!Expected_Ventoy_Hash!" (
 :InstallerTitle
 cls
 echo ========================================================================================================================
-echo ================================ Starting ALOSToy Installer... (!D! !T!) ================================
+echo ================================ Starting !Program!... (!D! !T!) ================================
 echo ========================================================================================================================
 if "!GPLNotice!"=="1" if "!EXISTS!"=="1" (
     type "!FILE!"
@@ -4392,7 +4418,7 @@ rem DO NOT ASK ME TO REMOVE THIS IN ISSUES OR COMMENTS! I WILL NOT RESPOND!
 set "ARE=0"
 if /i "%~1"=="AfterRedownload" set "ARE=1"
 set "Valid_LicenceDocuments=0"
-for /f "tokens=1,2,3 usebackq" %%H in (`powershell -nop -nol -c "chcp 65001 > $null; $i18n = New-Object System.Text.UTF8Encoding; [Console]::InputEncoding = $i18n; [Console]::OutputEncoding = $i18n; $OutputEncoding = $i18n; $section = [io.file]::ReadAllText($env:FullScript) -split '(?ms)^:HashLicences\r?\n(.*?)\r?\n:Post_HashLicences'; & ([scriptblock]::Create($section[1]))"`) do (
+for /f "tokens=1,2,3 usebackq" %%H in (`powershell -nop -nol -c "chcp 65001 > $null; $i18n = New-Object System.Text.UTF8Encoding; [Console]::InputEncoding = $i18n; [Console]::OutputEncoding = $i18n; $OutputEncoding = $i18n; $section = [IO.File]::ReadAllText($env:FullScript) -split '(?ms)^:HashLicences\r?\n(.*?)\r?\n:Post_HashLicences'; & ([scriptblock]::Create($section[1]))"`) do (
     if /i "%%H"=="MISSING" (set "Missing=True") else if /i "%%H"=="Hashes:" (
         rem LICENCE.TXT or GPLV3_ONLY_INFO.TXT
         if /i "%%I"=="7F545FE11D2817185E365A03E5DD7FAD1C9F858702FA09E361D5ABF5A8FFF4E6" (set /a "Valid_LicenceDocuments+=1") else if /i "%%I"=="F3F3786ADE093D4EA620147AB7CED3FEB1C49E5A6F04C186D4490F1D70C945D7" (set /a "Valid_LicenceDocuments+=1")
@@ -4411,6 +4437,82 @@ if "!ARE!"=="0" (
     exit /b 0
     goto :eof
 )
+:UninstallMenu
+cls
+call :WindowTitle "UNINSTALL ALOSTOY OPTIONS"
+call :PowerShell_Helper "Uninstall_Choices"
+call Button 20 3 F4 "Uninstall ALOSToy" 50 3 F2 "Select Disk" 75 3 F6 "Abort Uninstallation" X _Var_Box _Var_Hover
+call :PowerShell_Helper "Uninstall_Instructions"
+if defined Disk echo Disk Number Selected: !Disk!.
+GetInput /M !_Var_Box! /H !_Var_Hover! 
+if "!errorlevel!"=="1" (
+    if defined Disk (goto StartUninstall) else (
+        echo.
+        echo.
+        echo.
+        echo You need to select your disk in the menu.
+        echo Go back and click on "Select Disk".
+        echo Press any key to return to menu...
+        pause >nul
+        goto UninstallMenu
+    )
+) else if "!errorlevel!"=="2" (
+    set "Disk="
+    goto U_ChooseDisk
+) else if "!errorlevel!"=="3" (
+    set "Disk="
+    set "ResetVars=1"
+    goto Main
+) else (
+    echo.
+    echo.
+    echo.
+    echo That is not a valid choice.
+    echo Return Code: !errorlevel!
+    pause
+    goto UninstallMenu
+)
+:U_ChooseDisk
+cls
+echo Choose a disk that has ALOSToy on it.
+for /f "usebackq" %%D in (`powershell -nop -nol -c "chcp 65001 > $null; $i18n = New-Object System.Text.UTF8Encoding; [Console]::InputEncoding = $i18n; [Console]::OutputEncoding = $i18n; $OutputEncoding = $i18n; $section = [IO.File]::ReadAllText($env:FullScript) -split '(?ms)^:PS-U_ChooseDisk\r?\n(.*?)\r?\n:Post_PS-U_ChooseDisk'; & ([scriptblock]::Create($section[1]))"`) do set "Disk=%%D"
+if "!Disk!"=="None" set "Disk="
+goto UninstallMenu
+:StartUninstall
+cls
+echo select disk !Disk!> "!Root!diskpart_wipe.txt"
+echo !DiskPart_WipeCmd!>> "!Root!diskpart_wipe.txt"
+echo convert !PartitionScheme! noerr>> "!Root!diskpart_wipe.txt"
+echo create partition primary noerr>> "!Root!diskpart_wipe.txt"
+echo format fs=ntfs label=Files quick override noerr>> "!Root!diskpart_wipe.txt"
+echo assign noerr>> "!Root!diskpart_wipe.txt"
+echo exit>> "!Root!diskpart_wipe.txt"
+for /f "delims=" %%W in ('powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('DO YOU WANT TO PROCEED WITH THE UNINSTALLATION OF ALOSTOY? ALL DATA ON EVERY PARTITON OF !DISK! WILL BE LOST. IF YOU SAY \"YES\", YOU WILL BE ASKED TO CONFIRM THAT YOU WANT TO DO THIS. Note: We will create a data partition on the selected disk for you to reduce headaches.',$env:Program,'YesNo','Warn')"') do if "%%W"=="Yes" (goto ConfirmUninstall) else (goto UninstallMenu)
+:ConfirmUninstall
+cls
+echo Type the following in exactly as shown (case-sensitive). Typing it wrong returns you to the uninstall menu:
+echo.
+set /p "FinalConfirm="Yes, I acknowledge that all partitions of disk !Disk! will be erased forever and all data will be lost." >> "
+rem Not joking. Case-sensitive input is required.
+if "!FinalConfirm!"=="Yes, I acknowledge that all partitions of disk !Disk! will be erased forever and all data will be lost." (
+    cls
+    echo Hold on while ALOSToy is being uninstalled...
+    echo.
+    echo Thank you for choosing ALOSToy. You always have an option to reinstall ALOSToy through
+    echo this same program at any time, if you want. If any important files were on disk !Disk!, they
+    echo are now irreversibly gone forever (potentially recoverable if quick erase was chosen).
+    echo.
+    echo Errors will be shown here:
+    diskpart /s "!Root!diskpart_wipe.txt" >> "!logfile!"
+    if /i "!EraseType!"=="Quick" (
+        rem Introduce an artificial delay for the
+        rem user to read the following text above.
+        timeout /t 5 /NOBREAK >nul
+    )
+) else (
+    set "FinalConfirm="
+    goto UninstallMenu
+)
 rem =====================================================
 rem The rest of the code below down to the end of the
 rem installer file, is all embedded PowerShell that will
@@ -4425,7 +4527,7 @@ if ((Test-Path -LiteralPath $env:FILE) -and (Test-Path -LiteralPath (Join-Path $
     'Hashes: {0} {1}' -f $LICENCE,$COPYING
     Exit 0
 } else {
-    'MISSING'
+    Write-Output 'MISSING'
     Exit 1
 }
 :Post_HashLicences
@@ -4436,14 +4538,14 @@ Add-Type -AssemblyName PresentationFramework
     environment is completely independent of the Command Prompt session.
     So %~f0 will not expand to the full batch script path.
 #>
-$CommandToCopy = [string]::Concat('powershell -nop -nol -c ',[char]34,'chcp 65001 > $null; $i18n = New-Object System.Text.UTF8Encoding; [Console]::InputEncoding = $i18n; [Console]::OutputEncoding = $i18n; $OutputEncoding = $i18n; $section = [io.file]::ReadAllText(''%~f0'') -split ''(?ms)^:YourPSBlock\r?\n(.*?)\r?\n:Post_YourPSBlock''; & ([scriptblock]::Create($section[1])) <YourArguments>',[char]34)
+$CommandToCopy = [string]::Concat('powershell -nop -nol -c ',[char]34,'chcp 65001 > $null; $i18n = New-Object System.Text.UTF8Encoding; [Console]::InputEncoding = $i18n; [Console]::OutputEncoding = $i18n; $OutputEncoding = $i18n; $section = [IO.File]::ReadAllText(''%~f0'') -split ''(?ms)^:YourPSBlock\r?\n(.*?)\r?\n:Post_YourPSBlock''; & ([scriptblock]::Create($section[1])) <YourArguments>',[char]34)
 Set-Clipboard -Value $CommandToCopy
 if ($?) {
-    [System.Windows.MessageBox]::Show('Command has been copied to clipboard.','ALOSToy Installer','OK','Info') | Out-Null
-    [System.Windows.MessageBox]::Show("Using a scriptblock is FAR safer. ${env:Author} used to use Invoke-Expression but stopped using it for much better scriptblocks.",'ALOSToy Installer','OK','Info') | Out-Null
-    [System.Windows.MessageBox]::Show("There is a placeholder for arguments called <YourArguments>. If you want to use arguments, remove the placeholder that you see and replace it with your own arguments defined in your embedding block.`r`n`r`nUse param() to define arguments in a custom embedding block.",'ALOSToy Installer','OK','Info') | Out-Null
-    [System.Windows.MessageBox]::Show('Then add your arguments in your command to call the embedding block with your custom arguments. If you do not want to pass arguments to embedded script blocks, remove the <YourArguments> placeholder entirely.','ALOSToy Installer','OK','Info') | Out-Null
-    [System.Windows.MessageBox]::Show('The first example with param will be shown in the console window. Press OK. The example will show in magenta.','ALOSToy Installer','OK','Info') | Out-Null
+    [System.Windows.MessageBox]::Show('Command has been copied to clipboard.',$env:Program,'OK','Info') | Out-Null
+    [System.Windows.MessageBox]::Show("Using a scriptblock is FAR safer. ${env:Author} used to use Invoke-Expression but stopped using it for much better scriptblocks.",$env:Program,'OK','Info') | Out-Null
+    [System.Windows.MessageBox]::Show("There is a placeholder for arguments called <YourArguments>. If you want to use arguments, remove the placeholder that you see and replace it with your own arguments defined in your embedding block.`r`n`r`nUse param() to define arguments in a custom embedding block.",$env:Program,'OK','Info') | Out-Null
+    [System.Windows.MessageBox]::Show('Then add your arguments in your command to call the embedding block with your custom arguments. If you do not want to pass arguments to embedded script blocks, remove the <YourArguments> placeholder entirely.',$env:Program,'OK','Info') | Out-Null
+    [System.Windows.MessageBox]::Show('The first example with param will be shown in the console window. Press OK. The example will show in magenta.',$env:Program,'OK','Info') | Out-Null
     # Show example one.
     $ExampleScriptA = @'
 [CmdletBinding()] # <---- You should add this because it gives the scriptblock common parameters.
@@ -4461,14 +4563,14 @@ param(
 Write-Host "MyStringValue is set to ${MyStringValue}."
 Write-Host "MyIntegerValue is set to ${MyIntegerValue}."
 Write-Host "MyStringArrayOrValue is set to ${MyStringArrayOrValue}."
-foreach ($Value in $MyStringArrayOrValue) { Set-Content -LiteralPath "${env:USERPROFILE}\myfolder\myfile.txt" -Value "The user passed ${MyStringArrayOrValue} in the array." -Encoding Unicode }
+foreach ($Value in $MyStringArrayOrValue) { Set-Content -LiteralPath "${env:USERPROFILE}\myfolder\myfile.txt" -Value "The user passed ${MyStringArrayOrValue} in the array." -Encoding Unicode } # Unicode saves as UTF-16 little endian.
 Pause
 Exit
 '@
     Write-Host $ExampleScriptA -ForegroundColor Magenta
     Pause
     Clear-Host
-    [System.Windows.MessageBox]::Show('But you can also use $env: variables from your batch or windows environment/session as arguments. Click OK to see the second example. The example will show in magenta.','ALOSToy Installer','OK','Info') | Out-Null
+    [System.Windows.MessageBox]::Show('But you can also use $env: variables from your batch or windows environment/session as arguments. Click OK to see the second example. The example will show in magenta.',$env:Program,'OK','Info') | Out-Null
     # Show example two.
     $ExampleScriptB = @'
 [CmdletBinding()] # <---- You should add this because it gives the scriptblock common parameters.
@@ -4484,7 +4586,7 @@ Exit
     Clear-Host
     Exit 0
 } else {
-    [System.Windows.MessageBox]::Show('Command could not be copied to clipboard','ALOSToy Installer','OK','Error') | Out-Null
+    [System.Windows.MessageBox]::Show('Command could not be copied to clipboard',$env:Program,'OK','Error') | Out-Null
     Exit 1
 }
 :Post_CopyToClipboard
@@ -4707,7 +4809,7 @@ $Host.UI.RawUI.WindowTitle = "$env:BaseHeader <-----> HASHING FILES..."
 Write-Host "Hashing Files..." -ForegroundColor Yellow
 $Root = $env:Root
 # Make a big hashtable.
-[hashtable]$Hashes = @{
+[HashTable]$Hashes = @{
     "${Root}bin\aria2c_X64.exe" = "BE2099C214F63A3CB4954B09A0BECD6E2E34660B886D4C898D260FEBFE9D70C2"
     "${Root}bin\aria2c_ARM64.exe" = "33C775256F64123515F32A8252200EF2AB5AD72963981C694DFF5E61D650F6BE"
     "${Root}bin\batbox.exe" = "9553BC17FA0FD08E026C1865812B3388E3D5495A5394BBF671E5A8F21C79989A"
@@ -4997,18 +5099,18 @@ else {
 Write-Output $text
 exit 0
 :Post_Installer-Choices
-:licence-Terms_EXT
+:Licence-Terms_EXT
 $Language = $env:lang
 if ($Language -eq "en") {
     # English body.
     $text = @"
-ALOSToy V1.0 Extended - licence agreement Copyright (C) 2026 AaravLegend-Inc
+ALOSToy V1.0 Extended - licence agreement Copyright (C) 2023-2026 $env:Author
 
 Did you pay for this? If so, you were SCAMMED and may have malware instead!
 
-This toolkit is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the licence, or (at your option) any later version.
-This toolkit has been created in the hope that it will be useful, but WITHOUT ANY WARRANTY, not even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. For more information, see the GNU General Public License.
-You should have received a copy of the GNU General Public License along with this toolkit. If not, see https://ww.w.gnu.org/licenses/.
+This toolkit is free software: you can redistribute it and/or modify it under the terms of the GNU General Public Licence as published by the Free Software Foundation, either version 3 of the licence, or (at your option) any later version.
+This toolkit has been created in the hope that it will be useful, but WITHOUT ANY WARRANTY, not even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. For more information, see the GNU General Public Licence.
+You should have received a copy of the GNU General Public Licence along with this toolkit. If not, see https://ww.w.gnu.org/licenses/.
 
 SECTION 1 - DEFINITIONS
 "Toolkit" refers to ALOSToy v1.0 Extended, including its source files, isos, documentation and any related files. "You" refers to the licencee or user of the toolkit. "Modified version" refers to any derivative work based on the toolkit.
@@ -5037,7 +5139,7 @@ THE TOOLKIT GIVES NO WARRANTY, TO THE EXTENT PERMITTED BY APPLICABLE LAW. THE TO
 SECTION 6 - LIMITATION OF LIABILITY
 IN NO EVENT, UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING, SHALL ANY COPYRIGHT HOLDER BE LIABLE TO YOU FOR ANY DAMAGES, INCLUDING GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE THE TOOLKIT.
 
-This licence is based on the GNU General Public License v3. See https://ww.w.gnu.org/licenses/gpl-3.0.html for complete terms.
+This licence is based on the GNU General Public Licence v3. See https://ww.w.gnu.org/licenses/gpl-3.0.html for complete terms.
 
 SECTION 7 – Extended Toolkit Info
 Because this is the extended version of ALOSToy v1.0, you get a ton of additional features including:
@@ -5052,7 +5154,7 @@ This is the end of the licence terms. Enjoy ALOSToy v1.0 Extended.
 elseif ($Language -eq "fr") {
     # French body.
     $text = @"
-ALOSToy V1.0 Extended - Contrat de licence Copyright (C) 2026 AaravLegend-Inc
+ALOSToy V1.0 Extended - Contrat de licence Copyright (C) 2023-2026 $env:Author
 
 Avez-vous payé pour cela ? Si oui, vous avez été victime d'une ARNAQUE et vous avez peut-être reçu un logiciel malveillant à la place!
 
@@ -5102,13 +5204,13 @@ Ceci conclut les conditions de licence. Profitez pleinement d'ALOSToy v1.0 Exten
 elseif ($Language -eq "de") {
     # German body.
     $text = @"
-ALOSToy V1.0 Extended – Lizenzvereinbarung Copyright (C) 2026 AaravLegend-Inc
+ALOSToy V1.0 Extended – Lizenzvereinbarung Copyright (C) 2023-2026 $env:Author
 
 Haben Sie dafür bezahlt? Wenn ja, wurden Sie BETROGEN und haben möglicherweise stattdessen Malware!
 
-Dieses Toolkit ist freie Software: Sie können es unter den Bedingungen der GNU General Public License, wie von der Free Software Foundation veröffentlicht, entweder in der Version 3 der Lizenz oder (nach Ihrer Wahl) in einer späteren Version weitergeben und/oder modifizieren.
-Dieses Toolkit wurde in der Hoffnung erstellt, dass es nützlich ist, jedoch OHNE JEGLICHE GARANTIE, auch ohne die implizite Garantie der MARKTGÄNGIGKEIT oder EIGNUNG FÜR EINEN BESTIMMTEN ZWECK. Weitere Informationen finden Sie in der GNU General Public License.
-Sie sollten zusammen mit diesem Toolkit eine Kopie der GNU General Public License erhalten haben. Falls nicht, finden Sie diese unter https://ww.w.gnu.org/licenses/.
+Dieses Toolkit ist freie Software: Sie können es unter den Bedingungen der GNU General Public Licence, wie von der Free Software Foundation veröffentlicht, entweder in der Version 3 der Lizenz oder (nach Ihrer Wahl) in einer späteren Version weitergeben und/oder modifizieren.
+Dieses Toolkit wurde in der Hoffnung erstellt, dass es nützlich ist, jedoch OHNE JEGLICHE GARANTIE, auch ohne die implizite Garantie der MARKTGÄNGIGKEIT oder EIGNUNG FÜR EINEN BESTIMMTEN ZWECK. Weitere Informationen finden Sie in der GNU General Public Licence.
+Sie sollten zusammen mit diesem Toolkit eine Kopie der GNU General Public Licence erhalten haben. Falls nicht, finden Sie diese unter https://ww.w.gnu.org/licenses/.
 
 ABSCHNITT 1 – DEFINITIONEN
 „Toolkit” bezieht sich auf ALOSToy v1.0 Extended, einschließlich seiner Quelldateien, ISOs, Dokumentation und aller zugehörigen Dateien. „Sie” bezieht sich auf den Lizenznehmer oder Nutzer des Toolkits. „Modifizierte Version” bezieht sich auf alle abgeleiteten Werke, die auf dem Toolkit basieren.
@@ -5137,7 +5239,7 @@ DAS TOOLKIT GIBT KEINE GEWÄHRLEISTUNG, SOWEIT DIES NACH GELTENDEM RECHT ZULÄSS
 ABSCHNITT 6 – HAFTUNGSBESCHRÄNKUNG
 IN KEINEM FALL, SOFERN NICHT GESETZLICH VORGESCHRIEBEN ODER SCHRIFTLICH VEREINBART, HAFTET EIN URHEBERRECHTSINHABER IHNEN GEGENÜBER FÜR SCHÄDEN, EINSCHLIESSLICH ALLGEMEINER, BESONDERER, ZUFÄLLIGER ODER FOLGESCHÄDEN , DIE SICH AUS DER NUTZUNG ODER DER UNMÖGLICHKEIT DER NUTZUNG DES TOOLKITS ERGEBEN.
 
-Diese Lizenz basiert auf der GNU General Public License v3. Die vollständigen Bedingungen finden Sie unter https://ww.w.gnu.org/licenses/gpl-3.0.html.
+Diese Lizenz basiert auf der GNU General Public Licence v3. Die vollständigen Bedingungen finden Sie unter https://ww.w.gnu.org/licenses/gpl-3.0.html.
 
 ABSCHNITT 7 – Informationen zum erweiterten Toolkit
 Da es sich um die erweiterte Version von ALOSToy v1.0 handelt, erhalten Sie eine Vielzahl zusätzlicher Funktionen, darunter:
@@ -5152,7 +5254,7 @@ Dies ist das Ende der Lizenzbedingungen. Viel Spaß mit ALOSToy v1.0 Extended.
 elseif ($Language -eq "es") {
     # Spanish body.
     $text = @"
-ALOSToy V1.0 Extended - Acuerdo de licencia Copyright (C) 2026 AaravLegend-Inc
+ALOSToy V1.0 Extended - Acuerdo de licencia Copyright (C) 2023-2026 $env:Author
 
 ¿Ha pagado por esto? Si es así, ¡le han ESTAFADO y es posible que tenga malware en su lugar!
 
@@ -5202,13 +5304,13 @@ Aquí finalizan los términos de la licencia. Disfruta de ALOSToy v1.0 Extended.
 elseif ($Language -eq "it") {
     # Italian body.
     $text = @"
-ALOSToy V1.0 Extended - Contratto di licenza Copyright (C) 2026 AaravLegend-Inc
+ALOSToy V1.0 Extended - Contratto di licenza Copyright (C) 2023-2026 $env:Author
 
 Hai pagato per questo? Se sì, sei stato TRUFFATO e potresti avere un malware!
 
-Questo toolkit è un software gratuito: puoi ridistribuirlo e/o modificarlo secondo i termini della GNU General Public License pubblicata dalla Free Software Foundation, sia nella versione 3 della Licenza, sia (a tua discrezione) in qualsiasi versione successiva.
-Questo toolkit è stato creato nella speranza che possa essere utile, ma SENZA ALCUNA GARANZIA, nemmeno la garanzia implicita di COMMERCIABILITÀ o IDONEITÀ PER UN PARTICOLARE SCOPO. Per ulteriori informazioni, consulta la GNU General Public License.
-Dovresti aver ricevuto una copia della GNU General Public License insieme a questo toolkit. In caso contrario, consulta https://ww.w.gnu.org/licenses/.
+Questo toolkit è un software gratuito: puoi ridistribuirlo e/o modificarlo secondo i termini della GNU General Public Licence pubblicata dalla Free Software Foundation, sia nella versione 3 della Licenza, sia (a tua discrezione) in qualsiasi versione successiva.
+Questo toolkit è stato creato nella speranza che possa essere utile, ma SENZA ALCUNA GARANZIA, nemmeno la garanzia implicita di COMMERCIABILITÀ o IDONEITÀ PER UN PARTICOLARE SCOPO. Per ulteriori informazioni, consulta la GNU General Public Licence.
+Dovresti aver ricevuto una copia della GNU General Public Licence insieme a questo toolkit. In caso contrario, consulta https://ww.w.gnu.org/licenses/.
 
 SEZIONE 1 - DEFINIZIONI
 Per "Toolkit" si intende ALOSToy v1.0 Extended, inclusi i file sorgente, le immagini ISO, la documentazione e qualsiasi file correlato. Per "Utente" si intende il licenziatario o l'utente del toolkit. Per "Versione modificata" si intende qualsiasi opera derivata basata sul toolkit.
@@ -5237,7 +5339,7 @@ IL TOOLKIT NON FORNISCE ALCUNA GARANZIA, NEI LIMITI CONSENTITI DALLA LEGGE APPLI
 SEZIONE 6 - LIMITAZIONE DI RESPONSABILITÀ
 IN NESSUN CASO, SALVO QUANTO PREVISTO DALLA LEGGE APPLICABILE O CONCORDATO PER ISCRITTO, I TITOLARI DEL DIRITTO D'AUTORE SARANNO RESPONSABILI NEI CONFRONTI DELL'UTENTE PER EVENTUALI DANNI, INCLUSE LE PERDITE GENERALI, SPECIALI, INCIDENTALI O CONSEGUENTI I DERIVANTI DALL'UTILIZZO O DALL'IMPOSSIBILITÀ DI UTILIZZARE IL TOOLKIT.
 
-La presente licenza si basa sulla GNU General Public License v3. Per i termini completi, consultare https://ww.w.gnu.org/licenses/gpl-3.0.html.
+La presente licenza si basa sulla GNU General Public Licence v3. Per i termini completi, consultare https://ww.w.gnu.org/licenses/gpl-3.0.html.
 
 SEZIONE 7 - Informazioni sul toolkit esteso
 Poiché questa è la versione estesa di ALOSToy v1.0, avrai a disposizione tantissime funzionalità aggiuntive, tra cui:
@@ -5252,7 +5354,7 @@ Questo è tutto per quanto riguarda i termini della licenza. Buon divertimento c
 elseif ($Language -eq "ja") {
     # Japanese body.
     $text = @"
-ALOSToy V1.0 Extended - ライセンス契約著作権 (C) 2026 AaravLegend-Inc
+ALOSToy V1.0 Extended - ライセンス契約著作権 (C) 2023-2026 $env:Author
 
 これは購入したものですか？もしそうなら、あなたは詐欺に遭い、マルウェアを入手した可能性があります！
 
@@ -5287,7 +5389,7 @@ ALOSToy Extended のソース製品をお探しの方は、https://www.ventoy.ne
 第6条 - 責任の制限
 適用される法律で要求される場合、または書面で合意された場合を除き、いかなる著作権者も、ツールキットの使用または使用不能に起因する、一般的、特別、付随的、または 結果的損害を含む、いかなる損害についても、お客様に対して責任を負わないものとします。
 
-本ライセンスはGNU General Public License v3に基づいています。完全な条項についてはhttps://ww.w.gnu.org/licenses/gpl-3.0.htmlを参照してください。
+本ライセンスはGNU General Public Licence v3に基づいています。完全な条項についてはhttps://ww.w.gnu.org/licenses/gpl-3.0.htmlを参照してください。
 
 セクション7 – 拡張ツールキット情報
 これはALOSToy v1.0の拡張版であるため、以下のような多数の追加機能を利用できます:
@@ -5302,11 +5404,11 @@ WindowsまたはLinuxの再インストール用完全ISOイメージ
 elseif ($Language -eq "ko") {
     # South Korean body.
     $text = @"
-ALOSToy V1.0 Extended - 라이선스 계약서 저작권 (C) 2026 AaravLegend-Inc
+ALOSToy V1.0 Extended - 라이선스 계약서 저작권 (C) 2023-2026 $env:Author
 
 이걸 구매하셨나요? 그렇다면 사기 당한 것이며 악성 코드를 설치했을 수 있습니다!
 
-이 툴킷은 자유 소프트웨어입니다: 귀하는 자유 소프트웨어 재단이 발표한 GNU 일반 공중 사용 허가서(GNU General Public License)의 조건에 따라, 라이선스 버전 3 또는 (선택에 따라) 그 이후 버전을 사용하여 이를 재배포 및/또는 수정할 수 있습니다.
+이 툴킷은 자유 소프트웨어입니다: 귀하는 자유 소프트웨어 재단이 발표한 GNU 일반 공중 사용 허가서(GNU General Public Licence)의 조건에 따라, 라이선스 버전 3 또는 (선택에 따라) 그 이후 버전을 사용하여 이를 재배포 및/또는 수정할 수 있습니다.
 이 툴킷은 유용할 것이라는 희망으로 제작되었으나, 상품성 또는 특정 목적에 대한 적합성에 대한 묵시적 보증을 포함하여 어떠한 보증도 제공하지 않습니다. 자세한 내용은 GNU 일반 공중 사용 허가서를 참조하십시오.
 본 툴킷과 함께 GNU 일반 공중 사용 허가서 사본을 받으셨을 것입니다. 그렇지 않은 경우 https://ww.w.gnu.org/licenses/를 참조하십시오.
 
@@ -5356,19 +5458,19 @@ else {
 }
 Write-Output $text
 exit 0
-:Post_licence-Terms_EXT
-:licence-Terms_STD
+:Post_Licence-Terms_EXT
+:Licence-Terms_STD
 $Language = $env:lang
 if ($Language -eq "en") {
     # English body.
     $text = @"
-ALOSToy V1.0 Standard - licence agreement Copyright (C) 2026 AaravLegend-Inc
+ALOSToy V1.0 Standard - licence agreement Copyright (C) 2023-2026 $env:Author
 
 Did you pay for this? If so, you were SCAMMED and may have malware instead!
 
-This toolkit is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the licence, or (at your option) any later version.
-This toolkit has been created in the hope that it will be useful, but WITHOUT ANY WARRANTY, not even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. For more information, see the GNU General Public License.
-You should have received a copy of the GNU General Public License along with this toolkit. If not, see https://ww.w.gnu.org/licenses/.
+This toolkit is free software: you can redistribute it and/or modify it under the terms of the GNU General Public Licence as published by the Free Software Foundation, either version 3 of the licence, or (at your option) any later version.
+This toolkit has been created in the hope that it will be useful, but WITHOUT ANY WARRANTY, not even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. For more information, see the GNU General Public Licence.
+You should have received a copy of the GNU General Public Licence along with this toolkit. If not, see https://ww.w.gnu.org/licenses/.
 
 SECTION 1 - DEFINITIONS
 "Toolkit" refers to ALOSToy v1.0 Standard, including its source files, isos, documentation and any related files. "You" refers to the licencee or user of the toolkit. "Modified version" refers to any derivative work based on the toolkit.
@@ -5397,14 +5499,14 @@ THE TOOLKIT GIVES NO WARRANTY, TO THE EXTENT PERMITTED BY APPLICABLE LAW. THE TO
 SECTION 6 - LIMITATION OF LIABILITY
 IN NO EVENT, UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING, SHALL ANY COPYRIGHT HOLDER BE LIABLE TO YOU FOR ANY DAMAGES, INCLUDING GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE THE TOOLKIT.
 
-This licence is based on the GNU General Public License v3. See https://ww.w.gnu.org/licenses/gpl-3.0.html for complete terms.
+This licence is based on the GNU General Public Licence v3. See https://ww.w.gnu.org/licenses/gpl-3.0.html for complete terms.
 This is the end of the licence terms. Enjoy ALOSToy v1.0 Standard.
 "@
 }
 elseif ($Language -eq "fr") {
     # French body.
     $text = @"
-ALOSToy V1.0 Standard - Contrat de licence Copyright (C) 2026 AaravLegend-Inc
+ALOSToy V1.0 Standard - Contrat de licence Copyright (C) 2023-2026 $env:Author
 
 Avez-vous payé pour cela ? Si oui, vous avez été victime d'une ARNAQUE et vous avez peut-être reçu un logiciel malveillant à la place!
 
@@ -5446,12 +5548,12 @@ Ceci est la fin des conditions de licence. Profitez bien d'ALOSToy v1.0 Standard
 elseif ($Language -eq "de") {
     # German body.
     $text = @"
-ALOSToy V1.0 Standard – Lizenzvereinbarung Copyright (C) 2026 AaravLegend-Inc
+ALOSToy V1.0 Standard – Lizenzvereinbarung Copyright (C) 2023-2026 $env:Author
 
 Haben Sie dafür bezahlt? Wenn ja, wurden Sie BETROGEN und haben möglicherweise stattdessen Malware erhalten!
-Dieses Toolkit ist freie Software: Sie können es unter den Bedingungen der GNU General Public License, wie von der Free Software Foundation veröffentlicht, entweder in der Version 3 der Lizenz oder (nach Ihrer Wahl) in einer späteren Version weitergeben und/oder modifizieren.
-Dieses Toolkit wurde in der Hoffnung erstellt, dass es nützlich ist, jedoch OHNE JEGLICHE GARANTIE, auch ohne die implizite Garantie der MARKTGÄNGIGKEIT oder EIGNUNG FÜR EINEN BESTIMMTEN ZWECK. Weitere Informationen finden Sie in der GNU General Public License.
-Sie sollten zusammen mit diesem Toolkit eine Kopie der GNU General Public License erhalten haben. Falls nicht, finden Sie diese unter https://ww.w.gnu.org/licenses/.
+Dieses Toolkit ist freie Software: Sie können es unter den Bedingungen der GNU General Public Licence, wie von der Free Software Foundation veröffentlicht, entweder in der Version 3 der Lizenz oder (nach Ihrer Wahl) in einer späteren Version weitergeben und/oder modifizieren.
+Dieses Toolkit wurde in der Hoffnung erstellt, dass es nützlich ist, jedoch OHNE JEGLICHE GARANTIE, auch ohne die implizite Garantie der MARKTGÄNGIGKEIT oder EIGNUNG FÜR EINEN BESTIMMTEN ZWECK. Weitere Informationen finden Sie in der GNU General Public Licence.
+Sie sollten zusammen mit diesem Toolkit eine Kopie der GNU General Public Licence erhalten haben. Falls nicht, finden Sie diese unter https://ww.w.gnu.org/licenses/.
 
 ABSCHNITT 1 – DEFINITIONEN
 „Toolkit” bezieht sich auf ALOSToy v1.0 Standard, einschließlich seiner Quelldateien, ISOs, Dokumentation und aller zugehörigen Dateien. „Sie” bezieht sich auf den Lizenznehmer oder Nutzer des Toolkits. „Modifizierte Version” bezieht sich auf alle abgeleiteten Werke, die auf dem Toolkit basieren.
@@ -5480,14 +5582,14 @@ DAS TOOLKIT GIBT KEINE GEWÄHRLEISTUNG, SOWEIT DIES NACH GELTENDEM RECHT ZULÄSS
 ABSCHNITT 6 – HAFTUNGSBESCHRÄNKUNG
 IN KEINEM FALL, SOFERN NICHT GESETZLICH VORGESCHRIEBEN ODER SCHRIFTLICH VEREINBART, HAFTET EIN URHEBERRECHTSINHABER IHNEN GEGENÜBER FÜR SCHÄDEN, EINSCHLIESSLICH ALLGEMEINER, BESONDERER, ZUFÄLLIGER ODER FOLGESCHÄDEN , DIE SICH AUS DER NUTZUNG ODER DER UNMÖGLICHKEIT DER NUTZUNG DES TOOLKITS ERGEBEN.
 
-Diese Lizenz basiert auf der GNU General Public License v3. Die vollständigen Bedingungen finden Sie unter https://ww.w.gnu.org/licenses/gpl-3.0.html.
+Diese Lizenz basiert auf der GNU General Public Licence v3. Die vollständigen Bedingungen finden Sie unter https://ww.w.gnu.org/licenses/gpl-3.0.html.
 Dies ist das Ende der Lizenzbedingungen. Viel Spaß mit ALOSToy v1.0 Standard.
 "@
 }
 elseif ($Language -eq "es") {
     # Spanish body.
     $text = @"
-ALOSToy V1.0 Estándar - Acuerdo de licencia Copyright (C) 2026 AaravLegend-Inc
+ALOSToy V1.0 Estándar - Acuerdo de licencia Copyright (C) 2023-2026 $env:Author
 
 ¿Ha pagado por esto? Si es así, ¡le han ESTAFADO y es posible que tenga malware en su lugar!
 Este kit de herramientas es software libre: puede redistribuirlo y/o modificarlo bajo los términos de la Licencia Pública General GNU publicada por la Free Software Foundation, ya sea la versión 3 de la Licencia o (a su elección) cualquier versión posterior.
@@ -5528,13 +5630,13 @@ Aquí finalizan los términos de la licencia. Disfrute de ALOSToy v1.0 Standard.
 elseif ($Language -eq "it") {
     # Italian body.
     $text = @"
-ALOSToy V1.0 Standard - Contratto di licenza Copyright (C) 2026 AaravLegend-Inc
+ALOSToy V1.0 Standard - Contratto di licenza Copyright (C) 2023-2026 $env:Author
 
 Hai pagato per questo? Se sì, sei stato TRUFFATO e potresti avere un malware!
 
-Questo toolkit è un software gratuito: puoi ridistribuirlo e/o modificarlo secondo i termini della GNU General Public License pubblicata dalla Free Software Foundation, sia nella versione 3 della Licenza, sia (a tua discrezione) in qualsiasi versione successiva.
-Questo toolkit è stato creato nella speranza che possa essere utile, ma SENZA ALCUNA GARANZIA, nemmeno la garanzia implicita di COMMERCIABILITÀ o IDONEITÀ PER UN PARTICOLARE SCOPO. Per ulteriori informazioni, consulta la GNU General Public License.
-Dovresti aver ricevuto una copia della GNU General Public License insieme a questo toolkit. In caso contrario, consulta https://ww.w.gnu.org/licenses/.
+Questo toolkit è un software gratuito: puoi ridistribuirlo e/o modificarlo secondo i termini della GNU General Public Licence pubblicata dalla Free Software Foundation, sia nella versione 3 della Licenza, sia (a tua discrezione) in qualsiasi versione successiva.
+Questo toolkit è stato creato nella speranza che possa essere utile, ma SENZA ALCUNA GARANZIA, nemmeno la garanzia implicita di COMMERCIABILITÀ o IDONEITÀ PER UN PARTICOLARE SCOPO. Per ulteriori informazioni, consulta la GNU General Public Licence.
+Dovresti aver ricevuto una copia della GNU General Public Licence insieme a questo toolkit. In caso contrario, consulta https://ww.w.gnu.org/licenses/.
 
 SEZIONE 1 - DEFINIZIONI
 Per "Toolkit" si intende ALOSToy v1.0 Standard, inclusi i file sorgente, le immagini ISO, la documentazione e qualsiasi file correlato. Per "Utente" si intende il licenziatario o l'utente del toolkit. Per "Versione modificata" si intende qualsiasi opera derivata basata sul toolkit.
@@ -5563,14 +5665,14 @@ IL TOOLKIT NON FORNISCE ALCUNA GARANZIA, NEI LIMITI CONSENTITI DALLA LEGGE APPLI
 SEZIONE 6 - LIMITAZIONE DI RESPONSABILITÀ
 IN NESSUN CASO, SALVO QUANTO PREVISTO DALLA LEGGE APPLICABILE O CONCORDATO PER ISCRITTO, I TITOLARI DEL DIRITTO D'AUTORE SARANNO RESPONSABILI NEI CONFRONTI DELL'UTENTE PER EVENTUALI DANNI, INCLUSE LE PERDITE GENERALI, SPECIALI, INCIDENTALI O CONSEGUENTI I DERIVANTI DALL'UTILIZZO O DALL'IMPOSSIBILITÀ DI UTILIZZARE IL TOOLKIT.
 
-La presente licenza è basata sulla GNU General Public License v3. Per i termini completi, consultare https://ww.w.gnu.org/licenses/gpl-3.0.html.
+La presente licenza è basata sulla GNU General Public Licence v3. Per i termini completi, consultare https://ww.w.gnu.org/licenses/gpl-3.0.html.
 Questo è il termine dei termini di licenza. Buon divertimento con ALOSToy v1.0 Standard.
 "@
 }
 elseif ($Language -eq "ja") {
     # Japanese body.
     $text = @"
-ALOSToy V1.0 Standard - ライセンス契約著作権 (C) 2026 AaravLegend-Inc
+ALOSToy V1.0 Standard - ライセンス契約著作権 (C) 2023-2026 $env:Author
 
 これは購入したものですか？もしそうなら、あなたは詐欺に遭い、マルウェアを入手した可能性があります！
 
@@ -5605,18 +5707,18 @@ ALOSToy Standard のソース製品をお探しの方は、https://www.ventoy.ne
 第6条 - 責任の制限
 適用される法律で要求される場合、または書面で合意された場合を除き、いかなる著作権者も、ツールキットの使用または使用不能に起因する、一般的、特別、付随的、または 結果的損害を含む、いかなる損害についても、お客様に対して責任を負わないものとしま す。
 
-本ライセンスはGNU General Public License v3に基づいています。完全な条項についてはhttps://ww.w.gnu.org/licenses/gpl-3.0.htmlを参照してください。
+本ライセンスはGNU General Public Licence v3に基づいています。完全な条項についてはhttps://ww.w.gnu.org/licenses/gpl-3.0.htmlを参照してください。
 以上がライセンス条項の終わりです。ALOSToy v1.0 Standardをお楽しみください。
 "@
 }
 elseif ($Language -eq "ko") {
     # South Korean body.
     $text = @"
-ALOSToy V1.0 Standard - 라이선스 계약서 저작권 (C) 2026 AaravLegend-Inc
+ALOSToy V1.0 Standard - 라이선스 계약서 저작권 (C) 2023-2026 $env:Author
 
 이걸 구매하셨나요? 그렇다면 사기 당한 것이며 악성 코드를 설치했을 수 있습니다!
 
-이 툴킷은 자유 소프트웨어입니다: 귀하는 자유 소프트웨어 재단이 발표한 GNU 일반 공중 사용 허가서(GNU General Public License)의 조건에 따라, 라이선스 버전 3 또는 (귀하의 선택에 따라) 그 이후 버전을 사용하여 이를 재배포 및/또는 수정할 수 있습 니다.
+이 툴킷은 자유 소프트웨어입니다: 귀하는 자유 소프트웨어 재단이 발표한 GNU 일반 공중 사용 허가서(GNU General Public Licence)의 조건에 따라, 라이선스 버전 3 또는 (귀하의 선택에 따라) 그 이후 버전을 사용하여 이를 재배포 및/또는 수정할 수 있습 니다.
 이 툴킷은 유용할 것이라는 희망으로 제작되었으나, 상품성 또는 특정 목적에 대한 적합성에 대한 묵시적 보증을 포함하여 어떠 한 보증도 제공하지 않습니다. 자세한 내용은 GNU 일반 공중 사용 허가서를 참조하십시오.
 본 툴킷과 함께 GNU 일반 공중 사용 허가서 사본을 받으셨을 것입니다. 그렇지 않은 경우 https://ww.w.gnu.org/licenses/를 참조하십시오.
 
@@ -5658,7 +5760,7 @@ else {
 }
 Write-Output $text
 exit 0
-:Post_licence-Terms_STD
+:Post_Licence-Terms_STD
 :Size-Requirements
 $Language = $env:lang
 if ($Language -eq "en") {
@@ -5784,23 +5886,606 @@ else {
 Write-Output $text
 exit 0
 :Post_Ventoy-Choices
+:Uninstall_Choices
+$Language = $env:lang
+if ($Language -eq "en") {
+    # English body.
+    $text = @"
+Thank you for trying out/using ALOSToy. Select one of three options to uninstall ALOSToy from your USB drive.
+"@
+}
+elseif ($Language -eq "fr") {
+    # French body.
+    $text = @"
+Merci d'avoir essayé/utilisé ALOSToy. Choisissez l'une des trois options suivantes pour désinstaller ALOSToy de votre clé USB.
+"@
+}
+elseif ($Language -eq "de") {
+    # German body.
+    $text = @"
+Vielen Dank, dass Sie ALOSToy ausprobiert bzw. genutzt haben. Wählen Sie eine der drei Optionen aus, um ALOSToy von Ihrem USB-Stick zu deinstallieren.
+"@
+}
+elseif ($Language -eq "es") {
+    # Spanish body.
+    $text = @"
+Gracias por probar o utilizar ALOSToy. Selecciona una de las tres opciones para desinstalar ALOSToy de tu unidad USB.
+"@
+}
+elseif ($Language -eq "it") {
+    # Italian body.
+    $text = @"
+Grazie per aver provato/utilizzato ALOSToy. Scegli una delle tre opzioni disponibili per disinstallare ALOSToy dalla tua chiavetta USB.
+"@
+}
+elseif ($Language -eq "ja") {
+    # Japanese body.
+    $text = @"
+ALOSToyをお試しいただき、ありがとうございます。USBドライブからALOSToyをアンインストールするには、以下の3つのオプションから1つを選択してください。
+"@
+}
+elseif ($Language -eq "ko") {
+    # South Korean body.
+    $text = @"
+ALOSToy를 사용해 주셔서 감사합니다. USB 드라이브에서 ALOSToy를 제거하려면 다음 세 가지 옵션 중 하나를 선택해 주세요.
+"@
+}
+else {
+    # If the user's language is not supported.
+    Write-Error "No text available for '$Language'"
+    exit 1
+}
+Write-Output $text
+exit 0
+:Post_Uninstall_Choices
+:Uninstall_Instructions
+$Language = $env:lang
+if ($Language -eq "en") {
+    # English body.
+    $text = @"
+
+
+
+Before you select "Uninstall ALOSToy", click "Select Disk", and pick a disk to uninstall ALOSToy from.
+"@
+}
+elseif ($Language -eq "fr") {
+    # French body.
+    $text = @"
+
+
+
+Avant de sélectionner « Uninstall ALOSToy », cliquez sur « Select Disk », puis choisissez le disque sur lequel vous souhaitez désinstaller ALOSToy.
+"@
+}
+elseif ($Language -eq "de") {
+    # German body.
+    $text = @"
+
+
+
+Bevor Sie „Uninstall ALOSToy“ auswählen, klicken Sie auf „Select Disk“ und wählen Sie den Datenträger aus, von dem Sie ALOSToy deinstallieren möchten.
+"@
+}
+elseif ($Language -eq "es") {
+    # Spanish body.
+    $text = @"
+
+
+
+Antes de seleccionar «Uninstall ALOSToy», haz clic en «Select Disk» y elige el disco del que deseas desinstalar ALOSToy.
+"@
+}
+elseif ($Language -eq "it") {
+    # Italian body.
+    $text = @"
+
+
+
+Prima di selezionare “Uninstall ALOSToy”, clicca su “Select Disk” e scegli il disco da cui disinstallare ALOSToy.
+"@
+}
+elseif ($Language -eq "ja") {
+    # Japanese body.
+    $text = @"
+
+
+
+「ALOSToyをアンインストール」を選択する前に、「ディスクを選択」をクリックし、ALOSToyをアンインストールするディスクを選択してください。
+"@
+}
+elseif ($Language -eq "ko") {
+    # South Korean body.
+    $text = @"
+
+
+
+“ALOSToy 제거”를 선택하기 전에 “디스크 선택”을 클릭하고, ALOSToy를 제거할 디스크를 선택하십시오.
+"@
+}
+else {
+    # If the user's language is not supported.
+    Write-Error "No text available for '$Language'"
+    exit 1
+}
+Write-Output $text
+exit 0
+:Post_Uninstall_Instructions
 :PS_EndMessages
 Add-Type -AssemblyName PresentationFramework
-if ($env:ProductDefinedWithArg -ieq 'True') { [System.Windows.MessageBox]::Show("Your bootable ALOSToy $env:product drive has been successfully created. Enjoy.",'ALOSToy Installer','OK','Info') | Out-Null }
-[System.Windows.MessageBox]::Show('Share this installer with your friends or other people as well. Help them save their pc''s too.','ALOSToy Installer','OK','Info') | Out-Null
-[System.Windows.MessageBox]::Show("If you have any other custom Windows PE''s you want to carry, copy them to ${env:drivepath}:\WinPE or any ALOSToy drive with the /WinPE folder.",'ALOSToy Installer','OK','Info') | Out-Null
-[System.Windows.MessageBox]::Show("If you have any of your own Windows Installation Media, copy them to:${env:NewLine}${env:drivepath}:\OSimages\Windows or any other drive with /OSImages/Windows.${env:NewLine}${env:NewLine}If you have any of your own Linux Installation Media, copy them to:${env:NewLine}${env:drivepath}:\OSimages\Linux or any other drive with /OSimages/Linux.",'ALOSToy Installer','OK','Info') | Out-Null
+if ($env:ProductDefinedWithArg -ieq 'True') { [System.Windows.MessageBox]::Show("Your bootable ALOSToy $env:product drive has been successfully created. Enjoy.",$env:Program,'OK','Info') | Out-Null }
+[System.Windows.MessageBox]::Show('Share this installer with your friends or other people as well. Help them save their pc''s too.',$env:Program,'OK','Info') | Out-Null
+[System.Windows.MessageBox]::Show("If you have any other custom Windows PE''s you want to carry, copy them to ${env:drivepath}:\WinPE or any ALOSToy drive with the /WinPE folder.",$env:Program,'OK','Info') | Out-Null
+[System.Windows.MessageBox]::Show("If you have any of your own Windows Installation Media, copy them to:${env:NewLine}${env:drivepath}:\OSimages\Windows or any other drive with /OSImages/Windows.${env:NewLine}${env:NewLine}If you have any of your own Linux Installation Media, copy them to:${env:NewLine}${env:drivepath}:\OSimages\Linux or any other drive with /OSimages/Linux.",$env:Program,'OK','Info') | Out-Null
 if ($env:RedoInstall -eq 'No') {
-    $Response = [System.Windows.MessageBox]::Show('Do you want to delete the bin folder since installation is complete?','ALOSToy Installer','YesNo','Question')
+    $Response = [System.Windows.MessageBox]::Show('Do you want to delete the bin folder since installation is complete?',$env:Program,'YesNo','Question')
     if ($Response -eq ([System.Windows.MessageBoxResult]::Yes)) {
         Remove-Item -LiteralPath "${env:Root}bin" -Recurse -Force
-        if ($?) { [System.Windows.MessageBox]::Show('The deletion completed successfully.','ALOSToy Installer','OK','Info') | Out-Null } else { [System.Windows.MessageBox]::Show('The deletion failed.','ALOSToy Installer','OK','Error') | Out-Null }
+        if ($?) { [System.Windows.MessageBox]::Show('The deletion completed successfully.',$env:Program,'OK','Info') | Out-Null } else { [System.Windows.MessageBox]::Show('The deletion failed.',$env:Program,'OK','Error') | Out-Null }
     }
 }
-if ($env:RedoInstall -ieq 'No') { [System.Windows.MessageBox]::Show("$env:Author thanks you for installing ALOSToy ${env:product}. Click OK to exit.",'ALOSToy Installer','OK','Info') | Out-Null }
+if ($env:RedoInstall -ieq 'No') { [System.Windows.MessageBox]::Show("$env:Author thanks you for installing ALOSToy ${env:product}. Click OK to exit.",$env:Program,'OK','Info') | Out-Null }
 Exit 0
 :Post_PS_EndMessages
+:PS-U_ChooseDisk
+$ErrorActionPreference = 'Stop'
+$script:DiskPickerResult = 'None'
+$script:SelectedDisk = $null
+$script:EligibleDisks = @()
+$script:AllowedEditions = @('Standard','Standard+Extensions','Extended')
+$script:VirtualDiskPattern = '(?i)(bitdefender|virtual|vdisk|vhdx?|vmdk|vmware|virtualbox|innotek|qemu|xen|parallels|hyper.?v|storage.?spaces)'
+try {
+    Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase
+    function Get-SystemTheme {
+        try {
+            $Value = Get-ItemPropertyValue -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize' -Name AppsUseLightTheme -ErrorAction Stop
+            if ($Value -eq 1) { return 'Light' }
+            return 'Dark'
+        }
+        catch { return 'Dark' }
+    }
+    function Test-EligibleDisk {
+        param([Parameter(Mandatory)][object]$Disk)
+        if ([int]$Disk.Number -eq 0) { return $false }
+        if ([string]$Disk.BusType -match '(?i)Virtual|Spaces|File Backed Virtual') { return $false }
+        $Identity = @($Disk.FriendlyName,$Disk.SerialNumber,$Disk.UniqueId,$Disk.Path,$Disk.Location) -join ' '
+        if ($CimDisks.ContainsKey([int]$Disk.Number)) {
+            $CimDisk = $CimDisks[[int]$Disk.Number]
+            $Identity += ' ' + (@($CimDisk.Model,$CimDisk.Manufacturer,$CimDisk.PNPDeviceID,$CimDisk.MediaType) -join ' ')
+        }
+        if ($Identity -match $script:VirtualDiskPattern) { return $false }
+        return $true
+    }
+    function Get-MatchingPartitions {
+        param([Parameter(Mandatory)][int]$DiskNumber)
+        $Matches = [System.Collections.Generic.List[object]]::new()
+        $Disk = Get-Disk -Number $DiskNumber -ErrorAction Stop
+        if (-not (Test-EligibleDisk -Disk $Disk)) { return @() }
+        if ($Disk.IsOffline -or $Disk.IsReadOnly -and $false) { return @() }
+        $Partitions = @(Get-Partition -DiskNumber $DiskNumber -ErrorAction SilentlyContinue)
+        foreach ($Partition in $Partitions) {
+            $Volumes = @(Get-Volume -Partition $Partition -ErrorAction SilentlyContinue)
+            foreach ($Volume in $Volumes) {
+                if ([string]::IsNullOrWhiteSpace([string]$Volume.DriveLetter)) { continue }
+                $DriveRoot = '{0}:\' -f $Volume.DriveLetter
+                $IdentifierPath = Join-Path -Path $DriveRoot -ChildPath 'System\ALOSToy_Edition.txt'
+                if (-not (Test-Path -LiteralPath $IdentifierPath -PathType Leaf)) { continue }
+                try {
+                    $Edition = [System.IO.File]::ReadAllText($IdentifierPath)
+                    if ($script:AllowedEditions -cnotcontains $Edition) { continue }
+                    $Matches.Add([PSCustomObject]@{
+                        DiskNumber = [int]$Disk.Number
+                        DiskName = [string]$Disk.FriendlyName
+                        DiskUniqueId = [string]$Disk.UniqueId
+                        DiskSize = [long]$Disk.Size
+                        PartitionNumber = [int]$Partition.PartitionNumber
+                        PartitionSize = [long]$Partition.Size
+                        DriveLetter = [string]$Volume.DriveLetter
+                        Edition = $Edition
+                        IdentifierPath = $IdentifierPath
+                    })
+                }
+                catch { continue }
+            }
+        }
+        return @($Matches.ToArray())
+    }
+    $CimDisks = @{}
+    try { foreach ($CimDisk in Get-CimInstance Win32_DiskDrive) { $CimDisks[[int]$CimDisk.Index] = $CimDisk } } catch {
+        # We do not care.
+    }
+    $PhysicalDisks = @(Get-Disk -ErrorAction Stop | Where-Object { Test-EligibleDisk -Disk $_ } | Sort-Object Number)
+    $script:EligibleDisks = @($PhysicalDisks | ForEach-Object {
+        [PSCustomObject]@{
+            Number = [int]$_.Number
+            FriendlyName = [string]$_.FriendlyName
+            Size = [long]$_.Size
+            UniqueId = [string]$_.UniqueId
+        }
+    })
+    [xml]$XAML = @'
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="ALOSToy Uninstaller Disk Selection"
+        Width="880"
+        Height="650"
+        MinWidth="600"
+        MinHeight="450"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        FontFamily="Segoe UI"
+        Background="{DynamicResource Bg}"
+        Foreground="{DynamicResource TextBrush}">
+    <Window.Resources>
+        <SolidColorBrush x:Key="Bg" Color="#FF000000"/>
+        <SolidColorBrush x:Key="ControlBg" Color="#FF000000"/>
+        <SolidColorBrush x:Key="TextBrush" Color="#FFFFFFFF"/>
+        <SolidColorBrush x:Key="BorderBrushDark" Color="#FFFFFFFF"/>
+        <SolidColorBrush x:Key="HoverBg" Color="#FFFFFFFF"/>
+        <Style TargetType="{x:Type Button}">
+            <Setter Property="Background" Value="{DynamicResource ControlBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrushDark}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="Margin" Value="0,0,10,10"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border x:Name="ButtonBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="BorderThickness" Value="2"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="BorderThickness" Value="3"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="1"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style TargetType="{x:Type ComboBox}">
+            <Setter Property="Background" Value="{DynamicResource ControlBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrushDark}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="5,3"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ComboBox}">
+                        <Grid>
+                            <ToggleButton Focusable="False"
+                                          ClickMode="Press"
+                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource AncestorType={x:Type ComboBox}}}">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="{x:Type ToggleButton}">
+                                        <Border Background="{DynamicResource ControlBg}"
+                                                BorderBrush="{DynamicResource BorderBrushDark}"
+                                                BorderThickness="1">
+                                            <Grid>
+                                                <Path Data="M 0 0 L 4 4 L 8 0 Z"
+                                                      Fill="{DynamicResource TextBrush}"
+                                                      HorizontalAlignment="Right"
+                                                      VerticalAlignment="Center"
+                                                      Margin="0,0,9,0"/>
+                                            </Grid>
+                                        </Border>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+                            <ContentPresenter IsHitTestVisible="False"
+                                              Content="{TemplateBinding SelectionBoxItem}"
+                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                              ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"
+                                              Margin="8,0,25,0"
+                                              VerticalAlignment="Center"
+                                              HorizontalAlignment="Left"
+                                              TextElement.Foreground="{DynamicResource TextBrush}"/>
+                            <Popup x:Name="PART_Popup"
+                                   Placement="Bottom"
+                                   IsOpen="{TemplateBinding IsDropDownOpen}"
+                                   AllowsTransparency="True"
+                                   Focusable="False"
+                                   PopupAnimation="None">
+                                <Border Background="{DynamicResource ControlBg}"
+                                        BorderBrush="{DynamicResource BorderBrushDark}"
+                                        BorderThickness="1"
+                                        MinWidth="{TemplateBinding ActualWidth}"
+                                        MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                    <ScrollViewer CanContentScroll="True">
+                                        <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style TargetType="{x:Type ComboBoxItem}">
+            <Setter Property="Background" Value="{DynamicResource ControlBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ComboBoxItem}">
+                        <Border x:Name="ItemBorder" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource HoverBg}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource Bg}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource HoverBg}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource Bg}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="1"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid Grid.Row="0" Margin="0,0,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="Pick a disk and partition."
+                           FontSize="26"
+                           FontWeight="Bold"
+                           Foreground="{DynamicResource TextBrush}"/>
+                <TextBlock Text="Select an ALOSToy disk and partition."
+                           FontSize="13"
+                           Margin="0,4,0,0"
+                           Foreground="{DynamicResource TextBrush}"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                <TextBlock Text="Theme"
+                           FontSize="10"
+                           FontWeight="Bold"
+                           Margin="0,0,0,5"
+                           Foreground="{DynamicResource TextBrush}"/>
+                <ComboBox x:Name="ThemeComboBox"
+                          Width="135"
+                          Height="32"
+                          SelectedIndex="2">
+                    <ComboBoxItem Content="Dark Theme"/>
+                    <ComboBoxItem Content="Light Theme"/>
+                    <ComboBoxItem Content="System Theme"/>
+                </ComboBox>
+            </StackPanel>
+        </Grid>
+        <Border Grid.Row="1"
+                Height="1"
+                Background="{DynamicResource TextBrush}"
+                Margin="0,0,0,15"/>
+        <TextBlock Grid.Row="2"
+                   x:Name="InstructionsText"
+                   Text="Stage 1: Select the physical disk containing ALOSToy."
+                   FontSize="13"
+                   Margin="0,0,0,12"
+                   Foreground="{DynamicResource TextBrush}"/>
+        <Border Grid.Row="3"
+                Background="{DynamicResource Bg}"
+                BorderBrush="{DynamicResource BorderBrushDark}"
+                BorderThickness="1"
+                Padding="12">
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
+                <WrapPanel x:Name="DiskPanel"/>
+            </ScrollViewer>
+        </Border>
+        <DockPanel Grid.Row="4"
+                   Margin="0,14,0,0"
+                   LastChildFill="False">
+            <TextBlock Text="You will not be able to select Disk 0 or virtual disks."
+                       VerticalAlignment="Center"
+                       FontWeight="Bold"
+                       Foreground="{DynamicResource TextBrush}"/>
+            <Button x:Name="BackButton"
+                    Content="Back"
+                    Width="100"
+                    Height="36"
+                    Margin="12,0,0,0"
+                    DockPanel.Dock="Right"
+                    Visibility="Collapsed"/>
+            <Button x:Name="CancelButton"
+                    Content="Abort"
+                    Width="110"
+                    Height="36"
+                    Margin="12,0,0,0"
+                    DockPanel.Dock="Right"/>
+        </DockPanel>
+    </Grid>
+</Window>
+'@
+    $StringReader = [System.IO.StringReader]::new($XAML.OuterXml)
+    $XmlReader = [System.Xml.XmlReader]::Create($StringReader)
+    $Window = [Windows.Markup.XamlReader]::Load($XmlReader)
+    $ThemeComboBox = $Window.FindName('ThemeComboBox')
+    $DiskPanel = $Window.FindName('DiskPanel')
+    $InstructionsText = $Window.FindName('InstructionsText')
+    $CancelButton = $Window.FindName('CancelButton')
+    $BackButton = $Window.FindName('BackButton')
+    $Window.TopMost = $true
+    $Window.WindowStyle = [System.Windows.WindowStyle]::None
+    $Window.WindowState = [System.Windows.WindowState]::Maximized
+    $Window.Topmost = $true
+    $Window.Left = 0
+    $Window.Top = 0
+    $Window.Width = [System.Windows.SystemParameters]::PrimaryScreenWidth
+    $Window.Height = [System.Windows.SystemParameters]::PrimaryScreenHeight
+    function Set-ThemeBrush {
+        param([string]$Key,[string]$Hex)
+        $Brush = [System.Windows.Media.BrushConverter]::new().ConvertFromString($Hex)
+        $Brush.Freeze()
+        $Window.Resources[$Key] = $Brush
+    }
+    $script:ThemeMode = 'Auto'
+    function Apply-Theme {
+        $EffectiveTheme = if ($script:ThemeMode -eq 'Auto') { Get-SystemTheme } else { $script:ThemeMode }
+        if ($EffectiveTheme -eq 'Light') {
+            $Palette = @{
+                Bg = '#FFFFFFFF'
+                ControlBg = '#FFFFFFFF'
+                TextBrush = '#FF000000'
+                BorderBrushDark = '#FF000000'
+                HoverBg = '#FF000000'
+            }
+        } else {
+            $Palette = @{
+                Bg = '#FF000000'
+                ControlBg = '#FF000000'
+                TextBrush = '#FFFFFFFF'
+                BorderBrushDark = '#FFFFFFFF'
+                HoverBg = '#FFFFFFFF'
+            }
+        }
+        foreach ($Key in $Palette.Keys) { Set-ThemeBrush -Key $Key -Hex $Palette[$Key] }
+        $Window.Background = $Window.Resources['Bg']
+        $Window.Foreground = $Window.Resources['TextBrush']
+    }
+    function Add-Label {
+        param(
+            [System.Windows.Controls.Panel]$Parent,
+            [string]$Value,
+            [double]$FontSize,
+            [switch]$Bold
+        )
+        $Label = [System.Windows.Controls.TextBlock]::new()
+        $Label.Text = $Value
+        $Label.FontSize = $FontSize
+        $Label.TextWrapping = 'Wrap'
+        if ($Bold) { $Label.FontWeight = 'Bold' }
+        $Label.SetResourceReference([System.Windows.Controls.TextBlock]::ForegroundProperty,'TextBrush')
+        $Parent.Children.Add($Label) | Out-Null
+        return $Label
+    }
+    function Show-PartitionSelection {
+        $DiskPanel.Children.Clear()
+        $BackButton.Visibility = 'Visible'
+        $DiskNumber = [int]$script:SelectedDisk.Number
+        $InstructionsText.Text = "Step Two: Pick an ALOSToy partition that has been found on Disk ${DiskNumber}. Remember: Only partitions with ALOSToy are shown here."
+        try { $Partitions = @(Get-MatchingPartitions -DiskNumber $DiskNumber) } catch { $Partitions = @() }
+        foreach ($Entry in $Partitions) {
+            $PartitionNumber = [int]$Entry.PartitionNumber
+            $Drive = '{0}:\' -f $Entry.DriveLetter
+            $SizeGB = [math]::Round($Entry.PartitionSize / 1GB,2)
+            $Button = [System.Windows.Controls.Button]::new()
+            $Button.Width = 255
+            $Button.MinHeight = 130
+            $Button.Tag = $Entry
+            $Button.ToolTip = $Entry.IdentifierPath
+            $Card = [System.Windows.Controls.StackPanel]::new()
+            Add-Label -Parent $Card -Value "Disk $DiskNumber | Partition $PartitionNumber" -FontSize 16 -Bold | Out-Null
+            Add-Label -Parent $Card -Value $Entry.DiskName -FontSize 12 | Out-Null
+            Add-Label -Parent $Card -Value "Drive: $Drive | $SizeGB GiB" -FontSize 12 | Out-Null
+            Add-Label -Parent $Card -Value "Edition: $($Entry.Edition)" -FontSize 12 -Bold | Out-Null
+            $Button.Content = $Card
+            $ClickHandler = {
+                param($Sender,$EventArgs)
+                $ChosenPartition = $Sender.Tag
+                $ChosenDiskNumber = [int]$ChosenPartition.DiskNumber
+                if ($ChosenDiskNumber -le 0) { return }
+                try {
+                    $CurrentDisk = Get-Disk -Number $ChosenDiskNumber -ErrorAction Stop
+                    if (-not (Test-EligibleDisk -Disk $CurrentDisk)) { return }
+                    if ([string]$CurrentDisk.UniqueId -ne [string]$ChosenPartition.DiskUniqueId) { return }
+                    $CurrentMatches = @(Get-MatchingPartitions -DiskNumber $ChosenDiskNumber)
+                    $StillPresent = @($CurrentMatches | Where-Object {
+                        [int]$_.PartitionNumber -eq [int]$ChosenPartition.PartitionNumber -and
+                        [string]$_.DriveLetter -eq [string]$ChosenPartition.DriveLetter -and
+                        [string]$_.Edition -ceq [string]$ChosenPartition.Edition
+                    })
+                    if ($StillPresent.Count -eq 0) { return }
+                    $script:DiskPickerResult = [string]$ChosenDiskNumber
+                    $Window.Close()
+                } catch {
+                    $script:DiskPickerResult = 'None'
+                    $Window.Close()
+                }
+            }
+            $Button.Add_Click([System.Windows.RoutedEventHandler]$ClickHandler)
+            $DiskPanel.Children.Add($Button) | Out-Null
+        }
+        if ($Partitions.Count -eq 0) { Add-Label -Parent $DiskPanel -Value 'ALOSToy does not appear to be installed on here. Pick another disk.' -FontSize 16 | Out-Null }
+    }
+    function Show-DiskSelection {
+        $DiskPanel.Children.Clear()
+        $InstructionsText.Text = 'Step One: Pick a physical disk.'
+        $BackButton.Visibility = 'Collapsed'
+        foreach ($Disk in $script:EligibleDisks) {
+            $Number = [int]$Disk.Number
+            $SizeGB = [math]::Round($Disk.Size / 1GB,2)
+            $Button = [System.Windows.Controls.Button]::new()
+            $Button.Width = 255
+            $Button.MinHeight = 110
+            $Button.Tag = $Disk
+            $Card = [System.Windows.Controls.StackPanel]::new()
+            Add-Label -Parent $Card -Value "Disk $Number" -FontSize 16 -Bold | Out-Null
+            Add-Label -Parent $Card -Value $Disk.FriendlyName -FontSize 12 | Out-Null
+            Add-Label -Parent $Card -Value "Capacity: $SizeGB GiB" -FontSize 12 | Out-Null
+            $Button.Content = $Card
+            $ClickHandler = {
+                param($Sender,$EventArgs)
+                $script:SelectedDisk = $Sender.Tag
+                Show-PartitionSelection
+            }
+            $Button.Add_Click([System.Windows.RoutedEventHandler]$ClickHandler)
+            $DiskPanel.Children.Add($Button) | Out-Null
+        }
+        if ($script:EligibleDisks.Count -eq 0) { Add-Label -Parent $DiskPanel -Value 'No eligible physical disks were found.' -FontSize 16 | Out-Null }
+    }
+    $ThemeComboBox.Add_SelectionChanged({
+        switch ($ThemeComboBox.SelectedIndex) {
+            0 { $script:ThemeMode = 'Dark' }
+            1 { $script:ThemeMode = 'Light' }
+            default { $script:ThemeMode = 'Auto' }
+        }
+        Apply-Theme
+    })
+    Apply-Theme
+    $CancelButton.Add_Click({ $Window.Close() })
+    $BackButton.Add_Click({ Show-DiskSelection })
+    Show-DiskSelection
+    $null = $Window.ShowDialog()
+} catch { $script:DiskPickerResult = 'None' }
+Write-Output $script:DiskPickerResult
+exit 0
+:Post_PS-U_ChooseDisk
 rem End of installer, leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 5807 (5806 without extra newline).
+rem Total line count: 6492 (6491 without extra newline).
 rem Made by Aarav Katariya with love and care...
