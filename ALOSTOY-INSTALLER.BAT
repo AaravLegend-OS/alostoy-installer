@@ -4487,12 +4487,15 @@ echo create partition primary noerr>> "!Root!diskpart_wipe.txt"
 echo format fs=ntfs label=Files quick override noerr>> "!Root!diskpart_wipe.txt"
 echo assign noerr>> "!Root!diskpart_wipe.txt"
 echo exit>> "!Root!diskpart_wipe.txt"
-for /f "delims=" %%W in ('powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('DO YOU WANT TO PROCEED WITH THE UNINSTALLATION OF ALOSTOY? ALL DATA ON EVERY PARTITON OF !DISK! WILL BE LOST. IF YOU SAY \"YES\", YOU WILL BE ASKED TO CONFIRM THAT YOU WANT TO DO THIS. Note: We will create a data partition on the selected disk for you to reduce headaches.',$env:Program,'YesNo','Warn')"') do if "%%W"=="Yes" (goto ConfirmUninstall) else (goto UninstallMenu)
+for /f "delims=" %%W in ('powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('DO YOU WANT TO PROCEED WITH THE UNINSTALLATION OF ALOSTOY? ALL DATA ON EVERY PARTITON OF !DISK! WILL BE LOST. IF YOU SAY \"YES\", YOU WILL BE ASKED TO CONFIRM THAT YOU WANT TO DO THIS. Note: We will create a data partition on the selected disk for you to reduce headaches.',$env:Program,'YesNo','Warn')"') do if "%%W"=="Yes" (goto ConfirmUninstall) else (
+    del "!Root!diskpart_wipe.txt" /f /q >nul
+    goto UninstallMenu
+)
 :ConfirmUninstall
 cls
 echo Type the following in exactly as shown (case-sensitive). Typing it wrong returns you to the uninstall menu:
 echo.
-set /p "FinalConfirm="Yes, I acknowledge that all partitions of disk !Disk! will be erased forever and all data will be lost." >> "
+set /p "FinalConfirm="Yes, I acknowledge that all partitions of disk !Disk! will be erased forever and all data will be lost." ^>^> "
 rem Not joking. Case-sensitive input is required.
 if "!FinalConfirm!"=="Yes, I acknowledge that all partitions of disk !Disk! will be erased forever and all data will be lost." (
     cls
@@ -4500,16 +4503,23 @@ if "!FinalConfirm!"=="Yes, I acknowledge that all partitions of disk !Disk! will
     echo.
     echo Thank you for choosing ALOSToy. You always have an option to reinstall ALOSToy through
     echo this same program at any time, if you want. If any important files were on disk !Disk!, they
-    echo are now irreversibly gone forever (potentially recoverable if quick erase was chosen).
+    echo are now irreversibly gone forever ^(potentially recoverable if quick erase was chosen^).
     echo.
     echo Errors will be shown here:
+    echo !DATE! !TIME! Begin diskpart log:>> "!logfile!"
     diskpart /s "!Root!diskpart_wipe.txt" >> "!logfile!"
+    echo !DATE! !TIME! Finish diskpart log.>> "!logfile!"
     if /i "!EraseType!"=="Quick" (
         rem Introduce an artificial delay for the
         rem user to read the following text above.
         timeout /t 5 /NOBREAK >nul
     )
+    del "!Root!diskpart_wipe.txt" /f /q >nul
+    start /b powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Uninstallation has been completed. Thank you for choosing ALOSToy.',$env:Program,'OK','Info')"
+    set "ResetVars=1"
+    goto Main
 ) else (
+    del "!Root!diskpart_wipe.txt" /f /q >nul
     set "FinalConfirm="
     goto UninstallMenu
 )
@@ -6466,7 +6476,7 @@ try {
             $Button.Add_Click([System.Windows.RoutedEventHandler]$ClickHandler)
             $DiskPanel.Children.Add($Button) | Out-Null
         }
-        if ($script:EligibleDisks.Count -eq 0) { Add-Label -Parent $DiskPanel -Value 'No eligible physical disks were found.' -FontSize 16 | Out-Null }
+        if ($script:EligibleDisks.Count -eq 0) { Add-Label -Parent $DiskPanel -Value 'Cannot find any physical disks that are eligible.' -FontSize 16 | Out-Null }
     }
     $ThemeComboBox.Add_SelectionChanged({
         switch ($ThemeComboBox.SelectedIndex) {
@@ -6487,5 +6497,5 @@ exit 0
 :Post_PS-U_ChooseDisk
 rem End of installer, leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 6492 (6491 without extra newline).
+rem Total line count: 6502 (6501 without extra newline).
 rem Made by Aarav Katariya with love and care...
