@@ -1231,6 +1231,13 @@ if !errorlevel! equ 0 (
 rem Set the optimal font. Users will be happy.
 call :PowerShell_Helper "SetFont"
 if "!errorlevel!"=="1" echo Unable to set optimal font, experience may not be great.
+rem Firmware information can influence recommendations.
+if not defined PartitionScheme (
+    for /f "delims=" %%F in ('powershell -nop -nol -c "(Get-ComputerInfo -Property BiosFirmwareType).BiosFirmwareType"') do (
+        set "Firmware=%%F"
+        if /i "!Firmware!"=="UEFI" (set "PartitionScheme=gpt") else if /i "!Firmware!"=="BIOS" (set "PartitionScheme=mbr")
+    )
+)
 set "D="
 set "T="
 where curl >nul 2>&1
@@ -4436,15 +4443,6 @@ if "!ARE!"=="0" (
 )
 :UninstallMenu
 cls
-rem Firmware information can influence recommendations.
-if not defined PartitionScheme (
-    for /f "delims=" %%F in ('powershell -nop -nol -c "(Get-ComputerInfo -Property BiosFirmwareType).BiosFirmwareType"') do (
-        set "Firmware=%%F"
-        if /i "!Firmware!"=="UEFI" (set "PartitionScheme=gpt") else if /i "!Firmware!"=="BIOS" (set "PartitionScheme=mbr")
-    )
-)
-rem Reinitalise the partition scheme because it gets quietly erased for some reason.
-set "PartitionScheme=!PartitionScheme!"
 call :WindowTitle "UNINSTALL ALOSTOY OPTIONS"
 call :PowerShell_Helper "Uninstall_Choices" || exit 1
 call Button 20 3 F4 "Uninstall ALOSToy" 50 3 F2 "Select Disk" 75 3 F6 "Abort Uninstallation" X _Var_Box _Var_Hover
@@ -6480,5 +6478,5 @@ exit 0
 :Post_PS-Uninstall_ChooseDisk
 rem End of installer, leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 6485 (6484 without extra newline).
+rem Total line count: 6483 (6482 without extra newline).
 rem Made by Aarav Katariya with love and care...
