@@ -417,7 +417,7 @@ if defined HASH5 if /i "!HASH5!"=="5F7C42892C1E86C3A7123F8A5A933ED584A21A2DA89EF
 rem FORCE_UPDATE_AND_RUN.BAT
 if defined HASH6 if /i "!HASH6!"=="6379DDD712A6009B4993D9A76E20BF74C07F62C18033E850A23C98171713E0A5" (set /a "Valid_SubFiles+=1")
 rem README.MD
-if defined HASH7 if /i "!HASH7!"=="1958DDED078415528A2F9CD5C5EDDB679045ED4496662F4DDA7F376C749487DF" (set /a "Valid_SubFiles+=1")
+if defined HASH7 if /i "!HASH7!"=="EA7A55D5FBB9D9A2DD1A9D4696E9E6D9A9AA799885ACCC019AE4005B138F5959" (set /a "Valid_SubFiles+=1")
 rem Enforce the subfile requirement immediately.
 rem If we get to the fail, exit immediately. Assume untrusted source.
 rem Remember. Zero-trust policy. I do not trust any entity personally.
@@ -2220,7 +2220,7 @@ echo.
 echo The ventoy command line result file will be checked. If 0 exists, it worked but if 1 exists, it failed.
 echo Close the file explorer when done.
 echo !DATE! !TIME! Begin Ventoy Install Log:>> "!logfile!"
-Ventoy2Disk_!Arch!.exe VTOYCLI /I /Drive:!drivepath! /NOUSBCheck !firstarg! !secondarg! !thirdarg!
+Ventoy2Disk.exe VTOYCLI /I /Drive:!drivepath! /NOUSBCheck !firstarg! !secondarg! !thirdarg!
 rem Capture the ventoy log into the main logfile.
 type "!Root!Ventoy2Disk\cli_log.txt" >> "!logfile!"
 echo !DATE! !TIME! End Ventoy Install Log:>> "!logfile!"
@@ -2245,7 +2245,7 @@ echo.
 echo The ventoy command line result file will be checked. If 0 exists, it worked but if 1 exists, it failed.
 echo Close the file explorer when done.
 echo !DATE! !TIME! Begin Ventoy Install Log:>> "!logfile!"
-Ventoy2Disk_!Arch!.exe VTOYCLI /U /Drive:!drivepath! /NOUSBCheck !firstarg! !secondarg!
+Ventoy2Disk.exe VTOYCLI /U /Drive:!drivepath! /NOUSBCheck !firstarg! !secondarg!
 rem Capture the ventoy log into the main logfile.
 type "!Root!Ventoy2Disk\cli_log.txt" >> "!logfile!"
 echo !DATE! !TIME! End Ventoy Install Log:>> "!logfile!"
