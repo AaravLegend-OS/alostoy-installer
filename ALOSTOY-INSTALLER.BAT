@@ -4,7 +4,7 @@
 @rem                      Program language: EN-GB
 @rem    Repo: https://www.github.com/AaravLegend-OS/alostoy-installer
 @rem                   Newline sequence: CRLF (Windows)
-@rem          Program licence: GNU GPLv3 "or any later version"
+@rem          Program Licence: GNU GPLv3 "or any later version"
 @rem                     (User choice if they fork.)
 @rem             Supports upgrade from GPLv3 to future: True
 @rem                     (User choice if they fork.)
@@ -6033,40 +6033,298 @@ if ($env:RedoInstall -ieq 'No') { [System.Windows.MessageBox]::Show("$env:Author
 Exit 0
 :Post_PS_EndMessages
 :PS-Uninstall_ChooseDisk
+[CmdletBinding()]
+param()
+Clear-Host
 $ErrorActionPreference = 'Stop'
 $script:DiskPickerResult = 'None'
 $script:SelectedDisk = $null
 $script:EligibleDisks = @()
 $script:AllowedEditions = @('Standard','Standard+Extensions','Extended')
 $script:VirtualDiskPattern = '(?i)(bitdefender|virtual|vdisk|vhdx?|vmdk|vmware|virtualbox|innotek|qemu|xen|parallels|hyper.?v|storage.?spaces)'
+$script:VentoyCache = @{}
 try {
     Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase
+    if (-not ('Ventoy.Detection' -as [type])) {
+        Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+namespace Ventoy
+{
+    public static class Detection
+    {
+        [DllImport("kernel32.dll",
+            CharSet = CharSet.Unicode,
+            SetLastError = true)]
+        public static extern IntPtr CreateFileW(
+            string name,
+            uint access,
+            uint share,
+            IntPtr security,
+            uint creation,
+            uint flags,
+            IntPtr template
+        );
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool DeviceIoControl(
+            IntPtr handle,
+            uint code,
+            IntPtr input,
+            uint inputSize,
+            byte[] output,
+            uint outputSize,
+            out uint returned,
+            IntPtr overlapped
+        );
+        [DllImport("kernel32.dll")]
+        public static extern bool CloseHandle(IntPtr handle);
+    }
+}
+'@
+    }
+    $IOCTL_DISK_GET_DRIVE_LAYOUT_EX = 0x00070050
+    [uint32]$GENERIC_READ = 0x80000000
+    [uint32]$FILE_SHARE_READ = 1
+    [uint32]$FILE_SHARE_WRITE = 2
+    [uint32]$OPEN_EXISTING = 3
+    $script:VentoyVersionRegex = '^1\.\d\.\d{2}$'
     function Get-SystemTheme {
         try {
             $Value = Get-ItemPropertyValue -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize' -Name AppsUseLightTheme -ErrorAction Stop
             if ($Value -eq 1) { return 'Light' }
             return 'Dark'
-        }
-        catch { return 'Dark' }
+        } catch { return 'Dark' }
     }
+    $CimDisks = @{}
+    try { foreach ($CimDisk in Get-CimInstance Win32_DiskDrive) { $CimDisks[[int]$CimDisk.Index] = $CimDisk } } catch {}
     function Test-EligibleDisk {
-        param([Parameter(Mandatory)][object]$Disk)
+        param(
+            [Parameter(Mandatory)]
+            [object]$Disk
+        )
         if ([int]$Disk.Number -eq 0) { return $false }
+        if ($Disk.IsOffline) { return $false }
         if ([string]$Disk.BusType -match '(?i)Virtual|Spaces|File Backed Virtual') { return $false }
-        $Identity = @($Disk.FriendlyName,$Disk.SerialNumber,$Disk.UniqueId,$Disk.Path,$Disk.Location) -join ' '
+        $Identity = @(
+            $Disk.FriendlyName
+            $Disk.SerialNumber
+            $Disk.UniqueId
+            $Disk.Path
+            $Disk.Location
+        ) -join ' '
         if ($CimDisks.ContainsKey([int]$Disk.Number)) {
             $CimDisk = $CimDisks[[int]$Disk.Number]
-            $Identity += ' ' + (@($CimDisk.Model,$CimDisk.Manufacturer,$CimDisk.PNPDeviceID,$CimDisk.MediaType) -join ' ')
+            $Identity += ' ' + (@(
+                $CimDisk.Model
+                $CimDisk.Manufacturer
+                $CimDisk.PNPDeviceID
+                $CimDisk.MediaType
+            ) -join ' ')
         }
         if ($Identity -match $script:VirtualDiskPattern) { return $false }
         return $true
     }
+    function Get-NativeDiskLayout {
+        param(
+            [Parameter(Mandatory)]
+            [int]$DiskNumber
+        )
+        $Path = "\\.\PhysicalDrive$DiskNumber"
+        $Handle = [Ventoy.Detection]::CreateFileW($Path,$GENERIC_READ,($FILE_SHARE_READ -bor $FILE_SHARE_WRITE),[IntPtr]::Zero,$OPEN_EXISTING,0,[IntPtr]::Zero)
+        if ($Handle -eq [IntPtr]::new(-1)) { return $null }
+        try {
+            [byte[]]$Buffer = New-Object byte[] 65536
+            [uint32]$Returned = 0
+            $Success = [Ventoy.Detection]::DeviceIoControl($Handle,$IOCTL_DISK_GET_DRIVE_LAYOUT_EX,[IntPtr]::Zero,0,$Buffer,[uint32]$Buffer.Length,[ref]$Returned,[IntPtr]::Zero)
+            if (-not $Success -or $Returned -lt 8) { return $null }
+            $Style = [BitConverter]::ToUInt32($Buffer, 0)
+            $Count = [BitConverter]::ToUInt32($Buffer, 4)
+            $StyleName = switch ($Style) {
+                0 { 'MBR' }
+                1 { 'GPT' }
+                2 { 'RAW' }
+                default { 'Unknown' }
+            }
+            [PSCustomObject]@{
+                DiskNumber = $DiskNumber
+                PartitionStyle = $StyleName
+                PartitionCount = $Count
+                APIConfirmed = $true
+            }
+        } finally { [void][Ventoy.Detection]::CloseHandle($Handle) }
+    }
+    function Find-VentoyGrubConfig {
+        param(
+            [Parameter(Mandatory)]
+            [string]$Root
+        )
+        $DefaultPath = Join-Path $Root 'grub\grub.cfg'
+        if (Test-Path -LiteralPath $DefaultPath -PathType Leaf) {
+            return [PSCustomObject]@{
+                Found  = $true
+                Path = $DefaultPath
+                Method = 'Default'
+            }
+        }
+        try {
+            $FoundFile = Get-ChildItem -LiteralPath $Root -Filter 'grub.cfg' -File -Recurse -Force -ErrorAction Stop | Select-Object -First 1
+            if ($FoundFile) {
+                return [PSCustomObject]@{
+                    Found  = $true
+                    Path = $FoundFile.FullName
+                    Method = 'Recursive'
+                }
+            }
+        } catch {}
+        [PSCustomObject]@{
+            Found  = $false
+            Path = $null
+            Method = 'NotFound'
+        }
+    }
+    function Get-VentoyVersion {
+        param(
+            [Parameter(Mandatory)]
+            [string]$ConfigPath
+        )
+        try {
+            $Content = Get-Content -LiteralPath $ConfigPath -Raw -ErrorAction Stop
+            $Match = [regex]::Match($Content,'(?im)^\s*set\s+VENTOY_VERSION\s*=\s*"?([^\s"#]+)')
+            if (-not $Match.Success) { return $null }
+            $Version = $Match.Groups[1].Value
+            [PSCustomObject]@{
+                Version = $Version
+                Valid = ($Version -cmatch $script:VentoyVersionRegex)
+            }
+        } catch { return $null }
+    }
+    function Get-VentoyVolumeInfo {
+        param(
+            [Parameter(Mandatory)]
+            $Partition
+        )
+        try {
+            $Volume = Get-Volume -Partition $Partition -ErrorAction SilentlyContinue
+            if (-not $Volume) { return $null }
+            $Root = $Volume.Path
+            if (-not $Root -and $Volume.DriveLetter) { $Root = "$($Volume.DriveLetter):\" }
+            $Label = $Volume.FileSystemLabel
+            $FileSystem = $Volume.FileSystem
+            $HasVentoyDirectory = $false
+            $HasBootDirectory = $false
+            $HasBootloader = $false
+            $Config = [PSCustomObject]@{
+                Found  = $false
+                Path   = $null
+                Method = 'NotFound'
+            }
+            $VersionInfo = $null
+            if ($Root) {
+                $VentoyPath = Join-Path $Root 'ventoy'
+                $HasVentoyDirectory = Test-Path -LiteralPath $VentoyPath -PathType Container
+                $BootPath = Join-Path $Root 'EFI\BOOT'
+                $HasBootDirectory = Test-Path -LiteralPath $BootPath -PathType Container
+                if ($HasBootDirectory) {
+                    $HasBootloader = @(Get-ChildItem -LiteralPath $BootPath -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -ieq '.efi' }).Count -gt 0
+                }
+                $Config = Find-VentoyGrubConfig -Root $Root
+                if ($Config.Found) { $VersionInfo = Get-VentoyVersion -ConfigPath $Config.Path }
+            }
+            [PSCustomObject]@{
+                PartitionNumber = $Partition.PartitionNumber
+                SizeMB = [math]::Round($Partition.Size / 1MB,2)
+                Label = $Label
+                FileSystem = $FileSystem
+                VolumePath = $Root
+                HasVentoyDirectory = $HasVentoyDirectory
+                HasBootDirectory = $HasBootDirectory
+                HasBootloader = $HasBootloader
+                GrubConfigFound = [bool]$Config.Found
+                GrubConfigPath = $Config.Path
+                GrubSearchMethod = $Config.Method
+                VentoyVersion = if ($VersionInfo) { $VersionInfo.Version } else { $null }
+                VersionValid = if ($VersionInfo) { $VersionInfo.Valid } else { $false }
+                Partition = $Partition
+            }
+        } catch { return $null }
+    }
+    function Get-VentoyDiskInfo {
+        param(
+            [Parameter(Mandatory)]
+            [int]$DiskNumber
+        )
+        try {
+            $Disk = Get-Disk -Number $DiskNumber -ErrorAction Stop
+            if (-not (Test-EligibleDisk -Disk $Disk)) { return $null }
+            $Layout = Get-NativeDiskLayout -DiskNumber $DiskNumber
+            if (-not $Layout) { return $null }
+            $Partitions = @(Get-Partition -DiskNumber $DiskNumber -ErrorAction SilentlyContinue)
+            $HasMinimumPartitions = (($Layout.PartitionCount -ge 2) -and ($Partitions.Count -ge 2))
+            $VolumeInfo = @(foreach ($Partition in $Partitions) { Get-VentoyVolumeInfo -Partition $Partition }) | Where-Object { $null -ne $_ }
+            $EFI = @(
+                $VolumeInfo | Where-Object {
+                    $_.Label -ieq 'VTOYEFI' -and
+                    $_.FileSystem -match '^FAT' -and
+                    $_.SizeMB -ge 16 -and
+                    $_.SizeMB -le 64
+                }
+            )
+            $HasValidEFI = ($EFI.Count -eq 1)
+            $EFIContentsValid = $false
+            if ($HasValidEFI) { $EFIContentsValid = ($EFI[0].HasVentoyDirectory -and $EFI[0].HasBootDirectory -and $EFI[0].HasBootloader -and $EFI[0].GrubConfigFound -and $EFI[0].VersionValid) }
+            $Detected = ($HasMinimumPartitions -and $HasValidEFI -and $EFIContentsValid)
+            if (-not $Detected) { return $null }
+            [PSCustomObject]@{
+                DiskNumber = $DiskNumber
+                Device = [string]$Disk.FriendlyName
+                SerialNumber = [string]$Disk.SerialNumber
+                UniqueId = [string]$Disk.UniqueId
+                Size = [long]$Disk.Size
+                SizeGB = [math]::Round($Disk.Size / 1GB,2)
+                PartitionStyle = $Layout.PartitionStyle
+                PartitionCount = $Partitions.Count
+                VentoyVersion = [string]$EFI[0].VentoyVersion
+                HasMinimumPartitions = $HasMinimumPartitions
+                HasVTOYEFI = $HasValidEFI
+                HasVentoyDirectory = $EFI[0].HasVentoyDirectory
+                HasBootloader = $EFI[0].HasBootloader
+                GrubConfigFound = $EFI[0].GrubConfigFound
+                GrubConfigPath = $EFI[0].GrubConfigPath
+                HasValidVersion = $EFI[0].VersionValid
+                IsVentoy = $true
+                Volumes = $VolumeInfo
+            }
+        } catch { return $null }
+    }
+    $PhysicalDisks = @(Get-Disk -ErrorAction Stop | Where-Object { Test-EligibleDisk -Disk $_ } | Sort-Object Number)
+    $script:EligibleDisks = @(
+        foreach ($Disk in $PhysicalDisks) {
+            $Number = [int]$Disk.Number
+            $VentoyInfo = Get-VentoyDiskInfo -DiskNumber $Number
+            if (-not $VentoyInfo) { continue }
+            $script:VentoyCache[$Number] = $VentoyInfo
+            [PSCustomObject]@{
+                Number = $Number
+                FriendlyName = [string]$Disk.FriendlyName
+                Size = [long]$Disk.Size
+                UniqueId = [string]$Disk.UniqueId
+                VentoyVersion = $VentoyInfo.VentoyVersion
+                PartitionStyle = $VentoyInfo.PartitionStyle
+                PartitionCount = $VentoyInfo.PartitionCount
+            }
+        }
+    )
     function Get-MatchingPartitions {
-        param([Parameter(Mandatory)][int]$DiskNumber)
-        $Matches = [System.Collections.Generic.List[object]]::new()
+        param(
+            [Parameter(Mandatory)]
+            [int]$DiskNumber
+        )
+        $PartitionMatches = [System.Collections.Generic.List[object]]::new()
         $Disk = Get-Disk -Number $DiskNumber -ErrorAction Stop
         if (-not (Test-EligibleDisk -Disk $Disk)) { return @() }
-        if ($Disk.IsOffline -or $Disk.IsReadOnly -and $false) { return @() }
+        if ($Disk.IsOffline -or $Disk.IsReadOnly) { return @() }
+        $VentoyInfo = Get-VentoyDiskInfo -DiskNumber $DiskNumber
+        if (-not $VentoyInfo) { return @() }
         $Partitions = @(Get-Partition -DiskNumber $DiskNumber -ErrorAction SilentlyContinue)
         foreach ($Partition in $Partitions) {
             $Volumes = @(Get-Volume -Partition $Partition -ErrorAction SilentlyContinue)
@@ -6077,37 +6335,26 @@ try {
                 if (-not (Test-Path -LiteralPath $IdentifierPath -PathType Leaf)) { continue }
                 try {
                     $Edition = [System.IO.File]::ReadAllText($IdentifierPath)
+                    $Edition = $Edition.TrimEnd("`r", "`n")
                     if ($script:AllowedEditions -cnotcontains $Edition) { continue }
-                    $Matches.Add([PSCustomObject]@{
-                        DiskNumber = [int]$Disk.Number
-                        DiskName = [string]$Disk.FriendlyName
-                        DiskUniqueId = [string]$Disk.UniqueId
-                        DiskSize = [long]$Disk.Size
-                        PartitionNumber = [int]$Partition.PartitionNumber
-                        PartitionSize = [long]$Partition.Size
-                        DriveLetter = [string]$Volume.DriveLetter
-                        Edition = $Edition
-                        IdentifierPath = $IdentifierPath
-                    })
-                }
-                catch { continue }
+                    $PartitionMatches.Add(
+                        [PSCustomObject]@{
+                            DiskNumber = [int]$Disk.Number
+                            DiskName = [string]$Disk.FriendlyName
+                            DiskUniqueId = [string]$Disk.UniqueId
+                            DiskSize = [long]$Disk.Size
+                            PartitionNumber = [int]$Partition.PartitionNumber
+                            PartitionSize = [long]$Partition.Size
+                            DriveLetter = [string]$Volume.DriveLetter
+                            Edition = $Edition
+                            IdentifierPath = $IdentifierPath
+                        }
+                    )
+                } catch { continue }
             }
         }
-        return @($Matches.ToArray())
+        return @($PartitionMatches.ToArray())
     }
-    $CimDisks = @{}
-    try { foreach ($CimDisk in Get-CimInstance Win32_DiskDrive) { $CimDisks[[int]$CimDisk.Index] = $CimDisk } } catch {
-        # We do not care.
-    }
-    $PhysicalDisks = @(Get-Disk -ErrorAction Stop | Where-Object { Test-EligibleDisk -Disk $_ } | Sort-Object Number)
-    $script:EligibleDisks = @($PhysicalDisks | ForEach-Object {
-        [PSCustomObject]@{
-            Number = [int]$_.Number
-            FriendlyName = [string]$_.FriendlyName
-            Size = [long]$_.Size
-            UniqueId = [string]$_.UniqueId
-        }
-    })
     [xml]$XAML = @'
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -6146,18 +6393,20 @@ try {
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                            <ContentPresenter
+                                HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ButtonBorder" Property="BorderThickness" Value="2"/>
+                                <Setter TargetName="ButtonBorder"
+                                        Property="BorderThickness"
+                                        Value="2"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="ButtonBorder" Property="BorderThickness" Value="3"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="1"/>
+                                <Setter TargetName="ButtonBorder"
+                                        Property="BorderThickness"
+                                        Value="3"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -6170,87 +6419,11 @@ try {
             <Setter Property="BorderBrush" Value="{DynamicResource BorderBrushDark}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="5,3"/>
-            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type ComboBox}">
-                        <Grid>
-                            <ToggleButton Focusable="False"
-                                          ClickMode="Press"
-                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource AncestorType={x:Type ComboBox}}}">
-                                <ToggleButton.Template>
-                                    <ControlTemplate TargetType="{x:Type ToggleButton}">
-                                        <Border Background="{DynamicResource ControlBg}"
-                                                BorderBrush="{DynamicResource BorderBrushDark}"
-                                                BorderThickness="1">
-                                            <Grid>
-                                                <Path Data="M 0 0 L 4 4 L 8 0 Z"
-                                                      Fill="{DynamicResource TextBrush}"
-                                                      HorizontalAlignment="Right"
-                                                      VerticalAlignment="Center"
-                                                      Margin="0,0,9,0"/>
-                                            </Grid>
-                                        </Border>
-                                    </ControlTemplate>
-                                </ToggleButton.Template>
-                            </ToggleButton>
-                            <ContentPresenter IsHitTestVisible="False"
-                                              Content="{TemplateBinding SelectionBoxItem}"
-                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-                                              ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"
-                                              Margin="8,0,25,0"
-                                              VerticalAlignment="Center"
-                                              HorizontalAlignment="Left"
-                                              TextElement.Foreground="{DynamicResource TextBrush}"/>
-                            <Popup x:Name="PART_Popup"
-                                   Placement="Bottom"
-                                   IsOpen="{TemplateBinding IsDropDownOpen}"
-                                   AllowsTransparency="True"
-                                   Focusable="False"
-                                   PopupAnimation="None">
-                                <Border Background="{DynamicResource ControlBg}"
-                                        BorderBrush="{DynamicResource BorderBrushDark}"
-                                        BorderThickness="1"
-                                        MinWidth="{TemplateBinding ActualWidth}"
-                                        MaxHeight="{TemplateBinding MaxDropDownHeight}">
-                                    <ScrollViewer CanContentScroll="True">
-                                        <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained"/>
-                                    </ScrollViewer>
-                                </Border>
-                            </Popup>
-                        </Grid>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
         </Style>
         <Style TargetType="{x:Type ComboBoxItem}">
             <Setter Property="Background" Value="{DynamicResource ControlBg}"/>
             <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
             <Setter Property="Padding" Value="8,6"/>
-            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type ComboBoxItem}">
-                        <Border x:Name="ItemBorder" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsHighlighted" Value="True">
-                                <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource HoverBg}"/>
-                                <Setter Property="Foreground" Value="{DynamicResource Bg}"/>
-                            </Trigger>
-                            <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource HoverBg}"/>
-                                <Setter Property="Foreground" Value="{DynamicResource Bg}"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="1"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
         </Style>
     </Window.Resources>
     <Grid Margin="20">
@@ -6267,71 +6440,85 @@ try {
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <StackPanel>
-                <TextBlock Text="Pick a disk and partition."
-                           FontSize="26"
-                           FontWeight="Bold"
-                           Foreground="{DynamicResource TextBrush}"/>
-                <TextBlock Text="Select an ALOSToy disk and partition."
-                           FontSize="13"
-                           Margin="0,4,0,0"
-                           Foreground="{DynamicResource TextBrush}"/>
+                <TextBlock
+                    Text="Pick a disk and partition."
+                    FontSize="26"
+                    FontWeight="Bold"
+                    Foreground="{DynamicResource TextBrush}"/>
+                <TextBlock
+                    Text="Select an ALOSToy disk and partition."
+                    FontSize="13"
+                    Margin="0,4,0,0"
+                    Foreground="{DynamicResource TextBrush}"/>
             </StackPanel>
-            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                <TextBlock Text="Theme"
-                           FontSize="10"
-                           FontWeight="Bold"
-                           Margin="0,0,0,5"
-                           Foreground="{DynamicResource TextBrush}"/>
-                <ComboBox x:Name="ThemeComboBox"
-                          Width="135"
-                          Height="32"
-                          SelectedIndex="2">
+            <StackPanel
+                Grid.Column="1"
+                VerticalAlignment="Center">
+                <TextBlock
+                    Text="Theme"
+                    FontSize="10"
+                    FontWeight="Bold"
+                    Margin="0,0,0,5"
+                    Foreground="{DynamicResource TextBrush}"/>
+                <ComboBox
+                    x:Name="ThemeComboBox"
+                    Width="135"
+                    Height="32"
+                    SelectedIndex="2">
                     <ComboBoxItem Content="Dark Theme"/>
                     <ComboBoxItem Content="Light Theme"/>
                     <ComboBoxItem Content="System Theme"/>
                 </ComboBox>
             </StackPanel>
         </Grid>
-        <Border Grid.Row="1"
-                Height="1"
-                Background="{DynamicResource TextBrush}"
-                Margin="0,0,0,15"/>
-        <TextBlock Grid.Row="2"
-                   x:Name="InstructionsText"
-                   Text="Stage 1: Select the physical disk containing ALOSToy."
-                   FontSize="13"
-                   Margin="0,0,0,12"
-                   Foreground="{DynamicResource TextBrush}"/>
-        <Border Grid.Row="3"
-                Background="{DynamicResource Bg}"
-                BorderBrush="{DynamicResource BorderBrushDark}"
-                BorderThickness="1"
-                Padding="12">
-            <ScrollViewer VerticalScrollBarVisibility="Auto"
-                          HorizontalScrollBarVisibility="Disabled">
+        <Border
+            Grid.Row="1"
+            Height="1"
+            Background="{DynamicResource TextBrush}"
+            Margin="0,0,0,15"/>
+        <TextBlock
+            Grid.Row="2"
+            x:Name="InstructionsText"
+            Text="Stage 1: Select a physical disk containing Ventoy."
+            FontSize="13"
+            Margin="0,0,0,12"
+            Foreground="{DynamicResource TextBrush}"/>
+        <Border
+            Grid.Row="3"
+            Background="{DynamicResource Bg}"
+            BorderBrush="{DynamicResource BorderBrushDark}"
+            BorderThickness="1"
+            Padding="12">
+            <ScrollViewer
+                VerticalScrollBarVisibility="Auto"
+                HorizontalScrollBarVisibility="Disabled">
                 <WrapPanel x:Name="DiskPanel"/>
             </ScrollViewer>
         </Border>
-        <DockPanel Grid.Row="4"
-                   Margin="0,14,0,0"
-                   LastChildFill="False">
-            <TextBlock Text="You will not be able to select Disk 0 or virtual disks."
-                       VerticalAlignment="Center"
-                       FontWeight="Bold"
-                       Foreground="{DynamicResource TextBrush}"/>
-            <Button x:Name="BackButton"
-                    Content="Back"
-                    Width="100"
-                    Height="36"
-                    Margin="12,0,0,0"
-                    DockPanel.Dock="Right"
-                    Visibility="Collapsed"/>
-            <Button x:Name="CancelButton"
-                    Content="Abort"
-                    Width="110"
-                    Height="36"
-                    Margin="12,0,0,0"
-                    DockPanel.Dock="Right"/>
+        <DockPanel
+            Grid.Row="4"
+            Margin="0,14,0,0"
+            LastChildFill="False">
+            <TextBlock
+                Text="Disk 0 and virtual disks cannot be selected."
+                VerticalAlignment="Center"
+                FontWeight="Bold"
+                Foreground="{DynamicResource TextBrush}"/>
+            <Button
+                x:Name="BackButton"
+                Content="Back"
+                Width="100"
+                Height="36"
+                Margin="12,0,0,0"
+                DockPanel.Dock="Right"
+                Visibility="Collapsed"/>
+            <Button
+                x:Name="CancelButton"
+                Content="Abort"
+                Width="110"
+                Height="36"
+                Margin="12,0,0,0"
+                DockPanel.Dock="Right"/>
         </DockPanel>
     </Grid>
 </Window>
@@ -6347,20 +6534,22 @@ try {
     $Window.TopMost = $true
     $Window.WindowStyle = [System.Windows.WindowStyle]::None
     $Window.WindowState = [System.Windows.WindowState]::Maximized
-    $Window.Topmost = $true
     $Window.Left = 0
     $Window.Top = 0
     $Window.Width = [System.Windows.SystemParameters]::PrimaryScreenWidth
     $Window.Height = [System.Windows.SystemParameters]::PrimaryScreenHeight
     function Set-ThemeBrush {
-        param([string]$Key,[string]$Hex)
+        param(
+            [string]$Key,
+            [string]$Hex
+        )
         $Brush = [System.Windows.Media.BrushConverter]::new().ConvertFromString($Hex)
         $Brush.Freeze()
         $Window.Resources[$Key] = $Brush
     }
     $script:ThemeMode = 'Auto'
     function Apply-Theme {
-        $EffectiveTheme = if ($script:ThemeMode -eq 'Auto') { Get-SystemTheme } else { $script:ThemeMode }
+        $EffectiveTheme = if ($script:ThemeMode -eq 'Auto') { Get-SystemTheme } else { $script:ThemeMod }
         if ($EffectiveTheme -eq 'Light') {
             $Palette = @{
                 Bg = '#FFFFFFFF'
@@ -6402,7 +6591,7 @@ try {
         $DiskPanel.Children.Clear()
         $BackButton.Visibility = 'Visible'
         $DiskNumber = [int]$script:SelectedDisk.Number
-        $InstructionsText.Text = "Step Two: Pick an ALOSToy partition that has been found on Disk ${DiskNumber}. Remember: Only partitions with ALOSToy are shown here."
+        $InstructionsText.Text = ("Stage 2: Pick an ALOSToy partition on Disk ${DiskNumber}.")
         try { $Partitions = @(Get-MatchingPartitions -DiskNumber $DiskNumber) } catch { $Partitions = @() }
         foreach ($Entry in $Partitions) {
             $PartitionNumber = [int]$Entry.PartitionNumber
@@ -6420,7 +6609,7 @@ try {
             Add-Label -Parent $Card -Value "Edition: $($Entry.Edition)" -FontSize 12 -Bold | Out-Null
             $Button.Content = $Card
             $ClickHandler = {
-                param($Sender,$EventArgs)
+                param($Sender, $EventArgs)
                 $ChosenPartition = $Sender.Tag
                 $ChosenDiskNumber = [int]$ChosenPartition.DiskNumber
                 if ($ChosenDiskNumber -le 0) { return }
@@ -6428,12 +6617,19 @@ try {
                     $CurrentDisk = Get-Disk -Number $ChosenDiskNumber -ErrorAction Stop
                     if (-not (Test-EligibleDisk -Disk $CurrentDisk)) { return }
                     if ([string]$CurrentDisk.UniqueId -ne [string]$ChosenPartition.DiskUniqueId) { return }
+                    $CurrentVentoy = Get-VentoyDiskInfo -DiskNumber $ChosenDiskNumber
+                    if (-not $CurrentVentoy) { return }
                     $CurrentMatches = @(Get-MatchingPartitions -DiskNumber $ChosenDiskNumber)
-                    $StillPresent = @($CurrentMatches | Where-Object {
-                        [int]$_.PartitionNumber -eq [int]$ChosenPartition.PartitionNumber -and
-                        [string]$_.DriveLetter -eq [string]$ChosenPartition.DriveLetter -and
-                        [string]$_.Edition -ceq [string]$ChosenPartition.Edition
-                    })
+                    $StillPresent = @(
+                        $CurrentMatches | Where-Object {
+                            [int]$_.PartitionNumber -eq
+                            [int]$ChosenPartition.PartitionNumber -and
+                            [string]$_.DriveLetter -eq
+                            [string]$ChosenPartition.DriveLetter -and
+                            [string]$_.Edition -ceq
+                            [string]$ChosenPartition.Edition
+                        }
+                    )
                     if ($StillPresent.Count -eq 0) { return }
                     $script:DiskPickerResult = [string]$ChosenDiskNumber
                     $Window.Close()
@@ -6445,33 +6641,45 @@ try {
             $Button.Add_Click([System.Windows.RoutedEventHandler]$ClickHandler)
             $DiskPanel.Children.Add($Button) | Out-Null
         }
-        if ($Partitions.Count -eq 0) { Add-Label -Parent $DiskPanel -Value 'ALOSToy does not appear to be installed on here. Pick another disk.' -FontSize 16 | Out-Null }
+        if ($Partitions.Count -eq 0) { Add-Label -Parent $DiskPanel -Value 'No authorised ALOSToy installation was found on this Ventoy disk. Pick another disk.' -FontSize 16 | Out-Null }
     }
     function Show-DiskSelection {
         $DiskPanel.Children.Clear()
-        $InstructionsText.Text = 'Step One: Pick a physical disk.'
+        $InstructionsText.Text = ('Stage 1: Pick a physical disk containing a verified Ventoy installation.')
         $BackButton.Visibility = 'Collapsed'
         foreach ($Disk in $script:EligibleDisks) {
             $Number = [int]$Disk.Number
             $SizeGB = [math]::Round($Disk.Size / 1GB,2)
             $Button = [System.Windows.Controls.Button]::new()
             $Button.Width = 255
-            $Button.MinHeight = 110
+            $Button.MinHeight = 140
             $Button.Tag = $Disk
             $Card = [System.Windows.Controls.StackPanel]::new()
             Add-Label -Parent $Card -Value "Disk $Number" -FontSize 16 -Bold | Out-Null
             Add-Label -Parent $Card -Value $Disk.FriendlyName -FontSize 12 | Out-Null
             Add-Label -Parent $Card -Value "Capacity: $SizeGB GiB" -FontSize 12 | Out-Null
+            Add-Label -Parent $Card -Value "Ventoy Version: $($Disk.VentoyVersion)" -FontSize 12 -Bold | Out-Null
+            Add-Label -Parent $Card -Value "Partition Style: $($Disk.PartitionStyle)" -FontSize 12 | Out-Null
+            Add-Label -Parent $Card -Value "Partitions: $($Disk.PartitionCount)" -FontSize 12 | Out-Null
             $Button.Content = $Card
             $ClickHandler = {
-                param($Sender,$EventArgs)
-                $script:SelectedDisk = $Sender.Tag
-                Show-PartitionSelection
+                param($Sender, $EventArgs)
+                $ChosenDisk = $Sender.Tag
+                try {
+                    $CurrentDisk = Get-Disk -Number ([int]$ChosenDisk.Number) -ErrorAction Stop
+                    if (-not (Test-EligibleDisk -Disk $CurrentDisk)) { return }
+                    if ([string]$CurrentDisk.UniqueId -ne [string]$ChosenDisk.UniqueId) { return }
+                    $CurrentVentoy = Get-VentoyDiskInfo -DiskNumber ([int]$ChosenDisk.Number)
+                    if (-not $CurrentVentoy) { return }
+                    $script:SelectedDisk = $ChosenDisk
+                    $script:SelectedDisk.VentoyVersion = $CurrentVentoy.VentoyVersion
+                    Show-PartitionSelection
+                } catch { return }
             }
             $Button.Add_Click([System.Windows.RoutedEventHandler]$ClickHandler)
             $DiskPanel.Children.Add($Button) | Out-Null
         }
-        if ($script:EligibleDisks.Count -eq 0) { Add-Label -Parent $DiskPanel -Value 'Cannot find any physical disks that are eligible.' -FontSize 16 | Out-Null }
+        if ($script:EligibleDisks.Count -eq 0) { Add-Label -Parent $DiskPanel -Value 'No verified Ventoy installations were detected on eligible physical disks.' -FontSize 16 | Out-Null }
     }
     $ThemeComboBox.Add_SelectionChanged({
         switch ($ThemeComboBox.SelectedIndex) {
@@ -6482,8 +6690,14 @@ try {
         Apply-Theme
     })
     Apply-Theme
-    $CancelButton.Add_Click({ $Window.Close() })
-    $BackButton.Add_Click({ Show-DiskSelection })
+    $CancelButton.Add_Click({
+        $script:DiskPickerResult = 'None'
+        $Window.Close()
+    })
+    $BackButton.Add_Click({
+        $script:SelectedDisk = $null
+        Show-DiskSelection
+    })
     Show-DiskSelection
     $null = $Window.ShowDialog()
 } catch { $script:DiskPickerResult = 'None' }
@@ -6492,5 +6706,5 @@ exit 0
 :Post_PS-Uninstall_ChooseDisk
 rem End of installer, leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 6497 (6496 without extra newline).
+rem Total line count: 6711 (6710 without extra newline).
 rem Made by Aarav Katariya with love and care...
