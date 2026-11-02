@@ -8,7 +8,7 @@
 @rem                     (User choice if they fork.)
 @rem             Supports upgrade from GPLv3 to future: True
 @rem                     (User choice if they fork.)
-@rem              SPDX-licence-Identifier: GPL-3.0-or-later
+@rem              SPDX-License-Identifier: GPL-3.0-or-later
 @rem                     (User choice if they fork.)
 @rem   Please read GPLV3_ONLY_INFO.TXT for GPLv3 only redistribution.
 @rem ===================================================================
@@ -26,7 +26,7 @@
 @rem                     Pro delayed expansion tip:
 @rem If you want to escape ! in delayed expansion, without disabling it,
 @rem use ^^! so that it prints the exclamation mark without creating any
-@rem setlocal layers. I know. ^^ is required becase one ^ will still
+@rem setlocal layers. I know. ^^ is required because one ^ will still
 @rem expand !variables! to their contents so use two ^^ to properly
 @rem print any ! you want to display. Eg:
 @rem echo ^^!variable^^!
@@ -194,7 +194,7 @@ for %%A in (!UserArgs!) do (
 :Start
 set "D=!DATE!"
 set "T=!TIME!"
-rem Define the number of columms and lines.
+rem Define the number of columns and lines.
 rem It will always be 120x30.
 set "Columns=120"
 set "Lines=30"
@@ -480,7 +480,7 @@ powershell -nop -nol -ExecutionPolicy Bypass -c "if ($env:Version -match '^1\.[0
     exit 19
 )
 if /i "!CmdEchoing!"=="on" (echo on) else if /i "!CmdEchoing!"=="off" (echo off) else (endlocal & exit 1)
-rem Disable Quick Edit only if neccesary and that
+rem Disable Quick Edit only if necessary and that
 rem the argument supplied is not a help argument.
 rem Requires code duplication. (Batch limitation.)
 if "!StartHelp!"=="0" if "!QuickEdit!"=="On" goto DisableQuickEdit
@@ -504,7 +504,7 @@ rem If yes, run the extra check for Admin Approval Mode for the built in admin.
 if !errorlevel! equ 0 (
     set "Administrator_UACStatus="
     rem Check if the built-in Administrator account has
-    rem it's token limited to standard administrators.
+    rem its token limited to standard administrators.
     for /f "tokens=3" %%A in ('reg query "!Target!" /v FilterAdministratorToken 2^>nul') do set "Administrator_UACStatus=%%A"
     rem Enforce Administrator account UAC requirement.
     if /i "!Administrator_UACStatus!" neq "0x1" (
@@ -1331,7 +1331,7 @@ if "!AcceptEULA!"=="0" (
     if "!Vtoy_DL_Mode!"=="1" (
         echo - Ventoy is provided "as-is" with no warranty.
         echo - Ventoy Download Mode will grab a specific version for you.
-        echo - You must not misuse the software or it's owner to deploy malware.
+        echo - You must not misuse the software or its owner to deploy malware.
         echo - You must use Ventoy properly.
     ) else if "!Vtoy_DL_Mode!"=="0" (
         echo - This tool is provided "as-is" with no warranty.
@@ -3192,7 +3192,7 @@ echo    --Save-Location  ^<SaveLocation ^| Prompt^>
 echo        Specifies the location to save.
 echo        Or you can input "Prompt" to interactively select the save location. (For paths with spaces.)
 echo        You must use this argument with /DownloadVentoyVersion, -DownloadVentoyVersion or --Download-Ventoy-Version.
-echo        This is not compatible on it's own without that parent argument mentioned above.
+echo        This is not compatible on its own without that parent argument mentioned above.
 echo.
 choice /c FE /n /m "Turn the page forward or exit? [F or E]"
 if "!errorlevel!"=="1" (
@@ -3518,7 +3518,7 @@ if "!errorlevel!"=="1" (
     echo By using this software, you agree to the following:
     echo - Ventoy and this tool are provided "as-is" with no warranty.
     echo - Ventoy Download Mode will grab a specific version for you.
-    echo - You must not misuse the software or it's owner to deploy malware.
+    echo - You must not misuse the software or its owner to deploy malware.
     echo - You must use Ventoy properly.
     echo - Under GPLv3, you are required to provide source code if modified,
     echo - license under the GPLv3 licence and pass freedoms to others.
@@ -3634,7 +3634,7 @@ echo and Linux and even forensic tools for deep investigation and
 echo bit-for-bit clones. ALOSToy comes in 3 editions: Standard,
 echo Standard+Extensions and Extended versions. Higher versions give
 echo you OS installers pre-loaded for you. (Authorised by vendors.)
-echo Now with uninstall functionality!
+echo Now with uninstall functionality^^!
 echo.
 echo In theory, you can create the ultimate, bootable USB drive that will
 echo grant your access to the massive variety of diagnostic and disaster
@@ -3672,7 +3672,7 @@ echo STARTUP ROUTINE:
 echo.
 echo !Script! will relaunch it self as administrator. Just click Yes to
 echo the User Account Control prompt to continue. Then the installer
-echo will run all it's checks like DNS, site connections, dependency
+echo will run all its checks like DNS, site connections, dependency
 echo checks, update checks, and show the End User licence Agreement.
 echo.
 echo Turn over to see the next part. (GO ON.)
@@ -3736,7 +3736,7 @@ if "!errorlevel!"=="1" (
     echo By using this software, you agree to the following:
     echo - Ventoy and this tool are provided "as-is" with no warranty.
     echo - Ventoy Download Mode will grab a specific version for you.
-    echo - You must not misuse the software or it's owner to deploy malware.
+    echo - You must not misuse the software or its owner to deploy malware.
     echo - You must use Ventoy properly.
     echo - Under GPLv3, you are required to provide source code if modified,
     echo - license under the GPLv3 licence and pass freedoms to others.
@@ -3852,14 +3852,14 @@ call :InstallHelpTitle 6
 echo GPT AND SECURE BOOT PREFERENCES:
 echo.
 echo Now you will see a button menu saying "Do you want GPT?"
-echo GPT or GUID Partition Table is a modern partiton scheme that
+echo GPT or GUID Partition Table is a modern partition scheme that
 echo is primarily used on modern computers to boot your operating
 echo system like Windows and Linux. You can either click Yes or No
 echo to decide. If you select "Yes", your drive will use the modern
 echo GPT partition scheme which supports massive disks. If you select
 echo "No", your drive will use the MBR partition scheme which is an
 echo older partition scheme used on legacy computers and only supports
-echo disks up to 2TB. MBR should not be used unless you intent to boot
+echo disks up to 2TB. MBR should not be used unless you intend to boot
 echo ALOSToy on both modern and legacy computers. Click "Yes" or "No".
 echo I recommend clicking "Yes" unless you have a purpose with old pc's.
 echo.
@@ -4363,7 +4363,7 @@ rem windows archive checksum.
 rem The hashes are ordered line by line on their own lines.
 rem =============================================================
 rem ==============================================================================================
-rem Here is an example of it's contents from version 1.1.17:
+rem Here is an example of its contents from version 1.1.17:
 rem 7fb4ed08cef6a6b4d39dd19260d8c80291a78dfdf9af7d461571e23cbbc43805  ventoy-1.1.17-linux.tar.gz
 rem a8c66e94e04ee8c7ec4a8474ea576f4fbf26641e344ad223d711752628d0a814  ventoy-1.1.17-livecd.iso
 rem d250e97a7595fdac4f97debc630d7a8da942319274a76cb32384596b659dbaeb  ventoy-1.1.17-windows.zip
@@ -4974,7 +4974,7 @@ $Language = $env:lang
 if ($Language -eq "en") {
     # English body.
     $text = @"
-Now that ALOSToy is finished installing, do you want to exit, reboot your computer to it's firmware to disable Secure Boot or perform another installation?
+Now that ALOSToy is finished installing, do you want to exit, reboot your computer to its firmware to disable Secure Boot or perform another installation?
 "@
 }
 elseif ($Language -eq "fr") {
@@ -5139,7 +5139,7 @@ This toolkit has been created in the hope that it will be useful, but WITHOUT AN
 You should have received a copy of the GNU General Public Licence along with this toolkit. If not, see https://www.gnu.org/licenses/.
 
 SECTION 1 - DEFINITIONS
-"Toolkit" refers to ALOSToy v1.0 Extended, including its source files, isos, documentation and any related files. "You" refers to the licencee or user of the toolkit. "Modified version" refers to any derivative work based on the toolkit.
+"Toolkit" refers to ALOSToy v1.0 Extended, including its source files, isos, documentation and any related files. "You" refers to the licensee or user of the toolkit. "Modified version" refers to any derivative work based on the toolkit.
 
 SECTION 2 - AVAILABILITY OF SOURCE CODE
 The complete source code of ALOSToy v1.0 Extended must be made available to anyone to whom the object code is created. This ensures transparency, allows others to study, and modify the code. There are also freely available extensions that include installation media for reinstalling a popular OS. These can be found here.
@@ -5499,7 +5499,7 @@ This toolkit has been created in the hope that it will be useful, but WITHOUT AN
 You should have received a copy of the GNU General Public Licence along with this toolkit. If not, see https://www.gnu.org/licenses/.
 
 SECTION 1 - DEFINITIONS
-"Toolkit" refers to ALOSToy v1.0 Standard, including its source files, isos, documentation and any related files. "You" refers to the licencee or user of the toolkit. "Modified version" refers to any derivative work based on the toolkit.
+"Toolkit" refers to ALOSToy v1.0 Standard, including its source files, isos, documentation and any related files. "You" refers to the licensee or user of the toolkit. "Modified version" refers to any derivative work based on the toolkit.
 
 SECTION 2 - AVAILABILITY OF SOURCE CODE
 The complete source code of ALOSToy v1.0 Standard must be made available to anyone to whom the object code is created. This ensures transparency, allows others to study, and modify the code. There are also freely available extensions that include installation media for reinstalling a popular OS. These can be found here.
