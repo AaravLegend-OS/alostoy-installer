@@ -126,7 +126,7 @@ if "!Script!" neq "ALOSTOY-INSTALLER.BAT" exit 1
 rem Define the author.
 set "Author=Aarav Katariya"
 rem Define the version. (Will always remain in 1.X.X.X format.)
-set "Version=1.0.3.0"
+set "Version=1.0.3.1"
 for /f "skip=2 tokens=2*" %%A in ('reg query "HKEY_CURRENT_USER\Control Panel\International" /v "LocaleName"') do (
     set "OSLanguage=%%B"
     set "lang=!OSLanguage:~0,2!"
@@ -4069,7 +4069,7 @@ rem Ventoy Download Mode, Drive with a general Window Title that stays consisten
 rem about activity. Can now also track the help page as well. ArgumentsPassed is back but does not show.
 rem Now includes Archive_Part because of the need to see the archive progress.
 set "Input=%~1"
-if "!StartUninstall!"=="True" (set "HEADER=[ALOSTOY UNINSTALLER V1.0.0.0]") else if "!StartUninstall!"=="False" (set "HEADER=[ALOSTOY INSTALLER V!VERSION!]")
+if "!StartUninstall!"=="True" (set "HEADER=[ALOSTOY UNINSTALLER V1.0.0.1]") else if "!StartUninstall!"=="False" (set "HEADER=[ALOSTOY INSTALLER V!VERSION!]")
 if "!BrowsingHelp!"=="True" (
     if defined Page (set "BaseHeader=!HEADER! [!LANG!-!LOCALE!] [START PAGE: !STARTPAGE!] [PAGE !PAGE!]")
     if defined InstallGuidePage (set "BaseHeader=!HEADER! [!LANG!-!LOCALE!] [START PAGE: !STARTPAGE!] [PAGE !INSTALLGUIDEPAGE!]")
@@ -4459,14 +4459,14 @@ if "!ARE!"=="0" (
 cls
 call :WindowTitle "UNINSTALL ALOSTOY OPTIONS"
 call :PowerShell_Helper "Uninstall_Choices" || exit 1
-call Button 20 3 F4 "Uninstall ALOSToy" 50 3 F2 "Select Disk" 75 3 F6 "Abort Uninstallation" X _Var_Box _Var_Hover
+call Button 15 3 F4 "Uninstall ALOSToy" 45 3 F2 "Select Disk (Required)" 80 3 F6 "Abort Uninstallation" X _Var_Box _Var_Hover
 echo.
 echo.
 echo.
 if defined Disk (echo Disk Number Selected: !Disk!. You can now proceed with the uninstallation. Click the red button to start uninstallation.) else (call :PowerShell_Helper "Uninstall_Instructions" || exit 1)
 GetInput /M !_Var_Box! /H !_Var_Hover! 
 if "!errorlevel!"=="1" (
-    if defined Disk (goto StartUninstall) else (
+    if defined Disk (goto ConfirmUninstall) else (
         echo.
         echo You need to select your disk in the menu.
         echo Go back and click on "Select Disk".
@@ -4494,20 +4494,21 @@ echo Choose a disk that has ALOSToy on it.
 for /f "usebackq" %%D in (`powershell -nop -nol -c "chcp 65001 > $null; $i18n = New-Object System.Text.UTF8Encoding; [Console]::InputEncoding = $i18n; [Console]::OutputEncoding = $i18n; $OutputEncoding = $i18n; $section = [IO.File]::ReadAllText($env:FullScript) -split '(?ms)^:PS-Uninstall_ChooseDisk\r?\n(.*?)\r?\n:Post_PS-Uninstall_ChooseDisk'; & ([scriptblock]::Create($section[1]))"`) do set "Disk=%%D"
 if "!Disk!"=="None" set "Disk="
 goto UninstallMenu
-:StartUninstall
+:ConfirmUninstall
 cls
 echo select disk !Disk!> "!Root!diskpart_wipe.txt"
 echo !DiskPart_WipeCmd!>> "!Root!diskpart_wipe.txt"
-if "!PartitionScheme!"=="mbr" (echo convert mbr noerr>> "!Root!diskpart_wipe.txt") else if "!PartitionScheme!"=="gpt" (echo convert gpt noerr>> "!Root!diskpart_wipe.txt")
+echo convert !PartitionScheme! noerr>> "!Root!diskpart_wipe.txt"
 echo create partition primary noerr>> "!Root!diskpart_wipe.txt"
 echo format fs=ntfs label=Files quick override noerr>> "!Root!diskpart_wipe.txt"
 echo assign noerr>> "!Root!diskpart_wipe.txt"
 echo exit>> "!Root!diskpart_wipe.txt"
-for /f "delims=" %%W in ('powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('DO YOU WANT TO PROCEED WITH THE UNINSTALLATION OF ALOSTOY? ALL DATA ON EVERY PARTITON OF DISK !DISK! WILL BE LOST. IF YOU SAY \"YES\", YOU WILL BE ASKED TO CONFIRM THAT YOU WANT TO DO THIS. Note: We will create a data partition on the selected disk for you to reduce headaches.',$env:Program,'YesNo','Warn')"') do if "%%W"=="Yes" (goto ConfirmUninstall) else (
+for /f "delims=" %%W in ('powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('DO YOU WANT TO PROCEED WITH THE UNINSTALLATION OF ALOSTOY? ALL DATA ON EVERY PARTITON OF DISK !DISK! WILL BE LOST. IF YOU SAY \"YES\", YOU WILL BE ASKED TO CONFIRM THAT YOU WANT TO DO THIS. Note: We will create a data partition on the selected disk for you to reduce headaches.',$env:Program,'YesNo','Warn')"') do if "%%W"=="Yes" (goto StartUninstall) else (
     del "!Root!diskpart_wipe.txt" /f /q >nul
+    set "Disk="
     goto UninstallMenu
 )
-:ConfirmUninstall
+:StartUninstall
 cls
 echo Type the following in exactly as shown (case-sensitive). Typing it wrong returns you to the uninstall menu. Ignore ^>^>:
 echo.
@@ -4521,15 +4522,10 @@ if "!FinalConfirm!"=="Yes, I acknowledge that all partitions of disk !Disk! will
     echo this same program at any time, if you want. If any important files were on disk !Disk!, they
     echo are now irreversibly gone forever ^(potentially recoverable if quick erase was chosen^).
     echo.
-    echo Ventoy will also be uninstalled because disk !Disk! gets repartioned as well.
+    echo Ventoy also gets uninstalled because disk !Disk! loses all partitions and gets repartitioned.
     echo !DATE! !TIME! Begin diskpart log:>> "!logfile!"
     diskpart /s "!Root!diskpart_wipe.txt" >> "!logfile!"
     echo !DATE! !TIME! Finish diskpart log.>> "!logfile!"
-    if /i "!EraseType!"=="Quick" (
-        rem Introduce an artificial delay for the
-        rem user to read the following text above.
-        timeout /t 5 /NOBREAK >nul
-    )
     del "!Root!diskpart_wipe.txt" /f /q >nul
     start /b powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Uninstallation has been completed. Thank you for choosing ALOSToy. If the partition is not formatted (i.e, the filesystem is RAW), you must manually format it. The partition on disk !Disk! should be available.',$env:Program,'OK','Info') | Out-Null"
     set "ResetVars=1"
@@ -6035,12 +6031,11 @@ Exit 0
 :PS-Uninstall_ChooseDisk
 [CmdletBinding()]
 param()
-Clear-Host
 $ErrorActionPreference = 'Stop'
 $script:DiskPickerResult = 'None'
 $script:SelectedDisk = $null
 $script:EligibleDisks = @()
-$script:AllowedEditions = @('Standard','Standard+Extensions','Extended')
+$script:AllowedEditions = @('Standard','Standard With Extensions','Extended')
 $script:VirtualDiskPattern = '(?i)(bitdefender|virtual|vdisk|vhdx?|vmdk|vmware|virtualbox|innotek|qemu|xen|parallels|hyper.?v|storage.?spaces)'
 $script:VentoyCache = @{}
 try {
@@ -6083,7 +6078,7 @@ namespace Ventoy
 '@
     }
     $IOCTL_DISK_GET_DRIVE_LAYOUT_EX = 0x00070050
-    [uint32]$GENERIC_READ = 0x80000000
+    [uint32]$GENERIC_READ = 2147483648 # This is a fix because 0x80000000 does not get accepted for some reason.
     [uint32]$FILE_SHARE_READ = 1
     [uint32]$FILE_SHARE_WRITE = 2
     [uint32]$OPEN_EXISTING = 3
@@ -6224,9 +6219,7 @@ namespace Ventoy
                 $HasVentoyDirectory = Test-Path -LiteralPath $VentoyPath -PathType Container
                 $BootPath = Join-Path $Root 'EFI\BOOT'
                 $HasBootDirectory = Test-Path -LiteralPath $BootPath -PathType Container
-                if ($HasBootDirectory) {
-                    $HasBootloader = @(Get-ChildItem -LiteralPath $BootPath -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -ieq '.efi' }).Count -gt 0
-                }
+                if ($HasBootDirectory) { $HasBootloader = @(Get-ChildItem -LiteralPath $BootPath -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -ieq '.efi' }).Count -gt 0 }
                 $Config = Find-VentoyGrubConfig -Root $Root
                 if ($Config.Found) { $VersionInfo = Get-VentoyVersion -ConfigPath $Config.Path }
             }
@@ -6356,9 +6349,10 @@ namespace Ventoy
         return @($PartitionMatches.ToArray())
     }
     [xml]$XAML = @'
+
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="ALOSToy Uninstaller Disk Selection"
+        Title="ALOSToy Disk Selection"
         Width="880"
         Height="650"
         MinWidth="600"
@@ -6396,6 +6390,7 @@ namespace Ventoy
                             <ContentPresenter
                                 HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                 VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
@@ -6413,17 +6408,154 @@ namespace Ventoy
                 </Setter.Value>
             </Setter>
         </Style>
+        <Style TargetType="{x:Type ComboBoxItem}">
+            <Setter Property="Background" Value="{DynamicResource ControlBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ComboBoxItem}">
+                        <Border x:Name="ItemBorder"
+                                Background="{TemplateBinding Background}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter
+                                x:Name="ItemContent"
+                                Content="{TemplateBinding Content}"
+                                ContentTemplate="{TemplateBinding ContentTemplate}"
+                                HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                TextElement.Foreground="{TemplateBinding Foreground}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="ItemBorder"
+                                        Property="Background"
+                                        Value="{DynamicResource HoverBg}"/>
+                                <Setter TargetName="ItemContent"
+                                        Property="TextElement.Foreground"
+                                        Value="{DynamicResource Bg}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="ItemBorder"
+                                        Property="Background"
+                                        Value="{DynamicResource HoverBg}"/>
+                                <Setter TargetName="ItemContent"
+                                        Property="TextElement.Foreground"
+                                        Value="{DynamicResource Bg}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="ItemBorder"
+                                        Property="Opacity"
+                                        Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         <Style TargetType="{x:Type ComboBox}">
             <Setter Property="Background" Value="{DynamicResource ControlBg}"/>
             <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource BorderBrushDark}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="5,3"/>
-        </Style>
-        <Style TargetType="{x:Type ComboBoxItem}">
-            <Setter Property="Background" Value="{DynamicResource ControlBg}"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
-            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ComboBox}">
+                        <Grid>
+                            <Border x:Name="ComboBorder"
+                                    Background="{DynamicResource ControlBg}"
+                                    BorderBrush="{DynamicResource BorderBrushDark}"
+                                    BorderThickness="{TemplateBinding BorderThickness}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="26"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ContentPresenter
+                                        Grid.Column="0"
+                                        Margin="{TemplateBinding Padding}"
+                                        HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                        VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                        Content="{TemplateBinding SelectionBoxItem}"
+                                        ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                        ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                        IsHitTestVisible="False"
+                                        TextElement.Foreground="{DynamicResource TextBrush}"/>
+                                    <ToggleButton
+                                        Grid.Column="1"
+                                        Focusable="False"
+                                        Background="{DynamicResource ControlBg}"
+                                        BorderThickness="0"
+                                        IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                        ClickMode="Press">
+                                        <ToggleButton.Template>
+                                            <ControlTemplate TargetType="{x:Type ToggleButton}">
+                                                <Border
+                                                    Background="{DynamicResource ControlBg}">
+                                                    <Path
+                                                        Data="M 0 0 L 5 5 L 10 0"
+                                                        Stroke="{DynamicResource TextBrush}"
+                                                        StrokeThickness="1.5"
+                                                        HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center"/>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </ToggleButton.Template>
+                                    </ToggleButton>
+                                </Grid>
+                            </Border>
+                            <Popup
+                                x:Name="PART_Popup"
+                                Placement="Bottom"
+                                PlacementTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"
+                                IsOpen="{TemplateBinding IsDropDownOpen}"
+                                AllowsTransparency="True"
+                                Focusable="False"
+                                PopupAnimation="None">
+                                <Border
+                                    Background="{DynamicResource ControlBg}"
+                                    BorderBrush="{DynamicResource BorderBrushDark}"
+                                    BorderThickness="1"
+                                    MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}">
+                                    <ScrollViewer
+                                        CanContentScroll="True"
+                                        MaxHeight="250"
+                                        Background="{DynamicResource ControlBg}">
+                                        <ItemsPresenter
+                                            KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ComboBorder"
+                                        Property="BorderThickness"
+                                        Value="2"/>
+                            </Trigger>
+                            <Trigger Property="IsDropDownOpen" Value="True">
+                                <Setter TargetName="ComboBorder"
+                                        Property="BorderThickness"
+                                        Value="2"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="ComboBorder"
+                                        Property="Opacity"
+                                        Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
     </Window.Resources>
     <Grid Margin="20">
@@ -6500,7 +6632,7 @@ namespace Ventoy
             Margin="0,14,0,0"
             LastChildFill="False">
             <TextBlock
-                Text="Disk 0 and virtual disks cannot be selected."
+                Text="Only disks with Ventoy installed are shown. Just not disk 0 or virtual disks..."
                 VerticalAlignment="Center"
                 FontWeight="Bold"
                 Foreground="{DynamicResource TextBrush}"/>
@@ -6538,6 +6670,8 @@ namespace Ventoy
     $Window.Top = 0
     $Window.Width = [System.Windows.SystemParameters]::PrimaryScreenWidth
     $Window.Height = [System.Windows.SystemParameters]::PrimaryScreenHeight
+    $ThemeComboBox.InvalidateVisual()
+    $ThemeComboBox.UpdateLayout()
     function Set-ThemeBrush {
         param(
             [string]$Key,
@@ -6549,7 +6683,7 @@ namespace Ventoy
     }
     $script:ThemeMode = 'Auto'
     function Apply-Theme {
-        $EffectiveTheme = if ($script:ThemeMode -eq 'Auto') { Get-SystemTheme } else { $script:ThemeMod }
+        $EffectiveTheme = if ($script:ThemeMode -eq 'Auto') { Get-SystemTheme } else { $script:ThemeMode }
         if ($EffectiveTheme -eq 'Light') {
             $Palette = @{
                 Bg = '#FFFFFFFF'
@@ -6591,7 +6725,7 @@ namespace Ventoy
         $DiskPanel.Children.Clear()
         $BackButton.Visibility = 'Visible'
         $DiskNumber = [int]$script:SelectedDisk.Number
-        $InstructionsText.Text = ("Stage 2: Pick an ALOSToy partition on Disk ${DiskNumber}.")
+        $InstructionsText.Text = ("Stage 2: Pick a partition with a valid ALOSToy edition.")
         try { $Partitions = @(Get-MatchingPartitions -DiskNumber $DiskNumber) } catch { $Partitions = @() }
         foreach ($Entry in $Partitions) {
             $PartitionNumber = [int]$Entry.PartitionNumber
@@ -6641,11 +6775,11 @@ namespace Ventoy
             $Button.Add_Click([System.Windows.RoutedEventHandler]$ClickHandler)
             $DiskPanel.Children.Add($Button) | Out-Null
         }
-        if ($Partitions.Count -eq 0) { Add-Label -Parent $DiskPanel -Value 'No authorised ALOSToy installation was found on this Ventoy disk. Pick another disk.' -FontSize 16 | Out-Null }
+        if ($Partitions.Count -eq 0) { Add-Label -Parent $DiskPanel -Value 'Sorry! There is no ALOSToy installation on here.' -FontSize 16 | Out-Null }
     }
     function Show-DiskSelection {
         $DiskPanel.Children.Clear()
-        $InstructionsText.Text = ('Stage 1: Pick a physical disk containing a verified Ventoy installation.')
+        $InstructionsText.Text = ('Stage 1: Pick a physical disk. Note: Only disks with Ventoy installed are shown.')
         $BackButton.Visibility = 'Collapsed'
         foreach ($Disk in $script:EligibleDisks) {
             $Number = [int]$Disk.Number
@@ -6679,7 +6813,7 @@ namespace Ventoy
             $Button.Add_Click([System.Windows.RoutedEventHandler]$ClickHandler)
             $DiskPanel.Children.Add($Button) | Out-Null
         }
-        if ($script:EligibleDisks.Count -eq 0) { Add-Label -Parent $DiskPanel -Value 'No verified Ventoy installations were detected on eligible physical disks.' -FontSize 16 | Out-Null }
+        if ($script:EligibleDisks.Count -eq 0) { Add-Label -Parent $DiskPanel -Value 'Sorry! There are no disks that have Ventoy installed!' -FontSize 16 | Out-Null }
     }
     $ThemeComboBox.Add_SelectionChanged({
         switch ($ThemeComboBox.SelectedIndex) {
@@ -6706,5 +6840,5 @@ exit 0
 :Post_PS-Uninstall_ChooseDisk
 rem End of installer, leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 6711 (6710 without extra newline).
+rem Total line count: 6845 (6844 without extra newline).
 rem Made by Aarav Katariya with love and care...
