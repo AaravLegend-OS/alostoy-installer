@@ -2068,7 +2068,21 @@ echo.
 echo Do not confuse this with ChatGPT^^! GPT and ChatGPT are two different things^^!
 GetInput /M !_Var_Box! /H !_Var_Hover! 
 if "!errorlevel!"=="1" (
-    set "firstarg=/GPT"
+    if /i "!Firmware!"=="Uefi" (
+        for /f "delims= " %%A in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Your firmware is !Firmware! and does not support GPT. Do you want to use GPT? If you do, you will not be able to boot the final ALOSToy USB on this computer. Select ''Yes'' if you want to create the ALOSToy USB for UEFI computers ONLY.',$env:Program,'YesNoCancel','Question')"') do (
+            if "%%A"=="Yes" (
+                set "firstarg="
+            ) else if "%%A"=="No" (
+                goto GPTChoice
+            ) else if "%%A"=="Cancel" (
+                cls
+                if "!ProductDefinedWithArg!"=="True" (endlocal & exit 1) else (set "ResetVars=1" & goto Main)
+            ) else (
+                set "errorcode=Invalid choice."
+                goto Error
+            )
+        )
+    ) else (set "firstarg=/GPT")
 ) else if "!errorlevel!"=="2" (
     for /f "delims= " %%A in ('powershell -nop -nol -ExecutionPolicy Bypass -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('MBR only supports disks up to 2TB. Do you want to continue?',$env:Program,'YesNoCancel','Question')"') do (
         if "%%A"=="Yes" (
@@ -4228,10 +4242,10 @@ rem 0x0008 DISABLE_NEWLINE_AUTO_RETURN - Delay scrolling at the end of a line.
 rem 0x0010 ENABLE_LVB_GRID_WORLDWIDE - Enable LVB flags on any codepage for worldwide support.
 rem Some Example Combinations For Output:
 rem 0x0003 = 0x0001+0x0002 - Normal output mode.
-rem 0x0007 = 0x0001+0x0002+0x0004 - Process Virutal Terminal. This is common!
-rem 0x000F = 0x0001+0x0002+0x0004+0x0008 - Use Virutal Terminal without automatic return.
+rem 0x0007 = 0x0001+0x0002+0x0004 - Process Virtual Terminal. This is common!
+rem 0x000F = 0x0001+0x0002+0x0004+0x0008 - Use Virtual Terminal without automatic return.
 rem 0x0013 = 0x0003+0x0010 - Normal output mode with worldwide LVB.
-rem 0x0017 = 0x0007+0x0010 - Use Virutal Terminal with worldwide LVB.
+rem 0x0017 = 0x0007+0x0010 - Use Virtual Terminal with worldwide LVB.
 rem ================================================================================================
 :Banner_Art
 if /i "%~1"=="/PreInstall" (set "Text=        WELCOME TO THE INSTALLER. THANK YOU FOR CHOOSING TO INSTALL ALOSTOY V1.0.") else if /i "%~1"=="/PostInstall" (set "Text=    THANK YOU FOR INSTALLING ALOSTOY V1.0. YOU NOW HAVE THE BEST BOOTABLE USB DRIVE.") else (exit 2)
@@ -4507,7 +4521,7 @@ if "!FinalConfirm!"=="Yes, I acknowledge that all partitions of disk !Disk! will
     echo this same program at any time, if you want. If any important files were on disk !Disk!, they
     echo are now irreversibly gone forever ^(potentially recoverable if quick erase was chosen^).
     echo.
-    echo Errors will be shown here:
+    echo Ventoy will also be uninstalled because disk !Disk! gets repartioned as well.
     echo !DATE! !TIME! Begin diskpart log:>> "!logfile!"
     diskpart /s "!Root!diskpart_wipe.txt" >> "!logfile!"
     echo !DATE! !TIME! Finish diskpart log.>> "!logfile!"
@@ -4517,7 +4531,7 @@ if "!FinalConfirm!"=="Yes, I acknowledge that all partitions of disk !Disk! will
         timeout /t 5 /NOBREAK >nul
     )
     del "!Root!diskpart_wipe.txt" /f /q >nul
-    start /b powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Uninstallation has been completed. Thank you for choosing ALOSToy.',$env:Program,'OK','Info') | Out-Null"
+    start /b powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Uninstallation has been completed. Thank you for choosing ALOSToy. If the partition is not formatted (i.e, the filesystem is RAW), you must manually format it. The partition on disk !Disk! should be available.',$env:Program,'OK','Info') | Out-Null"
     set "ResetVars=1"
     goto Main
 ) else (
@@ -4569,7 +4583,7 @@ param(
     # You can assign default values if no value is specified.
     [int]$MyIntegerValue = 100,
     [Parameter(Mandatory)]
-    # Array versions are avaliable too! Append [] to the type. Eg: [string] ----> [string[]]
+    # Array versions are available too! Append [] to the type. Eg: [string] ----> [string[]]
     [string[]]$MyStringArrayOrValue
 )
 Write-Host "MyStringValue is set to ${MyStringValue}."
@@ -6478,5 +6492,5 @@ exit 0
 :Post_PS-Uninstall_ChooseDisk
 rem End of installer, leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 6483 (6482 without extra newline).
+rem Total line count: 6497 (6496 without extra newline).
 rem Made by Aarav Katariya with love and care...
