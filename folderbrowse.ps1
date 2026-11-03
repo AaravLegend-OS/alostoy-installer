@@ -625,4 +625,4 @@ $null = $Window.ShowDialog()
 # Finally, say out the selected path. (Used by a for /f loop in batch that calls the folder browser.)
 if ($SelectedPath) { Write-Output $SelectedPath } else { Write-Output "None" }
 # End of folderbrowse.exe. Made by Aarav Katariya with love and care...
-# Total line count: 623
+# Total line count: 628
