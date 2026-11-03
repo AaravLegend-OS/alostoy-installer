@@ -609,6 +609,11 @@ $DeleteButton.Add_Click({
 $Window.WindowState = [System.Windows.WindowState]::Maximized
 $Window.WindowStyle = [System.Windows.WindowStyle]::None
 $Window.ResizeMode = [System.Windows.ResizeMode]::NoResize
+# Change the window width and window height to the monitor's screen resolution.
+$Window.Left = 0
+$Window.Top = 0
+$Window.Width = [System.Windows.SystemParameters]::PrimaryScreenWidth
+$Window.Height = [System.Windows.SystemParameters]::PrimaryScreenHeight
 # Force the window to be the topmost.
 $Window.Topmost = $true
 # Wait for $Timeout seconds so that the user can read messages.
