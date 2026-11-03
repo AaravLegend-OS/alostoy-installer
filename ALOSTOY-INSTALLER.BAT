@@ -260,7 +260,7 @@ set "EXHashF=D55CDAAE3DD35900EF69DE063AA02C10DCCB8ED172B55434FDBB4E2F0378129C"
 set "EXHashG=0E417F999D42920282B9AD411E95372C692DC6FA21CDC15511F8F80EB04887CB"
 set "EXHashH=486265B9BA383F2ADB8B5C5F26B76148CDCEBAB7965ACE3B083F52080F6899D7"
 rem Store the tools hash and use it later. (Useful for hashing the tools.esd file and not trusting blindly.)
-set "ToolsHash=FB7815349521365C521F140B8BA63FC004418EA7FDA7FE2C909861BBD6EBB063"
+set "ToolsHash=78F41E373A01232F913B1220AE82FE3A3048271123A44263D416648C691B274E"
 rem =====================================================================
 rem You can configure how new lines are represented in message boxes.
 rem Use `r`n for Windows style Carriage Return Line Feed newlines or
@@ -4174,6 +4174,7 @@ if "!SuccessfulBackup!"=="1" (
         if !errorlevel! equ 0 (
             del ALOSTOY-INSTALLER.ZIP /f /q
             del hash.txt /f /q
+            rd "!Root!bin" /s /q >nul 2>&1
             cls
             set "SZ="
             call :WindowTitle "UPDATE SUCCESSFUL"
@@ -4248,7 +4249,13 @@ rem 0x0013 = 0x0003+0x0010 - Normal output mode with worldwide LVB.
 rem 0x0017 = 0x0007+0x0010 - Use Virtual Terminal with worldwide LVB.
 rem ================================================================================================
 :Banner_Art
-if /i "%~1"=="/PreInstall" (set "Text=        WELCOME TO THE INSTALLER. THANK YOU FOR CHOOSING TO INSTALL ALOSTOY V1.0.") else if /i "%~1"=="/PostInstall" (set "Text=    THANK YOU FOR INSTALLING ALOSTOY V1.0. YOU NOW HAVE THE BEST BOOTABLE USB DRIVE.") else (exit 2)
+if /i "%~1"=="/PreInstall" (
+    set "Menu=main"
+    set "Text=        WELCOME TO THE INSTALLER. THANK YOU FOR CHOOSING TO INSTALL ALOSTOY V1.0."
+) else if /i "%~1"=="/PostInstall" (
+    set "Menu=end choices"
+    set "Text=    THANK YOU FOR INSTALLING ALOSTOY V1.0. YOU NOW HAVE THE BEST BOOTABLE USB DRIVE."
+) else (exit 2)
 for /f %%A in ('"prompt $E & for %%B in (1) do rem"') do set "ESC=%%A"
 mode con: cols=100 lines=40
 set "C0=!ESC![38;2;255;0;76m"
@@ -4315,7 +4322,7 @@ if /i "!ProductDefinedWithArg!"=="True" (
     echo We will continue in 3 seconds...
     timeout /t 3 /NOBREAK >nul
 ) else (
-    echo Push any key to show the main menu.
+    echo Push any key to show the !Menu! menu.
     pause >nul
 )
 mode con: cols=!Columns! lines=!Lines!
@@ -4324,6 +4331,7 @@ set "Text="
 set "TC="
 set "N="
 set "OUT="
+set "Menu="
 exit /b 0
 goto :eof
 :Colour
@@ -4837,7 +4845,7 @@ $Root = $env:Root
     "${Root}bin\batbox.exe" = "9553BC17FA0FD08E026C1865812B3388E3D5495A5394BBF671E5A8F21C79989A"
     "${Root}bin\Box.bat" = "F164716E7B1F98F68F6CE3239345C30B3410ED9812F30B37BB7630F28047EBD9"
     "${Root}bin\Button.bat" = "03A86F9FCDCCBAA499EA4435434A45178E367639D8FB755C5211F304C70744B5"
-    "${Root}bin\folderbrowse.exe" = "348430F39C1CE0C0C1FFF7E7B80C796F533F85F2DE40EA00C97759C66FC2AA70"
+    "${Root}bin\folderbrowse.exe" = "416E877B7272F8E3A58A8795A8542E2E9162E5400AC931DFF631161C08C3967F"
     "${Root}bin\folderbrowse.exe.config" = "A122790E20A37DD3A16D42F4F089275558E94310BCB6DB11F71769B7C722AB39"
     "${Root}bin\GetInput.exe" = "3F5C64717A0092AE214154A730E96E2E56921BE2E3F1121A3E98B1BA84627665"
     "${Root}bin\Getlen.bat" = "83CE5342710A2F2E385A363402661E3426728DD6BCFE9D87E22F2FB858B07BDE"
@@ -6031,16 +6039,19 @@ Exit 0
 :PS-Uninstall_ChooseDisk
 [CmdletBinding()]
 param()
+# Define script-wide variables.
 $ErrorActionPreference = 'Stop'
 $script:DiskPickerResult = 'None'
 $script:SelectedDisk = $null
 $script:EligibleDisks = @()
 $script:AllowedEditions = @('Standard','Standard With Extensions','Extended')
-$script:VirtualDiskPattern = '(?i)(bitdefender|virtual|vdisk|vhdx?|vmdk|vmware|virtualbox|innotek|qemu|xen|parallels|hyper.?v|storage.?spaces)'
+$script:VirtualDiskPattern = '(?i)(bitdefender|virtual|vdisk|vhd?|vhdx?|vmdk|vmware|virtualbox|innotek|qemu|xen|parallels|hyper.?v|storage.?spaces)'
 $script:VentoyCache = @{}
+# Everything inside try/catch block.
 try {
     Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase
     if (-not ('Ventoy.Detection' -as [type])) {
+        # Add the type with our C# code.
         Add-Type -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
@@ -6077,12 +6088,17 @@ namespace Ventoy
 }
 '@
     }
-    $IOCTL_DISK_GET_DRIVE_LAYOUT_EX = 0x00070050
+    # Define constants.
+    $IOCTL_DISK_GET_DRIVE_LAYOUT_EX = 0x00070050 # Bypass the storage WMI provider and go straight to the raw disk information.
     [uint32]$GENERIC_READ = 2147483648 # This is a fix because 0x80000000 does not get accepted for some reason.
     [uint32]$FILE_SHARE_READ = 1
     [uint32]$FILE_SHARE_WRITE = 2
     [uint32]$OPEN_EXISTING = 3
-    $script:VentoyVersionRegex = '^1\.\d\.\d{2}$'
+    # Check if running inside Windows PE. It will determine if we can select disk 0.
+    & reg.exe query "HKLM\SYSTEM\CurrentControlSet\Control\MiniNT"
+    $WindowsPE = ($LASTEXITCODE -eq 0)
+    $script:VentoyVersionRegex = '^1\.\d\.\d{2}$' # Validate regex for ventoy version.
+    # Function to get the system theme.
     function Get-SystemTheme {
         try {
             $Value = Get-ItemPropertyValue -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize' -Name AppsUseLightTheme -ErrorAction Stop
@@ -6092,12 +6108,14 @@ namespace Ventoy
     }
     $CimDisks = @{}
     try { foreach ($CimDisk in Get-CimInstance Win32_DiskDrive) { $CimDisks[[int]$CimDisk.Index] = $CimDisk } } catch {}
+    # Function to test for eligible disks.
     function Test-EligibleDisk {
         param(
             [Parameter(Mandatory)]
             [object]$Disk
         )
-        if ([int]$Disk.Number -eq 0) { return $false }
+        # Allow disk 0 to show if inside Windows PE.
+        if (($WindowsPE -eq $false) -and ([int]$Disk.Number -eq 0)) { return $false }
         if ($Disk.IsOffline) { return $false }
         if ([string]$Disk.BusType -match '(?i)Virtual|Spaces|File Backed Virtual') { return $false }
         $Identity = @(
@@ -6119,6 +6137,7 @@ namespace Ventoy
         if ($Identity -match $script:VirtualDiskPattern) { return $false }
         return $true
     }
+    # Function to get the raw disk layout, bypassing the WMI storage provider and cache.
     function Get-NativeDiskLayout {
         param(
             [Parameter(Mandatory)]
@@ -6148,6 +6167,7 @@ namespace Ventoy
             }
         } finally { [void][Ventoy.Detection]::CloseHandle($Handle) }
     }
+    # Function to find a grub.cfg file in /grub.
     function Find-VentoyGrubConfig {
         param(
             [Parameter(Mandatory)]
@@ -6177,6 +6197,7 @@ namespace Ventoy
             Method = 'NotFound'
         }
     }
+    # Function to acquire the ventoy version on the disk.
     function Get-VentoyVersion {
         param(
             [Parameter(Mandatory)]
@@ -6193,11 +6214,9 @@ namespace Ventoy
             }
         } catch { return $null }
     }
+    # Function to get the ventoy volume information.
     function Get-VentoyVolumeInfo {
-        param(
-            [Parameter(Mandatory)]
-            $Partition
-        )
+        param([Parameter(Mandatory)]$Partition)
         try {
             $Volume = Get-Volume -Partition $Partition -ErrorAction SilentlyContinue
             if (-not $Volume) { return $null }
@@ -6209,8 +6228,8 @@ namespace Ventoy
             $HasBootDirectory = $false
             $HasBootloader = $false
             $Config = [PSCustomObject]@{
-                Found  = $false
-                Path   = $null
+                Found = $false
+                Path = $null
                 Method = 'NotFound'
             }
             $VersionInfo = $null
@@ -6241,11 +6260,9 @@ namespace Ventoy
             }
         } catch { return $null }
     }
+    # Function to acquire the disk information with ventoy installed.
     function Get-VentoyDiskInfo {
-        param(
-            [Parameter(Mandatory)]
-            [int]$DiskNumber
-        )
+        param([Parameter(Mandatory)][int]$DiskNumber)
         try {
             $Disk = Get-Disk -Number $DiskNumber -ErrorAction Stop
             if (-not (Test-EligibleDisk -Disk $Disk)) { return $null }
@@ -6307,11 +6324,9 @@ namespace Ventoy
             }
         }
     )
+    # Function to find all matching partitions on a disk.
     function Get-MatchingPartitions {
-        param(
-            [Parameter(Mandatory)]
-            [int]$DiskNumber
-        )
+        param([Parameter(Mandatory)][int]$DiskNumber)
         $PartitionMatches = [System.Collections.Generic.List[object]]::new()
         $Disk = Get-Disk -Number $DiskNumber -ErrorAction Stop
         if (-not (Test-EligibleDisk -Disk $Disk)) { return @() }
@@ -6348,6 +6363,7 @@ namespace Ventoy
         }
         return @($PartitionMatches.ToArray())
     }
+    # Build the GUI window in XAML.
     [xml]$XAML = @'
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -6654,6 +6670,7 @@ namespace Ventoy
     </Grid>
 </Window>
 '@
+    # Load our XAML and WPF components.
     $StringReader = [System.IO.StringReader]::new($XAML.OuterXml)
     $XmlReader = [System.Xml.XmlReader]::Create($StringReader)
     $Window = [Windows.Markup.XamlReader]::Load($XmlReader)
@@ -6662,15 +6679,19 @@ namespace Ventoy
     $InstructionsText = $Window.FindName('InstructionsText')
     $CancelButton = $Window.FindName('CancelButton')
     $BackButton = $Window.FindName('BackButton')
-    $Window.TopMost = $true
+    $Window.TopMost = $true # Keep window on top of every other application.
+    # Force window to hide taskbar and fullscreen.
     $Window.WindowStyle = [System.Windows.WindowStyle]::None
     $Window.WindowState = [System.Windows.WindowState]::Maximized
+    # Change the window width and window height to the monitor's screen resolution.
     $Window.Left = 0
     $Window.Top = 0
     $Window.Width = [System.Windows.SystemParameters]::PrimaryScreenWidth
     $Window.Height = [System.Windows.SystemParameters]::PrimaryScreenHeight
+    # Invalidate the visual and update the layout of the combo box for consistency.
     $ThemeComboBox.InvalidateVisual()
     $ThemeComboBox.UpdateLayout()
+    # Function to set the theme brush. Invoked by Apply-Theme.
     function Set-ThemeBrush {
         param(
             [string]$Key,
@@ -6681,6 +6702,7 @@ namespace Ventoy
         $Window.Resources[$Key] = $Brush
     }
     $script:ThemeMode = 'Auto'
+    # Function to apply the light or dark theme.
     function Apply-Theme {
         $EffectiveTheme = if ($script:ThemeMode -eq 'Auto') { Get-SystemTheme } else { $script:ThemeMode }
         if ($EffectiveTheme -eq 'Light') {
@@ -6704,6 +6726,7 @@ namespace Ventoy
         $Window.Background = $Window.Resources['Bg']
         $Window.Foreground = $Window.Resources['TextBrush']
     }
+    # Function to add a label.
     function Add-Label {
         param(
             [System.Windows.Controls.Panel]$Parent,
@@ -6720,6 +6743,7 @@ namespace Ventoy
         $Parent.Children.Add($Label) | Out-Null
         return $Label
     }
+    # Function to show the partition selection screen.
     function Show-PartitionSelection {
         $DiskPanel.Children.Clear()
         $BackButton.Visibility = 'Visible'
@@ -6776,6 +6800,7 @@ namespace Ventoy
         }
         if ($Partitions.Count -eq 0) { Add-Label -Parent $DiskPanel -Value 'Sorry! There is no ALOSToy installation on here.' -FontSize 16 | Out-Null }
     }
+    # Function to show the disk selection screen.
     function Show-DiskSelection {
         $DiskPanel.Children.Clear()
         $InstructionsText.Text = ('Stage 1: Pick a physical disk. Note: Only disks with Ventoy installed are shown.')
@@ -6814,6 +6839,7 @@ namespace Ventoy
         }
         if ($script:EligibleDisks.Count -eq 0) { Add-Label -Parent $DiskPanel -Value 'Sorry! There are no disks that have Ventoy installed!' -FontSize 16 | Out-Null }
     }
+    # All funcions defined. Set the theme and show the window.
     $ThemeComboBox.Add_SelectionChanged({
         switch ($ThemeComboBox.SelectedIndex) {
             0 { $script:ThemeMode = 'Dark' }
@@ -6822,22 +6848,29 @@ namespace Ventoy
         }
         Apply-Theme
     })
-    Apply-Theme
+    Apply-Theme # Apply the theme.
+    # Create the cancel button.
     $CancelButton.Add_Click({
         $script:DiskPickerResult = 'None'
         $Window.Close()
     })
+    # Create the back button.
     $BackButton.Add_Click({
         $script:SelectedDisk = $null
         Show-DiskSelection
     })
+    # Create the list of disks.
     Show-DiskSelection
-    $null = $Window.ShowDialog()
-} catch { $script:DiskPickerResult = 'None' }
+    $null = $Window.ShowDialog() # And show the window.
+} catch {
+    # If the program fails, return none like, as if we aborted.
+    $script:DiskPickerResult = 'None'
+}
+# Finally, print the selected disk to stdout for the for /f loop.
 Write-Output $script:DiskPickerResult
 exit 0
 :Post_PS-Uninstall_ChooseDisk
 rem End of installer, leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 6844 (6843 without extra newline).
+rem Total line count: 6877 (6876 without extra newline).
 rem Made by Aarav Katariya with love and care...
