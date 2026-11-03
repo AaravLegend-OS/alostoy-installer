@@ -6349,7 +6349,6 @@ namespace Ventoy
         return @($PartitionMatches.ToArray())
     }
     [xml]$XAML = @'
-
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="ALOSToy Disk Selection"
@@ -6840,5 +6839,5 @@ exit 0
 :Post_PS-Uninstall_ChooseDisk
 rem End of installer, leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 6845 (6844 without extra newline).
+rem Total line count: 6844 (6843 without extra newline).
 rem Made by Aarav Katariya with love and care...
