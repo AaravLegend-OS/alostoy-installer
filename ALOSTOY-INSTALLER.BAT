@@ -6047,6 +6047,7 @@ $script:EligibleDisks = @()
 $script:AllowedEditions = @('Standard','Standard With Extensions','Extended')
 $script:VirtualDiskPattern = '(?i)(bitdefender|virtual|vdisk|vhd?|vhdx?|vmdk|vmware|virtualbox|innotek|qemu|xen|parallels|hyper.?v|storage.?spaces)'
 $script:VentoyCache = @{}
+$script:AllowClose = $false
 # Everything inside try/catch block.
 try {
     Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase
@@ -6094,9 +6095,6 @@ namespace Ventoy
     [uint32]$FILE_SHARE_READ = 1
     [uint32]$FILE_SHARE_WRITE = 2
     [uint32]$OPEN_EXISTING = 3
-    # Check if running inside Windows PE. It will determine if we can select disk 0.
-    & reg.exe query "HKLM\SYSTEM\CurrentControlSet\Control\MiniNT"
-    $WindowsPE = ($LASTEXITCODE -eq 0)
     $script:VentoyVersionRegex = '^1\.\d\.\d{2}$' # Validate regex for ventoy version.
     # Function to get the system theme.
     function Get-SystemTheme {
@@ -6115,7 +6113,7 @@ namespace Ventoy
             [object]$Disk
         )
         # Allow disk 0 to show if inside Windows PE.
-        if (($WindowsPE -eq $false) -and ([int]$Disk.Number -eq 0)) { return $false }
+        if ([int]$Disk.Number -eq 0) { return $false }
         if ($Disk.IsOffline) { return $false }
         if ([string]$Disk.BusType -match '(?i)Virtual|Spaces|File Backed Virtual') { return $false }
         $Identity = @(
@@ -6647,7 +6645,7 @@ namespace Ventoy
             Margin="0,14,0,0"
             LastChildFill="False">
             <TextBlock
-                Text="Only disks with Ventoy installed are shown. Just not disk 0 or virtual disks..."
+                Text="Only disks with Ventoy installed are shown. Just not disk 0 or virtual disks... Also, pressing Alt F4 will NOT close this window. Press the abort button if you want to close this window."
                 VerticalAlignment="Center"
                 FontWeight="Bold"
                 Foreground="{DynamicResource TextBrush}"/>
@@ -6852,6 +6850,7 @@ namespace Ventoy
     # Create the cancel button.
     $CancelButton.Add_Click({
         $script:DiskPickerResult = 'None'
+        $script:AllowClose = $true
         $Window.Close()
     })
     # Create the back button.
@@ -6861,6 +6860,13 @@ namespace Ventoy
     })
     # Create the list of disks.
     Show-DiskSelection
+    # Hide GUI window from taskbar.
+    $Window.ShowInTaskbar = $false
+    # Add a handler to close when authorised.
+    $Window.Add_Closing({
+        param($sender, $e)
+        if (-not $script:AllowClose) { $e.Cancel = $true }
+    })
     $null = $Window.ShowDialog() # And show the window.
 } catch {
     # If the program fails, return none like, as if we aborted.
@@ -6872,5 +6878,5 @@ exit 0
 :Post_PS-Uninstall_ChooseDisk
 rem End of installer, leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 6877 (6876 without extra newline).
+rem Total line count: 6883 (6882 without extra newline).
 rem Made by Aarav Katariya with love and care...
