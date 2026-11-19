@@ -9,17 +9,30 @@
     the initial volume label to "My Custom WinPE" if you would like. The only rejected
     value is "Boot" because it is the default label that Windows PE has used for life.
 .EXAMPLE
-    .\Set-BootSdiVolumeLabel.ps1 -SdiPath 'C:\Media\Boot\boot.sdi' -Label 'My Custom WinPE' -InPlace
+    .\Set-BootSdiVolumeLabel.ps1 -SdiPath 'C:\Media\Boot\boot.sdi' -Label 'My Custom WinPE' -InPlace $true
+.EXAMPLE
+    .\Set-BootSdiVolumeLabel.ps1 -SdiPath 'C:\Media\Boot\boot.sdi' -Label 'My Custom WinPE' -InPlace $false
+.EXAMPLE
+    .\Set-BootSdiVolumeLabel.ps1 -SdiPath 'C:\Media\Boot\boot.sdi' -Label 'My Custom WinPE' -UseWithVentoy
 #>
 [CmdletBinding()]
 param(
+    # Parameter to specify the path to boot.sdi.
     [Parameter(Mandatory, HelpMessage="Where is the path to your boot.sdi?")]
     [string]$SdiPath,
+    # Parameter to specify the new label that applies
+    # when booting an iso with the new boot.sdi.
     [Parameter(Mandatory, HelpMessage="What should be the new label?")]
     [ValidateScript({ $_ -ine 'Boot' })]
     [string]$Label = 'Windows PE',
+    # [OPTIONAL] Parameter to specify output path.
     [string]$OutputPath,
-    [switch]$InPlace
+    # [OPTIONAL] Parameter to specify whether in place or external.
+    # $true is for in place, and $false is for external.
+    [bool]$InPlace = $true,
+    # [OPTIONAL] Switch to determine if Ventoy use is intended.
+    # If yes, you will get instructions on how to use with Ventoy.
+    [switch]$UseWithVentoy
 )
 Add-Type -AssemblyName PresentationFramework
 $ErrorActionPreference = 'Stop'
@@ -215,7 +228,6 @@ if ([string]::IsNullOrWhiteSpace($Label)) { throw 'A non-empty volume label is r
 if ($Label.Length -gt 32) { throw 'NTFS volume labels can contain at most 32 characters.' }
 $invalidLabelCharacters = '<>:"/\|?*'
 foreach ($character in $Label.ToCharArray()) { if ([char]::IsControl($character) -or $invalidLabelCharacters.Contains([string]$character)) { throw 'The label contains a character that is not valid in a Windows volume label.' } }
-if ($InPlace -and -not [string]::IsNullOrWhiteSpace($OutputPath)) { throw 'Use either -InPlace or -OutputPath, not both.' }
 $inputFile = Get-Item -LiteralPath $SdiPath
 if ($inputFile.PSIsContainer) { throw 'SdiPath must point to a boot.sdi file.' }
 $inputFullPath = $inputFile.FullName
@@ -286,4 +298,5 @@ try {
 } finally {
     if (Test-Path -LiteralPath $temporaryPath) { [IO.File]::Delete($temporaryPath) }
     [System.Windows.MessageBox]::Show('Make sure to place this boot.sdi in the /boot directory of the Windows ISO otherwise, it will not apply!','Boot.sdi Label Changer','OK','Info') | Out-Null
+    if ($UseWithVentoy) { [System.Windows.MessageBox]::Show("You can also integrate this boot.sdi into ventoy_wimboot.img if you would like to use the custom label with Ventoy. Steps:`r`n`r`n1. Extract the ventoy_wimboot.img file into a directory.`r`n2. Modify the boot.sdi in the boot directory of the extracted files with this tool.`r`n3. Reassemble the ventoy_wimboot.img using xorriso (there is a windows build avaliable).`r`n4. Copy the ventoy_wimboot.img file onto your ventoy drive.",'Boot.sdi Label Changer','OK','Info') | Out-Null }
 }
