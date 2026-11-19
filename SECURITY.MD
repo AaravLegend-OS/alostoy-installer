@@ -36,3 +36,4 @@ Please see this table:
 
 All versions of [ALOSToy Installer](https://www.github.com/AaravLegend-OS/alostoy-installer) and every other product that is created at AaravLegend-OS is licensed under **GNU GPLv3 "or any later version"** with some programs like [ALOS Image Tools](https://www.github.com/AaravLegendOS/alos-image-tools) being licensed under **GNU AGPL** because of things like **network protection**.
 
+If you find a security vulnerability, **report it immediately** to the owner's email address with the subject **Security Vulnerability | <Your Findings>**. The owner will take action **immediately**, upon seeing the email.
