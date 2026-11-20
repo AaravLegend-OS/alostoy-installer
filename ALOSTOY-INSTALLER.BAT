@@ -6929,7 +6929,7 @@ Title=The story of ALOSToy and the installer.
 Body=The ${env:program} is developed by ${env:Author} as a way to install the ALOSToy bootable toolkit onto a USB drive. It is a Windows Batch Script with embedded PowerShell, which pushes the program beyond regular batch scripting.
 [Page3]
 Title=About ${env:Author}.
-Body=${env:Author} started building the ${env:program} all the way back in July 2025 after finishing ALOSToy Standard and Extended. ${env:Author} realised that he needed to build an installer for everyone to use. So he spent a year to build the first version and publish it onto GitHub at:`r`n${env:InstallerRepo}`r`n`r`nOn 26th May 2026, ${env:Author} published the first version of ALOSToy Installer to the public under the GNU GPLv3 licence. Before this, ${env:Author} is very interested in computers and technology (and he still is), lives in the United Kingdom and is in Year 10 of high school. Since then, ${env:Author} has published seventeen updates to the ${env:Program}.
+Body=${env:Author} started building the ${env:program} all the way back in July 2025 after finishing ALOSToy Standard and Extended. ${env:Author} realised that he needed to build an installer for everyone to use. So he spent a year to build the first version and publish it onto GitHub at: ${env:InstallerRepo}. On 26th May 2026, ${env:Author} published the first version of ALOSToy Installer to the public under the GNU GPLv3 licence. Before this, ${env:Author} is very interested in computers and technology (and he still is), lives in the United Kingdom and is in Year 10 of high school. Since then, ${env:Author} has published seventeen updates to the ${env:Program}.
 "@
     }
     'fr' {
@@ -6955,7 +6955,7 @@ Title=L'histoire d'ALOSToy et du programme d'installation.
 Body=Le programme ${env:program} a été développé par ${env:Author} afin de permettre l'installation de la boîte à outils amorçable ALOSToy sur une clé USB. Il s'agit d'un script batch Windows intégrant PowerShell, ce qui lui confère des capacités allant au-delà de celles d'un simple script batch classique.
 [Page3]
 Title=À propos de ${env:Author}.
-Body=${env:Author} a commencé à développer le ${env:program} dès juillet 2025, après avoir terminé ALOSToy Standard et Extended. ${env:Author} s'est rendu compte qu'il devait créer un programme d'installation accessible à tous. Il a donc passé un an à développer la première version et à la publier sur GitHub à l'adresse suivante :`r`n${env:InstallerRepo}`r`n`r`nLe 26 mai 2026, ${env:Author} a rendu publique la première version d'ALOSToy Installer sous licence GNU GPLv3. Avant cela, ${env:Author} s'intéressait beaucoup aux ordinateurs et à la technologie (ce qui est toujours le cas), vivait au Royaume-Uni et était en 10e année au lycée. Depuis lors, ${env:Author} a publié dix-sept mises à jour du ${env:Program}.
+Body=${env:Author} a commencé à développer le ${env:program} dès juillet 2025, après avoir terminé ALOSToy Standard et Extended. ${env:Author} s'est rendu compte qu'il devait créer un programme d'installation accessible à tous. Il a donc passé un an à développer la première version et à la publier sur GitHub à l'adresse suivante: ${env:InstallerRepo}. Le 26 mai 2026, ${env:Author} a rendu publique la première version d'ALOSToy Installer sous licence GNU GPLv3. Avant cela, ${env:Author} s'intéressait beaucoup aux ordinateurs et à la technologie (ce qui est toujours le cas), vivait au Royaume-Uni et était en 10e année au lycée. Depuis lors, ${env:Author} a publié dix-sept mises à jour du ${env:Program}.
 "@
     }
     'de' {
@@ -6981,7 +6981,7 @@ Title=Die Geschichte von ALOSToy und dem Installationsprogramm.
 Body=Das ${env:program} wurde von ${env:Author} entwickelt, um das bootfähige ALOSToy-Toolkit auf einem USB-Stick zu installieren. Es handelt sich um ein Windows-Batch-Skript mit eingebetteter PowerShell, wodurch das Programm über die Möglichkeiten eines gewöhnlichen Batch-Skripts hinausgeht.
 [Page3]
 Title=Über ${env:Author}.
-Body=${env:Author} begann bereits im Juli 2025 mit der Entwicklung von ${env:program}, nachdem er ALOSToy Standard und Extended fertiggestellt hatte. ${env:Author} erkannte, dass er ein Installationsprogramm erstellen musste, das jeder nutzen kann. Also verbrachte er ein Jahr damit, die erste Version zu entwickeln und sie auf GitHub unter folgendem Link zu veröffentlichen:`r`n${env:InstallerRepo}`r`n`r`nAm 26. Mai 2026 veröffentlichte ${env:Author} die erste Version des ALOSToy-Installers unter der GNU GPLv3-Lizenz. Zuvor interessierte sich ${env:Author} sehr für Computer und Technik (was er auch heute noch tut), lebt im Vereinigten Königreich und besucht die 10. Klasse der High School. Seitdem hat ${env:Author} siebzehn Updates für das ${env:Program} veröffentlicht.
+Body=${env:Author} begann bereits im Juli 2025 mit der Entwicklung von ${env:program}, nachdem er ALOSToy Standard und Extended fertiggestellt hatte. ${env:Author} erkannte, dass er ein Installationsprogramm erstellen musste, das jeder nutzen kann. Also verbrachte er ein Jahr damit, die erste Version zu entwickeln und sie auf GitHub unter folgendem Link zu veröffentlichen: ${env:InstallerRepo}. Am 26. Mai 2026 veröffentlichte ${env:Author} die erste Version des ALOSToy-Installers unter der GNU GPLv3-Lizenz. Zuvor interessierte sich ${env:Author} sehr für Computer und Technik (was er auch heute noch tut), lebt im Vereinigten Königreich und besucht die 10. Klasse der High School. Seitdem hat ${env:Author} siebzehn Updates für das ${env:Program} veröffentlicht.
 "@
     }
     'es' {
@@ -7007,7 +7007,7 @@ Title=La historia de ALOSToy y el instalador.
 Body=El programa ${env:program} ha sido desarrollado por ${env:Author} para instalar el kit de herramientas de arranque ALOSToy en una memoria USB. Se trata de un script por lotes de Windows con PowerShell integrado, lo que amplía las capacidades del programa más allá de las de un script por lotes convencional.
 [Page3]
 Title=Acerca de ${env:Author}.
-Body=${env:Author} empezó a desarrollar el ${env:program} allá por julio de 2025, tras terminar ALOSToy Standard y Extended. ${env:Author} se dio cuenta de que necesitaba crear un instalador para que todo el mundo pudiera utilizarlo. Así que dedicó un año a desarrollar la primera versión y a publicarla en GitHub en:`r`n${env:InstallerRepo}`r`n`r`nEl 26 de mayo de 2026, ${env:Author} publicó la primera versión de ALOSToy Installer bajo la licencia GNU GPLv3. Antes de esto, ${env:Author} sentía un gran interés por los ordenadores y la tecnología (y aún lo siente), vive en el Reino Unido y cursa el 10.º curso de secundaria. Desde entonces, ${env:Author} ha publicado diecisiete actualizaciones del ${env:Program}.
+Body=${env:Author} empezó a desarrollar el ${env:program} allá por julio de 2025, tras terminar ALOSToy Standard y Extended. ${env:Author} se dio cuenta de que necesitaba crear un instalador para que todo el mundo pudiera utilizarlo. Así que dedicó un año a desarrollar la primera versión y a publicarla en GitHub en: ${env:InstallerRepo}. El 26 de mayo de 2026, ${env:Author} publicó la primera versión de ALOSToy Installer bajo la licencia GNU GPLv3. Antes de esto, ${env:Author} sentía un gran interés por los ordenadores y la tecnología (y aún lo siente), vive en el Reino Unido y cursa el 10.º curso de secundaria. Desde entonces, ${env:Author} ha publicado diecisiete actualizaciones del ${env:Program}.
 "@
     }
     'it' {
@@ -7033,7 +7033,7 @@ Title=La storia di ALOSToy e del programma di installazione.
 Body=Il programma ${env:program} è stato sviluppato da ${env:Author} per consentire l'installazione del toolkit avviabile ALOSToy su una chiavetta USB. Si tratta di uno script batch di Windows con PowerShell integrato, il che lo rende molto più di un semplice script batch.
 [Page3]
 Title=Informazioni su ${env:Author}.
-Body=${env:Author} ha iniziato a sviluppare il ${env:program} nel lontano luglio 2025, dopo aver completato ALOSToy Standard ed Extended. ${env:Author} si è reso conto che era necessario creare un programma di installazione che tutti potessero utilizzare. Ha quindi dedicato un anno alla realizzazione della prima versione, pubblicandola su GitHub all'indirizzo:`r`n${env:InstallerRepo}`r`n`r`nIl 26 maggio 2026, ${env:Author} ha reso pubblica la prima versione di ALOSToy Installer sotto licenza GNU GPLv3. Prima di allora, ${env:Author} era molto interessato ai computer e alla tecnologia (e lo è tuttora), vive nel Regno Unito e frequenta il decimo anno di scuola superiore. Da allora, ${env:Author} ha pubblicato diciassette aggiornamenti del ${env:Program}.
+Body=${env:Author} ha iniziato a sviluppare il ${env:program} nel lontano luglio 2025, dopo aver completato ALOSToy Standard ed Extended. ${env:Author} si è reso conto che era necessario creare un programma di installazione che tutti potessero utilizzare. Ha quindi dedicato un anno alla realizzazione della prima versione, pubblicandola su GitHub all'indirizzo: ${env:InstallerRepo}. Il 26 maggio 2026, ${env:Author} ha reso pubblica la prima versione di ALOSToy Installer sotto licenza GNU GPLv3. Prima di allora, ${env:Author} era molto interessato ai computer e alla tecnologia (e lo è tuttora), vive nel Regno Unito e frequenta il decimo anno di scuola superiore. Da allora, ${env:Author} ha pubblicato diciassette aggiornamenti del ${env:Program}.
 "@
     }
     'ja' {
@@ -7059,7 +7059,7 @@ Title=ALOSToyとインストーラーの物語。
 Body=${env:program}は、ALOSToyブート可能ツールキットをUSBドライブにインストールするための手段として、${env:Author}によって開発されました。これはPowerShellが組み込まれたWindowsバッチスクリプトであり、通常のバッチスクリプトの枠を超えた機能を備えています。
 [Page3]
 Title=${env:Author}について。
-Body=${env:Author}は、ALOSToy StandardおよびExtendedの開発を終えた後、2025年7月に${env:program}の開発を開始しました。${env:Author}は、誰もが利用できるインストーラーを作成する必要があることに気づきました。そこで、1年をかけて最初のバージョンを開発し、GitHubの`r`n${env:InstallerRepo}`r`n`r`nに公開しました。2026年5月26日、${env:Author}はALOSToy Installerの最初のバージョンを、GNU GPLv3ライセンスの下で一般に公開しました。それ以前、${env:Author}はコンピュータやテクノロジーに非常に興味を持っており（現在もそうです）、イギリスに住み、高校の10年生でした。それ以来、${env:Author}は${env:Program}に対して17回のアップデートを公開してきました。
+Body=${env:Author}は、ALOSToy StandardおよびExtendedの開発を終えた後、2025年7月に${env:program}の開発を開始しました。${env:Author}は、誰もが利用できるインストーラーを作成する必要があることに気づきました。そこで、1年をかけて最初のバージョンを開発し、GitHubの ${env:InstallerRepo}。 に公開しました。2026年5月26日、${env:Author}はALOSToy Installerの最初のバージョンを、GNU GPLv3ライセンスの下で一般に公開しました。それ以前、${env:Author}はコンピュータやテクノロジーに非常に興味を持っており（現在もそうです）、イギリスに住み、高校の10年生でした。それ以来、${env:Author}は${env:Program}に対して17回のアップデートを公開してきました。
 "@
     }
     'ko' {
@@ -7085,7 +7085,7 @@ Title=ALOSToy와 설치 담당자의 이야기.
 Body=${env:program}은 ${env:Author}가 ALOSToy 부팅 가능 툴킷을 USB 드라이브에 설치할 수 있도록 개발한 프로그램입니다. 이 프로그램은 PowerShell이 내장된 Windows 배치 스크립트로, 일반적인 배치 스크립트의 한계를 뛰어넘는 기능을 제공합니다.
 [Page3]
 Title=${env:Author}에 대하여.
-Body=${env:Author}는 ALOSToy Standard와 Extended를 완성한 후, 2025년 7월부터 ${env:program} 개발을 시작했습니다. ${env:Author}는 누구나 사용할 수 있는 설치 프로그램을 만들어야 한다는 것을 깨달았습니다. 그래서 그는 1년 동안 첫 번째 버전을 개발하여 GitHub의 다음 위치에 공개했습니다:`r`n${env:InstallerRepo}`r`n`r`n2026년 5월 26일, ${env:Author}는 ALOSToy Installer의 첫 번째 버전을 GNU GPLv3 라이선스 하에 공개했습니다. 그 전까지 ${env:Author}는 컴퓨터와 기술에 큰 관심을 가지고 있었으며(지금도 여전히 그렇습니다), 영국에 거주하며 고등학교 10학년에 재학 중이었습니다. 그 이후로 ${env:Author}는 ${env:Program}에 대해 17차례의 업데이트를 공개했습니다.
+Body=${env:Author}는 ALOSToy Standard와 Extended를 완성한 후, 2025년 7월부터 ${env:program} 개발을 시작했습니다. ${env:Author}는 누구나 사용할 수 있는 설치 프로그램을 만들어야 한다는 것을 깨달았습니다. 그래서 그는 1년 동안 첫 번째 버전을 개발하여 GitHub의 다음 위치에 공개했습니다: ${env:InstallerRepo}. 2026년 5월 26일, ${env:Author}는 ALOSToy Installer의 첫 번째 버전을 GNU GPLv3 라이선스 하에 공개했습니다. 그 전까지 ${env:Author}는 컴퓨터와 기술에 큰 관심을 가지고 있었으며(지금도 여전히 그렇습니다), 영국에 거주하며 고등학교 10학년에 재학 중이었습니다. 그 이후로 ${env:Author}는 ${env:Program}에 대해 17차례의 업데이트를 공개했습니다.
 "@
     }
     default { exit 1 }
