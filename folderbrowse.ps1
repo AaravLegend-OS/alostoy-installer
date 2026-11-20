@@ -22,9 +22,7 @@ function Get-SystemAppTheme {
         $value = Get-ItemPropertyValue -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize' -Name 'AppsUseLightTheme' -ErrorAction Stop
         if ($value -eq 0) { return 'Dark' }
         return 'Light'
-    } catch {
-        return 'Dark'
-    }
+    } catch { return 'Dark' }
 }
 function Get-ThemeColors {
     $theme = if ($script:ThemeMode -eq 'Auto') { Get-SystemAppTheme } else { $script:ThemeMode }
@@ -92,14 +90,7 @@ function Load-Children {
     if ($Node.Items.Count -ne 1 -or $Node.Items[0].Header -ne 'Loading...') { return }
     $path = [string]$Node.Tag
     $Node.Items.Clear()
-    try {
-        [System.IO.Directory]::GetDirectories($path) | Sort-Object | ForEach-Object {
-            [void]$Node.Items.Add((New-FolderNode -Path $_))
-        }
-    } catch {
-        Write-Error "Access is denied. Here is the error information:`r`n`r`n$_"
-    }
-}
+    try { [System.IO.Directory]::GetDirectories($path) | Sort-Object | ForEach-Object { [void]$Node.Items.Add((New-FolderNode -Path $_)) } } catch { Write-Error "Access is denied. Here is the error information:`r`n`r`n$_" } }
 # Function to load all drives that can be selected.
 function Refresh-Drives {
     $FolderTree.Items.Clear()
@@ -113,9 +104,7 @@ function Refresh-Drives {
 # Function to get the currently selected folder path.
 function Get-SelectedFolderPath {
     $selected = $FolderTree.SelectedItem
-    if ($selected -is [System.Windows.Controls.TreeViewItem] -and $selected.Tag) {
-        return [string]$selected.Tag
-    }
+    if ($selected -is [System.Windows.Controls.TreeViewItem] -and $selected.Tag) { return [string]$selected.Tag }
     return $null
 }
 # Function to show a topmost message box.
@@ -222,6 +211,7 @@ function Display-Prompt {
     $promptText.Text = $Prompt
     $inputBox.Text = $DefaultValue
     $script:PopupValue = $null
+    $script:DenyClose = $true
     $okBtn.Add_Click({
         $script:PopupValue = $inputBox.Text
         $dialog.DialogResult = $true
@@ -484,6 +474,7 @@ $TitleBar.Add_MouseLeftButtonDown({
 $CloseButton.Add_Click({
     $script:SelectedPath = $null
     $Window.DialogResult = $false
+    $script:DenyClose = $false
     $Window.Close()
 })
 $ThemeComboBox.Add_SelectionChanged({
@@ -555,9 +546,7 @@ $NewFolderButton.Add_Click({
     try {
         [void][System.IO.Directory]::CreateDirectory($newPath)
         Refresh-Drives
-    } catch {
-        Display-Message "Failed to create folder.`r`n`r`n$($_.Exception.Message)" ([System.Windows.MessageBoxButton]::OK) ([System.Windows.MessageBoxImage]::Error) | Out-Null
-    }
+    } catch { Display-Message "Failed to create folder.`r`n`r`n$($_.Exception.Message)" ([System.Windows.MessageBoxButton]::OK) ([System.Windows.MessageBoxImage]::Error) | Out-Null }
 })
 $RenameButton.Add_Click({
     $oldPath = Get-SelectedFolderPath
@@ -586,9 +575,7 @@ $RenameButton.Add_Click({
     try {
         Move-Item -LiteralPath $oldPath -Destination $newPath
         Refresh-Drives
-    } catch {
-        Display-Message "Failed to rename folder.`r`n`r`n$($_.Exception.Message)" ([System.Windows.MessageBoxButton]::OK) ([System.Windows.MessageBoxImage]::Error) | Out-Null
-    }
+    } catch { Display-Message "Failed to rename folder.`r`n`r`n$($_.Exception.Message)" ([System.Windows.MessageBoxButton]::OK) ([System.Windows.MessageBoxImage]::Error) | Out-Null }
 })
 $DeleteButton.Add_Click({
     $path = Get-SelectedFolderPath
@@ -604,6 +591,10 @@ $DeleteButton.Add_Click({
     } catch {
         Display-Message "Failed to delete folder.`r`n`r`n$($_.Exception.Message)" ([System.Windows.MessageBoxButton]::OK) ([System.Windows.MessageBoxImage]::Error) | Out-Null
     }
+})
+$Window.Add_Closing({
+    param($sender, $e)
+    $e.Cancel = $script:DenyClose
 })
 # Set window states to borderless and maximised. (Hides taskbar too!)
 $Window.WindowState = [System.Windows.WindowState]::Maximized
@@ -625,4 +616,4 @@ $null = $Window.ShowDialog()
 # Finally, say out the selected path. (Used by a for /f loop in batch that calls the folder browser.)
 if ($SelectedPath) { Write-Output $SelectedPath } else { Write-Output "None" }
 # End of folderbrowse.exe. Made by Aarav Katariya with love and care...
-# Total line count: 628
+# Total line count: 619.
