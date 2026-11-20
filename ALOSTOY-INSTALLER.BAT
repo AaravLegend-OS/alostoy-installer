@@ -7008,7 +7008,7 @@ PageCounterMiddle= de
 PageCounterEnd=
 [Page1]
 Title=¿Qué es ${env:program}?
-Body=The ${env:program} is your foundation to installing ALOSToy Standard or ALOSToy Extended. Created by ${env:Author} to install the ultimate toolkit.
+Body=El ${env:program} es la base para instalar ALOSToy Standard o ALOSToy Extended. Creado por ${env:Author} para instalar el kit de herramientas definitivo.
 [Page2]
 Title=La historia de ALOSToy y el instalador.
 Body=El programa ${env:program} ha sido desarrollado por ${env:Author} para instalar el kit de herramientas de arranque ALOSToy en una memoria USB. Se trata de un script por lotes de Windows con PowerShell integrado, lo que amplía las capacidades del programa más allá de las de un script por lotes convencional.
@@ -7066,7 +7066,7 @@ Title=ALOSToyとインストーラーの物語。
 Body=${env:program}は、ALOSToyブート可能ツールキットをUSBドライブにインストールするための手段として、${env:Author}によって開発されました。これはPowerShellが組み込まれたWindowsバッチスクリプトであり、通常のバッチスクリプトの枠を超えた機能を備えています。
 [Page3]
 Title=${env:Author}について。
-Body=${env:Author}は、ALOSToy StandardおよびExtendedの開発を終えた後、2025年7月に${env:program}の開発を開始しました。${env:Author}は、誰もが利用できるインストーラーを作成する必要があることに気づきました。そこで、1年をかけて最初のバージョンを開発し、GitHubの ${env:InstallerRepo}。 に公開しました。2026年5月26日、${env:Author}はALOSToy Installerの最初のバージョンを、GNU GPLv3ライセンスの下で一般に公開しました。それ以前、${env:Author}はコンピュータやテクノロジーに非常に興味を持っており（現在もそうです）、イギリスに住み、高校の10年生でした。それ以来、${env:Author}は${env:Program}に対して17回のアップデートを公開してきました。
+Body=${env:Author}は、ALOSToy StandardおよびExtendedの開発を終えた後、2025年7月に${env:program}の開発を開始しました。${env:Author}は、誰もが利用できるインストーラーを作成する必要があることに気づきました。そこで、1年をかけて最初のバージョンを開発し、GitHubの ${env:InstallerRepo}。に公開しました。2026年5月26日、${env:Author}はALOSToy Installerの最初のバージョンを、GNU GPLv3ライセンスの下で一般に公開しました。それ以前、${env:Author}はコンピュータやテクノロジーに非常に興味を持っており（現在もそうです）、イギリスに住み、高校の10年生でした。それ以来、${env:Author}は${env:Program}に対して17回のアップデートを公開してきました。
 "@
     }
     'ko' {
@@ -7579,5 +7579,5 @@ exit 0
 :Post_PS-About_Program
 rem End of installer, leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 7577 (7576 without extra newline).
+rem Total line count: 7584 (7583 without extra newline).
 rem Made by Aarav Katariya with love and care...
