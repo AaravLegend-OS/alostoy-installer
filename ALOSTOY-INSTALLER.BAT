@@ -126,7 +126,7 @@ if "!Script!" neq "ALOSTOY-INSTALLER.BAT" exit 1
 rem Define the author.
 set "Author=Aarav Katariya"
 rem Define the version. (Will always remain in 1.X.X.X format.)
-set "Version=1.0.3.2"
+set "Version=1.0.3.3"
 for /f "skip=2 tokens=2*" %%A in ('reg query "HKEY_CURRENT_USER\Control Panel\International" /v "LocaleName"') do (
     set "OSLanguage=%%B"
     set "lang=!OSLanguage:~0,2!"
@@ -323,6 +323,13 @@ if "!NewLine!"=="`r`n" (echo >nul) else if "!NewLine!"=="`n" (echo >nul) else (
     pause
     endlocal
     exit 4
+)
+rem Get windows build number.
+for /f "tokens=2 delims=[]" %%A in ('ver') do (
+    for /f "tokens=3,4 delims=." %%B in ("%%A") do (
+        set "WindowsBuild=%%B"
+        set "Full_WindowsBuild=%%B.%%C"
+    )
 )
 if /i "%~1"=="/?" (set "StartHelp=1") else if /i "%~1"=="-?" (set "StartHelp=1") else if "%~1"=="--?" (set "StartHelp=1") else if /i "%~1"=="/H" (set "StartHelp=1") else if /i "%~1"=="-H" (set "StartHelp=1") else if "%~1"=="--H" (set "StartHelp=1") else if /i "%~1"=="/Help" (set "StartHelp=1") else if /i "%~1"=="-Help" (set "StartHelp=1") else if "%~1"=="--Help" (set "StartHelp=1")
 set "QuickEdit=On"
@@ -1149,12 +1156,12 @@ if "!NoUpdate!"=="1" if "!ForceUpdate!"=="1" (
     exit 1
 )
 rem This program uses features needed in build >17763. Like PowerShell DISM module.
-if !winbuild! lss 17763 (
+if !WindowsBuild! lss 17763 (
     call :WindowTitle "UNSUPPORTED OS VERSION FOUND!!!"
     echo Unsupported OS version...
     echo Press any key to quit...
     pause >nul
-    exit !winbuild!
+    exit !WindowsBuild!
 )
 rem Make Product and ForceUpdate/AutoUpdate mutually exclusive.
 rem Either one or the other, not both.
@@ -4913,7 +4920,7 @@ if ($Language -eq "en") {
     $text = @"
 ALOSToy is a new version of any ventoy toolkit that helps you diagnose PC's. ${env:Author} built ALOSToy as the only developer. It is a different Ventoy toolkit that is meant to modernise that 5.6 year old tool. ALOSToy is the world's first ventoy toolkit to feature an installer for AaravLegend-OS and ChromeOS that is patched with Brunch to boot on all computers.
 ========================================================================================================================
-Running On Windows Build ${env:full_winbuild}. If you want to open the installation help, press "i" or "I" on your keyboard.
+Running On Windows Build ${env:Full_WindowsBuild}. If you want to open the installation help, press "i" or "I" on your keyboard.
 We strongly recommend you read the installation guide so that you know how to use this tool.
 ========================================================================================================================
 "@
@@ -4923,7 +4930,7 @@ elseif ($Language -eq "fr") {
     $text = @"
 ALOSToy est une nouvelle version de la boîte à outils Ventoy qui vous aide à diagnostiquer les PC. ${env:Author} est le seul développeur à avoir créé ALOSToy. Il s'agit d'une boîte à outils Ventoy différente, destinée à moderniser cet outil vieux de 5,6 ans. ALOSToy est la première boîte à outils Ventoy au monde à proposer un programme d'installation pour AaravLegend-OS et ChromeOS, patché avec Brunch pour démarrer sur tous les ordinateurs.
 ========================================================================================================================
-Exécution sous Windows, version ${env:full_winbuild}. Si vous souhaitez afficher l'aide à l'installation, appuyez sur la touche « i » ou « I » de votre clavier.
+Exécution sous Windows, version ${env:Full_WindowsBuild}. Si vous souhaitez afficher l'aide à l'installation, appuyez sur la touche « i » ou « I » de votre clavier.
 Nous vous recommandons vivement de lire le guide d'installation afin de savoir comment utiliser cet outil.
 ========================================================================================================================
 "@
@@ -4933,7 +4940,7 @@ elseif ($Language -eq "de") {
     $text = @"
 ALOSToy ist eine neue Version eines beliebigen Ventoy-Toolkits, das Ihnen bei der Diagnose von PCs hilft. ${env:Author} hat ALOSToy als einziger Entwickler erstellt. Es handelt sich um ein eigenständiges Ventoy-Toolkit, das das 5,6 Jahre alte Tool modernisieren soll. ALOSToy ist das weltweit erste Ventoy-Toolkit, das einen Installer für AaravLegend-OS und ChromeOS enthält, der mit Brunch gepatcht ist, um auf allen Computern zu booten.
 ========================================================================================================================
-Läuft unter Windows-Build ${env:full_winbuild}. Wenn Sie die Installationshilfe öffnen möchten, drücken Sie „i“ oder „I“ auf Ihrer Tastatur.
+Läuft unter Windows-Build ${env:Full_WindowsBuild}. Wenn Sie die Installationshilfe öffnen möchten, drücken Sie „i“ oder „I“ auf Ihrer Tastatur.
 Wir empfehlen Ihnen dringend, die Installationsanleitung zu lesen, damit Sie wissen, wie Sie dieses Tool verwenden.
 ========================================================================================================================
 "@
@@ -4943,7 +4950,7 @@ elseif ($Language -eq "es") {
     $text = @"
 ALOSToy es una nueva versión de cualquier kit de herramientas de Ventoy que te ayuda a diagnosticar ordenadores. ${env:Author} es el único desarrollador de ALOSToy. Se trata de un kit de herramientas de Ventoy diferente, diseñado para modernizar esa herramienta que ya tiene 5,6 años. ALOSToy es el primer kit de herramientas de Ventoy del mundo que incluye un instalador para AaravLegend-OS y ChromeOS, parcheado con Brunch para que se inicie en todos los ordenadores.
 ========================================================================================================================
-Se está ejecutando en la compilación de Windows ${env:full_winbuild}. Si quieres abrir la ayuda de instalación, pulsa «i» o «I» en el teclado.
+Se está ejecutando en la compilación de Windows ${env:Full_WindowsBuild}. Si quieres abrir la ayuda de instalación, pulsa «i» o «I» en el teclado.
 Te recomendamos encarecidamente que leas la guía de instalación para saber cómo utilizar esta herramienta.
 ========================================================================================================================
 "@
@@ -4953,7 +4960,7 @@ elseif ($Language -eq "it") {
     $text = @"
 ALOSToy è una nuova versione del toolkit Ventoy che consente di eseguire la diagnostica dei PC. ${env:Author} è l’unico sviluppatore di ALOSToy. Si tratta di un toolkit Ventoy diverso, pensato per modernizzare quello ormai vecchio di 5,6 anni. ALOSToy è il primo toolkit Ventoy al mondo a includere un programma di installazione per AaravLegend-OS e ChromeOS, patchato con Brunch per consentire l’avvio su tutti i computer.
 ========================================================================================================================
-In esecuzione su Windows Build ${env:full_winbuild}. Se desideri aprire la guida all’installazione, premi il tasto “i” o “I” sulla tastiera.
+In esecuzione su Windows Build ${env:Full_WindowsBuild}. Se desideri aprire la guida all’installazione, premi il tasto “i” o “I” sulla tastiera.
 Ti consigliamo vivamente di leggere la guida all’installazione per imparare a utilizzare questo strumento.
 ========================================================================================================================
 "@
@@ -4963,7 +4970,7 @@ elseif ($Language -eq "ja") {
     $text = @"
 ALOSToyは、PCの診断に役立つVentoyツールキットの新バージョンです。 ${env:Author} が唯一の開発者としてALOSToyを構築しました。これは、5.6年前にリリースされた既存のツールを現代化することを目的とした、従来のVentoyツールキットとは異なるものです。ALOSToyは、あらゆるコンピュータで起動できるようBrunchでパッチが適用されたAaravLegend-OSおよびChromeOS用のインストーラーを搭載した、世界初のVentoyツールキットです。
 ========================================================================================================================
-Windows ビルド ${env:full_winbuild} 上で実行中です。インストールヘルプを開きたい場合は、キーボードの「i」または「I」キーを押してください。
+Windows ビルド ${env:Full_WindowsBuild} 上で実行中です。インストールヘルプを開きたい場合は、キーボードの「i」または「I」キーを押してください。
 このツールの使い方を理解するため、インストールガイドを必ずお読みになることを強くお勧めします。
 ========================================================================================================================
 "@
@@ -4973,7 +4980,7 @@ elseif ($Language -eq "ko") {
     $text = @"
 ALOSToy는 PC 진단에 도움을 주는 Ventoy 툴킷의 새로운 버전입니다. ${env:Author} 가 유일한 개발자로서 ALOSToy를 제작했습니다. 이 툴킷은 출시된 지 5.6년이 지난 기존 Ventoy 툴킷을 현대화하기 위해 개발된 새로운 버전입니다. ALOSToy는 모든 컴퓨터에서 부팅될 수 있도록 Brunch 패치가 적용된 AaravLegend-OS 및 ChromeOS용 설치 프로그램을 탑재한 세계 최초의 Ventoy 툴킷입니다.
 ========================================================================================================================
-Windows 빌드 ${env:full_winbuild} 에서 실행 중입니다. 설치 안내를 보려면 키보드의 “i” 또는 “I” 키를 누르십시오.
+Windows 빌드 ${env:Full_WindowsBuild} 에서 실행 중입니다. 설치 안내를 보려면 키보드의 “i” 또는 “I” 키를 누르십시오.
 이 도구의 사용 방법을 숙지하기 위해 설치 가이드를 꼭 읽어보실 것을 강력히 권장합니다.
 ========================================================================================================================
 "@
