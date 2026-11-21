@@ -127,12 +127,26 @@ rem Define the author.
 set "Author=Aarav Katariya"
 rem Define the version. (Will always remain in 1.X.X.X format.)
 set "Version=1.0.3.3"
+set "UserTypedLang=0"
+rem Define the main url. ALWAYS HTTPS, NEVER HTTP.
+set UserRepo=AaravLegend-OS/alostoy-installer
+set "InstallerRepo=https://github.com/!UserRepo!"
+set "Uri=!InstallerRepo!/raw/refs/heads/main/tools.esd"
 for /f "skip=2 tokens=2*" %%A in ('reg query "HKEY_CURRENT_USER\Control Panel\International" /v "LocaleName"') do (
     set "OSLanguage=%%B"
     set "lang=!OSLanguage:~0,2!"
     set "locale=!OSLanguage:~3,5!"
     set "OSLanguage="
 )
+set "QuickEdit=On"
+rem Arguments starting with "I_" are supposed to be internal use only.
+if /i "%~1"=="I_QEOff" set "QuickEdit=Off"
+rem Accept the language argument early, before the main parser.
+rem This argument can appear anywhere in the command line.
+call :ParseLanguage !UserArgs!
+goto InitialChecks
+:InitialChecks
+rem Change window title to happen immediately after enabling delayed expansion.
 call :WindowTitle "STARTING [Part 1]"
 rem The official way to check for admin in batch. Even Microsoft says this too.
 net session >nul 2>&1
@@ -144,6 +158,25 @@ if !errorlevel! gtr 0 (
         start /b powershell -nop -nol -ExecutionPolicy Bypass -WindowStyle Hidden -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Necessary administrator permissions was denied or rejected. Exiting...',$env:Program,'OK','Error') | Out-Null"
         endlocal
         exit 1
+    )
+)
+if "!QuickEdit!"=="Off" (
+    set "LangOutput=!TEMP!\ALOSToy_Language_!RANDOM!.tmp"
+    call :PowerShell_Helper "LanguageValidation" > "!LangOutput!"
+    set "LangExit=!errorlevel!"
+    if exist "!LangOutput!" (
+        set /p "lang="<"!LangOutput!"
+        del /f /q "!LangOutput!" >nul 2>&1
+    )
+    if "!LangExit!"=="27" (
+        endlocal
+        exit /b 27
+    )
+    if "!LangExit!" neq "0" (
+        echo Language validation failed.
+        pause
+        endlocal
+        exit /b 1
     )
 )
 rem Archetecture restarts if needed.
@@ -182,12 +215,15 @@ rem argument parser.
 for %%A in (!UserArgs!) do (
     if /i "%%A"=="/HideGPLNotice" (
         set "GPLNotice=0"
+        shift
         goto Start
     ) else if /i "%%A"=="-HideGPLNotice" (
         set "GPLNotice=0"
+        shift
         goto Start
     ) else if "%%A"=="--Hide-GPL-Notice" (
         set "GPLNotice=0"
+        shift
         goto Start
     )
 )
@@ -233,10 +269,6 @@ set "LogStamp=!D!-!T!"
 set "LogStamp=!LogStamp:/=-!"
 set "LogStamp=!LogStamp::=-!"
 set "LogStamp=!LogStamp: =0!"
-rem Define the main url. ALWAYS HTTPS, NEVER HTTP.
-set UserRepo=AaravLegend-OS/alostoy-installer
-set "InstallerRepo=https://github.com/!UserRepo!"
-set "Uri=!InstallerRepo!/raw/refs/heads/main/tools.esd"
 rem Write a new timestamped log.
 if not exist "!Root!logs" md "!Root!logs"
 set "logfile=!Root!logs\ALOSTOY-INSTALLER_!LOGSTAMP!.LOG"
@@ -332,9 +364,6 @@ for /f "tokens=2 delims=[]" %%A in ('ver') do (
     )
 )
 if /i "%~1"=="/?" (set "StartHelp=1") else if /i "%~1"=="-?" (set "StartHelp=1") else if "%~1"=="--?" (set "StartHelp=1") else if /i "%~1"=="/H" (set "StartHelp=1") else if /i "%~1"=="-H" (set "StartHelp=1") else if "%~1"=="--H" (set "StartHelp=1") else if /i "%~1"=="/Help" (set "StartHelp=1") else if /i "%~1"=="-Help" (set "StartHelp=1") else if "%~1"=="--Help" (set "StartHelp=1")
-set "QuickEdit=On"
-rem Arguments starting with "I_" are supposed to be internal use only.
-if /i "%~1"=="I_QEOff" set "QuickEdit=Off"
 if "!Or-Any-Later-Version!"=="False" (
     rem Allow user to still open help even with mismatched licence files.
     if !StartHelp! lss 1 (
@@ -531,7 +560,6 @@ set "Administrator_UACStatus="
 set "CurrentSID="
 set "UACStatus="
 set "Target="
-
 goto CLI_Arguments
 :CLI_Arguments
 rem ALL ARGUMENTS ARE CASE-INSENSITIVE.
@@ -575,7 +603,7 @@ rem Parse arguments cleanly in PowerShell. It works for me and is more efficient
 rem It makes sense because batch cannot do or, and, is, like, in or match checks.
 rem Using variable case-sensitivity for arguments.
 rem A much better argparser. Love it.
-for /f "delims=" %%A in ('powershell -nop -nol -ExecutionPolicy Bypass -c "function Match([string]$Left, [string]$Right) { if ($env:CaseSensitive -match '^(1|true|yes|on)$') { return $Left -ceq $Right } else { return $Left -ieq $Right } }; if ((Match $env:ArgName '?') -or (Match $env:ArgName 'Help') -or (Match $env:ArgName 'H')) { Write-Output 'Help' } elseif ((Match $env:ArgName 'NoBanner') -or (Match $env:ArgName 'No-Banner')) { Write-Output 'NoBanner' } elseif ((Match $env:ArgName 'ForceBanner') -or (Match $env:ArgName 'Force-Banner')) { Write-Output 'ForceBanner' } elseif ((Match $env:ArgName 'LogFile') -or (Match $env:ArgName 'Log-File')) { Write-Output 'LogFile' } elseif (Match $env:ArgName 'Product') { Write-Output 'Product' } elseif ((Match $env:ArgName 'VentoyVersion') -or (Match $env:ArgName 'Ventoy-Version')) { Write-Output 'VentoyVersion' } elseif ((Match $env:ArgName 'DownloadVentoyVersion') -or (Match $env:ArgName 'Download-Ventoy-Version')) { Write-Output 'DownloadVentoyVersion' } elseif ((Match $env:ArgName 're1') -or (Match $env:ArgName 're2') -or (Match $env:ArgName 'qedit')) { Write-Output 'Arch_Relaunch' } elseif ((Match $env:ArgName 'NoUpdate') -or (Match $env:ArgName 'No-Update')) { Write-Output 'Do_Not_Update' } elseif ((Match $env:ArgName 'ForceUpdate') -or (Match $env:ArgName 'Force-Update')) { Write-Output 'Always_Update' } elseif (Match $env:ArgName 'Updated') { Write-Output 'Successful_Update' } elseif ((Match $env:ArgName 'AutoUpdate') -or (Match $env:ArgName 'Auto-Update')) { Write-Output 'Auto_Update_Prg' } elseif ((Match $env:ArgName 'HideGPLNotice') -or (Match $env:ArgName 'Hide-GPL-Notice')) { Write-Output 'Inhibit_GPL_Notice' } elseif (Match $env:ArgName 'About') { Write-Output 'About_Program' } else { Write-Output 'Other' }"') do set "ArgKind=%%A"
+for /f "delims=" %%A in ('powershell -nop -nol -ExecutionPolicy Bypass -c "function Match([string]$Left, [string]$Right) { if ($env:CaseSensitive -match '^(1|true|yes|on)$') { return $Left -ceq $Right } else { return $Left -ieq $Right } }; if ((Match $env:ArgName '?') -or (Match $env:ArgName 'Help') -or (Match $env:ArgName 'H')) { Write-Output 'Help' } elseif ((Match $env:ArgName 'NoBanner') -or (Match $env:ArgName 'No-Banner')) { Write-Output 'NoBanner' } elseif ((Match $env:ArgName 'ForceBanner') -or (Match $env:ArgName 'Force-Banner')) { Write-Output 'ForceBanner' } elseif ((Match $env:ArgName 'LogFile') -or (Match $env:ArgName 'Log-File')) { Write-Output 'LogFile' } elseif (Match $env:ArgName 'Product') { Write-Output 'Product' } elseif ((Match $env:ArgName 'VentoyVersion') -or (Match $env:ArgName 'Ventoy-Version')) { Write-Output 'VentoyVersion' } elseif ((Match $env:ArgName 'DownloadVentoyVersion') -or (Match $env:ArgName 'Download-Ventoy-Version')) { Write-Output 'DownloadVentoyVersion' } elseif ((Match $env:ArgName 're1') -or (Match $env:ArgName 're2') -or (Match $env:ArgName 'qedit')) { Write-Output 'Arch_Relaunch' } elseif ((Match $env:ArgName 'NoUpdate') -or (Match $env:ArgName 'No-Update')) { Write-Output 'Do_Not_Update' } elseif ((Match $env:ArgName 'ForceUpdate') -or (Match $env:ArgName 'Force-Update')) { Write-Output 'Always_Update' } elseif (Match $env:ArgName 'Updated') { Write-Output 'Successful_Update' } elseif ((Match $env:ArgName 'AutoUpdate') -or (Match $env:ArgName 'Auto-Update')) { Write-Output 'Auto_Update_Prg' } elseif ((Match $env:ArgName 'HideGPLNotice') -or (Match $env:ArgName 'Hide-GPL-Notice')) { Write-Output 'Inhibit_GPL_Notice' } elseif (Match $env:ArgName 'About') { Write-Output 'About_Program' } elseif (Match $env:ArgName 'Language') { Write-Output 'Language' } else { Write-Output 'Other' }"') do set "ArgKind=%%A"
 rem Help arguments. Open the Command-Line Help Guide...
 if /i "!ArgKind!"=="Help" (
     call :WindowTitle "Starting Help Guide..."
@@ -977,10 +1005,18 @@ if /i "!ArgKind!"=="DownloadVentoyVersion" (
         )
     )
 )
+rem About Program argument.
 if /i "!ArgKind!"=="About_Program" (
     set "ShowAbout=1"
     shift
-    goto AboutProgram
+    goto CLI_Arguments
+)
+rem Language argument placeholder. Only here to
+rem make this argument valid.
+if /i "!ArgKind!"=="Language" (
+    shift
+    shift
+    goto CLI_Arguments
 )
 rem Architecture relaunch. Do not document or use. Only to be executed from:
 rem x86 process on Windows 11 or Windows 10 x64. (Restart in x64.)
@@ -1111,6 +1147,7 @@ if "!ArgumentsPassed!"=="True" (
     echo Arguments passed: !Args!
     echo ========================================================================================================================
 )
+if "!ShowAbout!"=="1" goto AboutProgram
 echo Working Directory: !CD!
 if /i "!AlwaysShowBanner!"=="Yes" set "ShowBanner=Yes"
 rem Show the Ventoy Download Mode message if selected.
@@ -3611,7 +3648,7 @@ set "BrowsingHelp=False"
 set "StartPage="
 if "!HelpFromMain!"=="0" (set "WSH=Hidden") else if "!HelpFromMain!"=="1" (set "WSH=Normal")
 call :WindowTitle "GOOD LUCK WITH THE ARGUMENTS."
-if "!ArgPrefix!"=="--" (start /b powershell -nop -nol -WindowStyle !WSH! -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.Messagebox]::Show(\"If you prefer to use ${env:ArgPrefix}, then all arguments are case-sensitive. Type it exactly as I show you.!NewLine!!NewLine!You must use the same prefix for all arguments.!NewLine!!NewLine!Choose a prefix and use that only. ^(Only per session.^)!NewLine!!NewLine!Like !ArgPrefix! for example.!NewLine!!NewLine!Using / or - makes them case-insensitive.\",$env:Program,'OK','Info') | Out-Null; [System.Windows.Messagebox]::Show(\"You probably came from GNU linux and programs. Most likely, --long-options are familiar with you. All arguments ARE case-sensitive for you. Every single one. I know your habits for case-sensitivity. Use Train-Case.!NewLine!!NewLine!Like --Ventoy-Version for example.\",$env:Program,'OK','Info') | Out-Null") else (start /b powershell -nop -nol -WindowStyle !WSH! -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.Messagebox]::Show(\"If you prefer to use ${env:ArgPrefix}, then all arguments are case-insensitive. You do not have to worry about casing.!NewLine!!NewLine!You must use the same prefix for all arguments.!NewLine!!NewLine!Choose a prefix and use that only. ^(Only per session.^)!NewLine!!NewLine!Like !ArgPrefix! for example.!NewLine!!NewLine!Using -- makes them case-sensitive.\",$env:Program,'OK','Info') | Out-Null")
+if "!ArgPrefix!"=="--" (start /b powershell -nop -nol -WindowStyle !WSH! -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.Messagebox]::Show(\"If you prefer to use ${env:ArgPrefix}, then all arguments are case-sensitive. Type it exactly as I show you.!NewLine!!NewLine!You must use the same prefix for all arguments.!NewLine!!NewLine!Choose a prefix and use that only. ^(Only per session.^)!NewLine!!NewLine!Like !ArgPrefix! for example.!NewLine!!NewLine!Using / or - makes them case-insensitive.\",$env:Program,'OK','Info') | Out-Null; [System.Windows.Messagebox]::Show(\"You probably came from GNU linux and programs. Most likely, --long-options are familiar with you. All arguments ARE case-sensitive for you. Every single one. I know your habits for case-sensitivity. Use Train-Case.!NewLine!!NewLine!Like --Ventoy-Version for example.\",$env:Program,'OK','Info') | Out-Null"; [System.Windows.MessageBox]::Show(\"If you want to override the installer language, use:!NewLine!!NewLine!${env:ArgPrefix}Language\",$env:Program,'OK','Info') | Out-Null) else (start /b powershell -nop -nol -WindowStyle !WSH! -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.Messagebox]::Show(\"If you prefer to use ${env:ArgPrefix}, then all arguments are case-insensitive. You do not have to worry about casing.!NewLine!!NewLine!You must use the same prefix for all arguments.!NewLine!!NewLine!Choose a prefix and use that only. ^(Only per session.^)!NewLine!!NewLine!Like !ArgPrefix! for example.!NewLine!!NewLine!Using -- makes them case-sensitive.\",$env:Program,'OK','Info') | Out-Null; [System.Windows.MessageBox]::Show(\"If you want to override the installer language, use:!NewLine!!NewLine!${env:ArgPrefix}Language\",$env:Program,'OK','Info') | Out-Null")
 title 
 if "!HelpFromMain!"=="1" (
     set "HelpFromMain=0"
@@ -4551,9 +4588,19 @@ if "!FinalConfirm!"=="Yes, I acknowledge that all partitions of disk !Disk! will
     diskpart /s "!Root!diskpart_wipe.txt" >> "!logfile!"
     echo !DATE! !TIME! Finish diskpart log.>> "!logfile!"
     del "!Root!diskpart_wipe.txt" /f /q >nul
-    start /b powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Uninstallation has been completed. Thank you for choosing ALOSToy. If the partition is not formatted (i.e, the filesystem is RAW), you must manually format it. The partition on disk !Disk! should be available.',$env:Program,'OK','Info') | Out-Null"
-    set "ResetVars=1"
-    goto Main
+    cls
+    for /f "delims=" %%# in ('powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Uninstallation has been completed. Thank you for choosing ALOSToy. If the partition is not formatted (i.e, the filesystem is RAW), you must manually format it. The partition on disk !Disk! should be available. Do you want to return to the main menu?',$env:Program,'YesNo','Info') | Out-Null"') do (
+        if "%%#"=="Yes" (
+            set "ResetVars=1"
+            goto Main
+        ) else if "%%#"=="No" (
+            endlocal
+            exit 0
+        ) else (
+            set "errorcode=Unknown choice. Maybe failed PowerShell command?"
+            goto Error
+        )
+    )
 ) else (
     del "!Root!diskpart_wipe.txt" /f /q >nul
     set "FinalConfirm="
@@ -4564,6 +4611,28 @@ cls
 call :WindowTitle "ABOUT THIS PROGRAM"
 call :PowerShell_Helper "PS-About_Program"
 exit 0
+goto :eof
+:ParseLanguage
+if "%~1"=="" exit /b 0
+rem Case-insensitive.
+if /i "%~1"=="/Language" goto ReadLanguage
+rem Case-insensitive.
+if /i "%~1"=="-Language" goto ReadLanguage
+rem Case-sensitive.
+if "%~1"=="--Language" goto ReadLanguage
+shift
+goto ParseLanguage
+:ReadLanguage
+if "%~2"=="" (
+    echo You need to input a valid language code.
+    pause
+    exit 27
+)
+set "lang=%~2"
+shift
+shift
+goto ParseLanguage
+:UnusedLabel_CommentOnly
 rem =======================================================
 rem The rest of the code below down to the end of the
 rem installer file, is all embedded PowerShell that will
@@ -4817,29 +4886,8 @@ try {
 $size = (Get-Volume -DriveLetter $env:drivepath).Size
 # On all size checks, we add a small buffer so that
 # you have some small amount of space left to use.
-if ($env:product -ieq "Standard") {
-    if ($env:InstallExtensions -ieq "True") {
-        if ($size -lt 123842994200) {
-            Exit 1
-        } else {
-            Exit 0
-        }
-    } elseif ($env:InstallExtensions -ieq "False") {
-        if ($size -lt 54104350800) {
-            Exit 1
-        } else {
-            Exit 0
-        }
-    } else {
-        Exit 2
-    }
-} elseif ($env:product -ieq "Extended") {
-    if ($size -lt 193504030800) {
-        Exit 1
-    } else {
-        Exit 0
-    }
-}
+if ($env:product -ieq "Standard") { if ($env:InstallExtensions -ieq "True") { if ($size -lt 123842994200) { Exit 1 } else { Exit 0 } } elseif ($env:InstallExtensions -ieq "False") { if ($size -lt 54104350800) { Exit 1 } else { Exit 0 } } else { Exit 2 }
+} elseif ($env:product -ieq "Extended") { if ($size -lt 193504030800) { Exit 1 } else { Exit 0 } }
 :Post_SizeValidation
 :Hash_BinFiles
 # A sub-wrapper to hash every single individual file using a hashtable of files and hashes.
@@ -7566,18 +7614,54 @@ $CloseButton.Add_Click({
 })
 $Window.Add_Closing({
     param($sender, $e)
-    $e.Cancel = if ($script:DenyClose) { $true }
+    $e.Cancel = $script:DenyClose
 })
 $Window.Add_Closed({
     param($sender, $e)
-    [System.Windows.MessageBox]::Show("Now you should know about this program and the origins.`r`n`r`nClick on OK to exit.`r`nNote: You can start this program again if you want.",$env:Program,'OK','Info') | Out-Null
+    [System.Windows.MessageBox]::Show("Now you should know about this program and the origins. Click on OK to exit.`r`n`r`nNote: You can start this program again if you want...",$env:Program,'OK','Info') | Out-Null
 })
 Apply-Theme
 Show-AboutPage
 $null = $Window.ShowDialog()
 exit 0
 :Post_PS-About_Program
+:LanguageValidation
+$ErrorActionPreference = 'Stop'
+Add-Type -AssemblyName PresentationFramework
+$ValidLanguages = @('en','fr','es','de','it','ja','ko')
+function Display-Message($Message, $Level) { [System.Windows.MessageBox]::Show($Message,$env:Program,'OK',$Level) | Out-Null }
+if ($env:lang -cin $ValidLanguages) {
+    Write-Output $env:lang
+    Exit 0
+}
+if ($env:UserTypedLang -eq '1') {
+    Clear-Host
+    Display-Message "Your language is not valid. If you want your language to be added, please file an issue on the official GitHub repository, which is at:`r`n$env:InstallerRepo" 'Error'
+    Exit 27
+}
+Display-Message 'The language value is invalid because this language does not exist.' 'Error'
+Clear-Host
+$Selection = Read-Host @'
+============================
+Your language options are:
+English  (type "en")
+French   (type "fr")
+German   (type "de")
+Spanish  (type "es")
+Italian  (type "it")
+Japanese (type "ja")
+Korean   (type "ko")
+============================
+Make a choice (input is case-sensitive)
+'@
+if ($Selection -cin $ValidLanguages) {
+    Write-Output $Selection
+    Exit 0
+}
+Write-Output '__INVALID__'
+Exit 27
+:Post_LanguageValidation
 rem End of installer, leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 7584 (7583 without extra newline).
+rem Total line count: 7668 (7667 without extra newline).
 rem Made by Aarav Katariya with love and care...
