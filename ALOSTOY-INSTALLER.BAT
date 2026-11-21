@@ -1,7 +1,7 @@
 @rem ===================================================================
 @rem                ALOSToy Installer By Aarav Katariya
 @rem                  Program encoding: UTF-8 (No BOM)
-@rem                      Program language: EN-GB
+@rem                  Program language: EN-GB (Mostly)
 @rem    Repo: https://www.github.com/AaravLegend-OS/alostoy-installer
 @rem                   Newline sequence: CRLF (Windows)
 @rem          Program Licence: GNU GPLv3 "or any later version"
@@ -142,7 +142,8 @@ set "QuickEdit=On"
 rem Arguments starting with "I_" are supposed to be internal use only.
 if /i "%~1"=="I_QEOff" set "QuickEdit=Off"
 rem Accept the language argument early, before the main parser.
-rem This argument can appear anywhere in the command line.
+rem This argument can appear anywhere in the command line. It
+rem overrides the automatically detected language with your own.
 call :ParseLanguage !UserArgs!
 goto InitialChecks
 :InitialChecks
@@ -4590,7 +4591,7 @@ if "!FinalConfirm!"=="Yes, I acknowledge that all partitions of disk !Disk! will
     echo !DATE! !TIME! Finish diskpart log.>> "!logfile!"
     del "!Root!diskpart_wipe.txt" /f /q >nul
     cls
-    for /f "delims=" %%# in ('powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Uninstallation has been completed. Thank you for choosing ALOSToy. If the partition is not formatted (i.e, the filesystem is RAW), you must manually format it. The partition on disk !Disk! should be available. Do you want to return to the main menu?',$env:Program,'YesNo','Info') | Out-Null"') do (
+    for /f "delims=" %%# in ('powershell -nop -nol -c "Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Uninstallation has been completed. Thank you for choosing ALOSToy. If the partition is not formatted (i.e, the filesystem is RAW), you must manually format it. The partition on disk !Disk! should be available. Do you want to return to the main menu?',$env:Program,'YesNo','Info')"') do (
         if "%%#"=="Yes" (
             set "ResetVars=1"
             goto Main
@@ -6092,9 +6093,9 @@ exit 0
 :PS_EndMessages
 Add-Type -AssemblyName PresentationFramework
 if ($env:ProductDefinedWithArg -ieq 'True') { [System.Windows.MessageBox]::Show("Your bootable ALOSToy $env:product drive has been successfully created. Enjoy.",$env:Program,'OK','Info') | Out-Null }
-[System.Windows.MessageBox]::Show('Share this installer with your friends or other people as well. Help them save their pc''s too.',$env:Program,'OK','Info') | Out-Null
-[System.Windows.MessageBox]::Show("If you have any other custom Windows PE''s you want to carry, copy them to ${env:drivepath}:\WinPE or any ALOSToy drive with the /WinPE folder.",$env:Program,'OK','Info') | Out-Null
-[System.Windows.MessageBox]::Show("If you have any of your own Windows Installation Media, copy them to:${env:NewLine}${env:drivepath}:\OSimages\Windows or any other drive with /OSImages/Windows.${env:NewLine}${env:NewLine}If you have any of your own Linux Installation Media, copy them to:${env:NewLine}${env:drivepath}:\OSimages\Linux or any other drive with /OSimages/Linux.",$env:Program,'OK','Info') | Out-Null
+[System.Windows.MessageBox]::Show("Share this installer with your friends or other people as well. Help them save their pc's too.",$env:Program,'OK','Info') | Out-Null
+[System.Windows.MessageBox]::Show("If you have any other custom Windows PE's you want to carry, copy them to ${env:drivepath}:\WinPE or any ALOSToy drive with the /WinPE folder.",$env:Program,'OK','Info') | Out-Null
+[System.Windows.MessageBox]::Show("If you have any of your own Windows Installation Media, copy them to:`r`n${env:drivepath}:\OSimages\Windows or any other drive with /OSImages/Windows.`r`n`r`nIf you have any of your own Linux Installation Media, copy them to:`r`n${env:drivepath}:\OSimages\Linux or any other drive with /OSimages/Linux.",$env:Program,'OK','Info') | Out-Null
 if ($env:RedoInstall -eq 'No') {
     $Response = [System.Windows.MessageBox]::Show('Do you want to delete the bin folder since installation is complete?',$env:Program,'YesNo','Question')
     if ($Response -eq ([System.Windows.MessageBoxResult]::Yes)) {
@@ -6856,9 +6857,11 @@ namespace Ventoy
                     )
                     if ($StillPresent.Count -eq 0) { return }
                     $script:DiskPickerResult = [string]$ChosenDiskNumber
+                    $script:AllowClose = $true
                     $Window.Close()
                 } catch {
                     $script:DiskPickerResult = 'None'
+                    $script:AllowClose = $true
                     $Window.Close()
                 }
             }
@@ -7664,5 +7667,5 @@ Exit 27
 :Post_LanguageValidation
 rem End of installer, leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 7669 (7668 without extra newline).
+rem Total line count: 7672 (7671 without extra newline).
 rem Made by Aarav Katariya with love and care...
