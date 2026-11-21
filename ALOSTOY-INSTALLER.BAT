@@ -4246,8 +4246,9 @@ if "!SuccessfulBackup!"=="1" (
     echo The backup could not be created^^!
     echo We will continue to use V!VERSION! anyway.
     echo Check if the backup logic is working.
-    timeout /t 3 /NOBREAK >nul
+    timeout /t 3 >nul
     cls
+    call :InstallerTitle
     goto Continue
 )
 :DisableQuickEdit
@@ -7663,5 +7664,5 @@ Exit 27
 :Post_LanguageValidation
 rem End of installer, leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 7668 (7667 without extra newline).
+rem Total line count: 7669 (7668 without extra newline).
 rem Made by Aarav Katariya with love and care...
