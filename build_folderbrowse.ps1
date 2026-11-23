@@ -36,7 +36,7 @@ try {
     if ((Test-Path -LiteralPath "${PSScriptRoot}\folderbrowse.ps1") -and (Test-Path -LiteralPath "${PSScriptRoot}\folderbrowse.ico")) { ps2exe -InputFile "${PSScriptRoot}\folderbrowse.ps1" -OutputFile "${PSScriptRoot}\folderbrowse.exe" -x64 -STA -IconFile "${PSScriptRoot}\folderbrowse.ico" -Title "Folder Browser" -Description "An effective folder picker." -Company "AaravLegend-Inc" -Product "Folder Browser" -Copyright "Copyright (C) Aarav Katariya 2023-2027" -Trademark "AaravLegend-Inc" -Version "1.0.0.0" -RequireAdmin -SupportOS -LongPaths | Out-Null }
     # If we succeed.
     if ($?) {
-        Write-Host "The compile succeeded!" -ForegroundColor Green
+        Write-Host "The compile succeeded! SHA256 hashes will be copied to clipboard." -ForegroundColor Green
         if (-not ($KeepSourceFiles)) { foreach ($item in $items) { Remove-Item -LiteralPath "${PSScriptRoot}\$item" -Force -ErrorAction Continue } }
         if (-not (Test-Path -LiteralPath "${PSScriptRoot}\bin")) { New-Item -Path "${PSScriptRoot}\bin" -ItemType Directory -Force }
         foreach ($file in @('folderbrowse.exe','folderbrowse.exe.config')) { Move-Item -LiteralPath "${PSScriptRoot}\$file" -Destination "${PSScriptRoot}\bin" -Force; Set-Clipboard -Value $((Get-FileHash -LiteralPath "${PSScriptRoot}\bin\$file" -Algorithm SHA256).Hash.ToUpper()); Start-Sleep -Milliseconds 1500 }
@@ -50,5 +50,6 @@ try {
     Pause
     Exit 1
 }
+
 
 
