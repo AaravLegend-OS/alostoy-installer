@@ -20,7 +20,7 @@ if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administra
 Clear-Host
 Write-Host "Compile in progress!" -ForegroundColor Yellow
 # Install ps2exe module.
-Install-Module -Name ps2exe -Scope AllUsers -Force
+try { Install-Module -Name ps2exe -Scope AllUsers } catch {}
 # Import module.
 Import-Module ps2exe -Force
 $items = @('folderbrowse.ps1','folderbrowse.ico')
@@ -50,4 +50,5 @@ try {
     Pause
     Exit 1
 }
+
 
