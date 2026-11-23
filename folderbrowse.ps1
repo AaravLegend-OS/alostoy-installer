@@ -1,5 +1,6 @@
 #Requires -PSEdition Desktop
 #Requires -Version 5.1
+#Requires -RunAsAdministrator
 <#
 ===========================================================================
 Compile this with ps2exe for the executable version seen in the installer!
@@ -53,8 +54,10 @@ function Get-ThemeColors {
 }
 function Set-ThemeBrush {
     param(
-        [Parameter(Mandatory)][string]$Key,
-        [Parameter(Mandatory)][string]$Hex
+        [Parameter(Mandatory)]
+        [string]$Key,
+        [Parameter(Mandatory)]
+        [string]$Hex
     )
     $Window.Resources[$Key] = [System.Windows.Media.BrushConverter]::new().ConvertFromString($Hex)
 }
@@ -211,7 +214,6 @@ function Display-Prompt {
     $promptText.Text = $Prompt
     $inputBox.Text = $DefaultValue
     $script:PopupValue = $null
-    $script:DenyClose = $true
     $okBtn.Add_Click({
         $script:PopupValue = $inputBox.Text
         $dialog.DialogResult = $true
@@ -392,15 +394,6 @@ function Display-Prompt {
                     <ComboBoxItem Content="Light Mode"/>
                     <ComboBoxItem Content="Auto"/>
                 </ComboBox>
-                <Button x:Name="CloseButton"
-                        Grid.Column="2"
-                        Width="46"
-                        Height="32"
-                        Content="✕"
-                        Background="{DynamicResource Bg}"
-                        BorderThickness="0"
-                        Foreground="{DynamicResource TextBrushWhite}"
-                        Cursor="Hand"/>
             </Grid>
             <Grid Grid.Row="1" Margin="12">
                 <TreeView x:Name="FolderTree"
@@ -458,7 +451,6 @@ $RefreshButton = $Window.FindName('RefreshButton')
 $NewFolderButton = $Window.FindName('NewFolderButton')
 $RenameButton = $Window.FindName('RenameButton')
 $DeleteButton = $Window.FindName('DeleteButton')
-$CloseButton = $Window.FindName('CloseButton')
 $TitleBar = $Window.FindName('TitleBar')
 $TitleText = $Window.FindName('TitleText')
 $ThemeComboBox = $Window.FindName('ThemeComboBox')
@@ -466,16 +458,11 @@ $Window.Title = $WindowTitle
 $TitleText.Text = $WindowTitle
 $script:ThemeMode = 'Auto'
 Apply-Theme
+$script:DenyClose = $true
 # Then map the buttons to the commands.
 $TitleBar.Add_MouseLeftButtonDown({
     param($sender, $e)
     if ($e.ChangedButton -eq [System.Windows.Input.MouseButton]::Left) { $Window.DragMove() }
-})
-$CloseButton.Add_Click({
-    $script:SelectedPath = $null
-    $Window.DialogResult = $false
-    $script:DenyClose = $false
-    $Window.Close()
 })
 $ThemeComboBox.Add_SelectionChanged({
     $selected = $ThemeComboBox.SelectedItem
@@ -516,12 +503,14 @@ $OkButton.Add_Click({
     if ($selected -and $selected.Tag) {
         $script:SelectedPath = [string]$selected.Tag
         $Window.DialogResult = $true
+        $script:DenyClose = $false
         $Window.Close()
     }
 })
 $CancelButton.Add_Click({
     $script:SelectedPath = $null
     $Window.DialogResult = $false
+    $script:DenyClose = $false
     $Window.Close()
 })
 $RefreshButton.Add_Click({ Refresh-Drives }) # Refresh button will reload all drives in the system.
@@ -616,4 +605,4 @@ $null = $Window.ShowDialog()
 # Finally, say out the selected path. (Used by a for /f loop in batch that calls the folder browser.)
 if ($SelectedPath) { Write-Output $SelectedPath } else { Write-Output "None" }
 # End of folderbrowse.exe. Made by Aarav Katariya with love and care...
-# Total line count: 619.
+# Total line count: 608
