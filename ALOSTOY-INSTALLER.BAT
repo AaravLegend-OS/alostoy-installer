@@ -74,16 +74,23 @@
 @rem We will turn off command echoing and then later reset
 @rem PATH and other system variables to their defaults.
 @set "CmdEchoing=off"
-@rem ========================================================================
+@rem =========================================================================
 @rem This does NOT print "off" or "on" literally. The echo command treats on
 @rem or off like a command to toggle command echoing. It is as if you use
 @rem "@echo off" or "@echo on"
 @echo !CmdEchoing!
-rem =========================================================================
+rem ==========================================================================
+rem Save the script name to relaunch and use. (Persists across arguments and
+rem relaunches.) A static variable is used to fix a bug where adding brackets
+rem breaks the script upon trying to set the path with a for loop.
+set "Script=%~nx0"
+set "FullScript=%~f0"
+set "PartialScript=%~n0"
+rem ==========================================================================
 rem Start by resetting path variables. Also, this fixes a WinPE problem where
 rem   powershell.exe is not in !PATH! variable by default, which is seen in
 rem                     Sergei Strelec's WinPE 10 and 11.
-rem =========================================================================
+rem ==========================================================================
 set "PathExt=.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC"
 set "SysPath=!SystemRoot!\System32"
 set "Path=!SystemRoot!\System32;!SystemRoot!;!SystemRoot!\System32\Wbem;!SystemRoot!\System32\WindowsPowerShell\v1.0\"
@@ -105,12 +112,6 @@ if exist "!SystemRoot!\System32\WindowsPowershell\v1.0\powershell.exe" (
     )
 )
 rem =========================================================================
-rem Save the script name to relaunch and use. (Persists across arguments and relaunches.)
-rem A for loop is more reliable because when arguments are parsed and shifted,
-rem %~nx0 could become the next argument.
-for /f "delims=" %%S in ('echo %~nx0') do set "Script=%%S"
-for /f "delims=" %%F in ('echo %~f0') do set "FullScript=%%F"
-for /f "delims=" %%P in ('echo %~n0') do set "PartialScript=%%P"
 rem Declare program name.
 set "Program=ALOSToy Installer"
 rem Initalise uninstall status to false.
@@ -126,7 +127,7 @@ if "!Script!" neq "ALOSTOY-INSTALLER.BAT" exit 1
 rem Define the author.
 set "Author=Aarav Katariya"
 rem Define the version. (Will always remain in 1.X.X.X format.)
-set "Version=1.0.3.3"
+set "Version=1.0.3.4"
 set "UserTypedLang=0"
 rem Define the main url. ALWAYS HTTPS, NEVER HTTP.
 set UserRepo=AaravLegend-OS/alostoy-installer
@@ -294,7 +295,7 @@ set "EXHashF=D55CDAAE3DD35900EF69DE063AA02C10DCCB8ED172B55434FDBB4E2F0378129C"
 set "EXHashG=0E417F999D42920282B9AD411E95372C692DC6FA21CDC15511F8F80EB04887CB"
 set "EXHashH=486265B9BA383F2ADB8B5C5F26B76148CDCEBAB7965ACE3B083F52080F6899D7"
 rem Store the tools hash and use it later. (Useful for hashing the tools.esd file and not trusting blindly.)
-set "ToolsHash=9BD5A46A4C6B4EF229426CCFC48EBE8AE7DB7783895934A8C4F5DDB01551A956"
+set "ToolsHash=AC346FED8F59F55451107863AD47083D5B11984E225A69F065E110B367AE4ADF"
 rem ======================================================================
 rem You can configure how new lines are represented in message boxes.
 rem Use `r`n for Windows style Carriage Return Line Feed newlines or use
@@ -4915,7 +4916,7 @@ $Root = $env:Root
     "${Root}bin\batbox.exe" = "9553BC17FA0FD08E026C1865812B3388E3D5495A5394BBF671E5A8F21C79989A"
     "${Root}bin\Box.bat" = "F164716E7B1F98F68F6CE3239345C30B3410ED9812F30B37BB7630F28047EBD9"
     "${Root}bin\Button.bat" = "03A86F9FCDCCBAA499EA4435434A45178E367639D8FB755C5211F304C70744B5"
-    "${Root}bin\folderbrowse.exe" = "416E877B7272F8E3A58A8795A8542E2E9162E5400AC931DFF631161C08C3967F"
+    "${Root}bin\folderbrowse.exe" = "726240DD4920407D8C418571845572EE11FCE81EC21EB23546C740C6C7CBB7A9"
     "${Root}bin\folderbrowse.exe.config" = "A122790E20A37DD3A16D42F4F089275558E94310BCB6DB11F71769B7C722AB39"
     "${Root}bin\GetInput.exe" = "3F5C64717A0092AE214154A730E96E2E56921BE2E3F1121A3E98B1BA84627665"
     "${Root}bin\Getlen.bat" = "83CE5342710A2F2E385A363402661E3426728DD6BCFE9D87E22F2FB858B07BDE"
@@ -7667,5 +7668,5 @@ Exit 27
 :Post_LanguageValidation
 rem End of installer, leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 7672 (7671 without extra newline).
+rem Total line count: 7674 (7673 without extra newline).
 rem Made by Aarav Katariya with love and care...
