@@ -295,7 +295,7 @@ set "EXHashF=D55CDAAE3DD35900EF69DE063AA02C10DCCB8ED172B55434FDBB4E2F0378129C"
 set "EXHashG=0E417F999D42920282B9AD411E95372C692DC6FA21CDC15511F8F80EB04887CB"
 set "EXHashH=486265B9BA383F2ADB8B5C5F26B76148CDCEBAB7965ACE3B083F52080F6899D7"
 rem Store the tools hash and use it later. (Useful for hashing the tools.esd file and not trusting blindly.)
-set "ToolsHash=AC346FED8F59F55451107863AD47083D5B11984E225A69F065E110B367AE4ADF"
+set "ToolsHash=3693FF389C25C88B5C590584FF137F8EEE434882162850D428E03AFCED0747B5"
 rem ======================================================================
 rem You can configure how new lines are represented in message boxes.
 rem Use `r`n for Windows style Carriage Return Line Feed newlines or use
@@ -4121,7 +4121,7 @@ rem Ventoy Download Mode, Drive with a general Window Title that stays consisten
 rem about activity. Can now also track the help page as well. ArgumentsPassed is back but does not show.
 rem Now includes Archive_Part because of the need to see the archive progress.
 set "Input=%~1"
-if "!StartUninstall!"=="True" (set "HEADER=[ALOSTOY UNINSTALLER V1.0.0.1]") else if "!StartUninstall!"=="False" (set "HEADER=[ALOSTOY INSTALLER V!VERSION!]")
+if "!StartUninstall!"=="True" (set "HEADER=[ALOSTOY UNINSTALLER V1.0.0.2]") else if "!StartUninstall!"=="False" (set "HEADER=[ALOSTOY INSTALLER V!VERSION!]")
 if "!BrowsingHelp!"=="True" (
     if defined Page (set "BaseHeader=!HEADER! [!LANG!-!LOCALE!] [START PAGE: !STARTPAGE!] [PAGE !PAGE!]")
     if defined InstallGuidePage (set "BaseHeader=!HEADER! [!LANG!-!LOCALE!] [START PAGE: !STARTPAGE!] [PAGE !INSTALLGUIDEPAGE!]")
@@ -4155,7 +4155,10 @@ if "!StartUninstall!"=="False" (
     if "!BrowsingHelp!"=="False" if defined ArgPrefix (set "BaseHeader=!BaseHeader! [PREFIX: !ARGPREFIX!]")
     rem But this WILL be necessary.
     if defined Archive_Part if defined Parts (set "BaseHeader=!BaseHeader! [ARCHIVE PART: !ARCHIVE_PART! OF !PARTS!]")
-) else if "!StartUninstall!"=="True" if defined EraseType (set "BaseHeader=!BaseHeader! [ERASE TYPE: !ERASETYPE!]")
+) else if "!StartUninstall!"=="True" (
+    if defined EraseType (set "BaseHeader=!BaseHeader! [ERASE TYPE: !ERASETYPE!]")
+    if defined Disk (set "BaseHeader=!BaseHeader! [DISK: !DISK!]")
+)
 title !BaseHeader! ^<-----^> !Input!
 set "Input="
 goto :eof
@@ -4520,7 +4523,7 @@ if "!ARE!"=="0" (
 cls
 call :WindowTitle "UNINSTALL ALOSTOY OPTIONS"
 call :PowerShell_Helper "Uninstall_Choices" || exit 1
-call Button 15 3 F4 "Uninstall ALOSToy" 45 3 F2 "Select Disk (Required)" 80 3 F6 "Abort Uninstallation" X _Var_Box _Var_Hover
+if defined Disk (call Button 20 3 F4 "Uninstall ALOSToy" 53 3 F2 "Change Disk" 80 3 F6 "Abort Uninstallation" X _Var_Box _Var_Hover) else (call Button 15 3 F4 "Uninstall ALOSToy" 45 3 F2 "Select Disk (Required)" 80 3 F6 "Abort Uninstallation" X _Var_Box _Var_Hover)
 echo.
 echo.
 echo.
@@ -4913,7 +4916,7 @@ $Root = $env:Root
     "${Root}bin\batbox.exe" = "9553BC17FA0FD08E026C1865812B3388E3D5495A5394BBF671E5A8F21C79989A"
     "${Root}bin\Box.bat" = "F164716E7B1F98F68F6CE3239345C30B3410ED9812F30B37BB7630F28047EBD9"
     "${Root}bin\Button.bat" = "03A86F9FCDCCBAA499EA4435434A45178E367639D8FB755C5211F304C70744B5"
-    "${Root}bin\folderbrowse.exe" = "726240DD4920407D8C418571845572EE11FCE81EC21EB23546C740C6C7CBB7A9"
+    "${Root}bin\folderbrowse.exe" = "74B9D1F5C8EE754646B3BADCBF3CCDD4B7C79104330A7F613465D3150C1B5870"
     "${Root}bin\folderbrowse.exe.config" = "A122790E20A37DD3A16D42F4F089275558E94310BCB6DB11F71769B7C722AB39"
     "${Root}bin\GetInput.exe" = "3F5C64717A0092AE214154A730E96E2E56921BE2E3F1121A3E98B1BA84627665"
     "${Root}bin\Getlen.bat" = "83CE5342710A2F2E385A363402661E3426728DD6BCFE9D87E22F2FB858B07BDE"
@@ -7591,8 +7594,8 @@ function Show-AboutPage {
 $script:PageIndex = 0
 $ThemeComboBox.Add_SelectionChanged({
     switch ($ThemeComboBox.SelectedIndex) {
-        0 { $script:ThemeMode = 'Dark' }
-        1 { $script:ThemeMode = 'Light' }
+        0       { $script:ThemeMode = 'Dark' }
+        1       { $script:ThemeMode = 'Light' }
         default { $script:ThemeMode = 'Auto' }
     }
     Apply-Theme
@@ -7664,5 +7667,5 @@ Exit 27
 :Post_LanguageValidation
 rem End of installer, leave an empty line and do not change the line endings.
 rem Changing line endings from CRLF to LF will fail the empty line check.
-rem Total line count: 7669 (7668 without extra newline).
+rem Total line count: 7672 (7671 without extra newline).
 rem Made by Aarav Katariya with love and care...
