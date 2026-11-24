@@ -390,9 +390,9 @@ function Display-Prompt {
                           Margin="0,4,8,4"
                           VerticalAlignment="Center"
                           SelectedIndex="2">
-                    <ComboBoxItem Content="Dark Mode"/>
-                    <ComboBoxItem Content="Light Mode"/>
-                    <ComboBoxItem Content="Auto"/>
+                    <ComboBoxItem Content="Dark Theme"/>
+                    <ComboBoxItem Content="Light Theme"/>
+                    <ComboBoxItem Content="System Theme"/>
                 </ComboBox>
             </Grid>
             <Grid Grid.Row="1" Margin="12">
